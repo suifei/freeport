@@ -1,0 +1,13 @@
+/target/
+/.build/
+/dist/
+/freeport-state/
+/reports/
+*.log
+/scan-results/
+/transactions/
+*.vhd
+*.vhdx
+*.dmp
+__pycache__/
+*.pyc

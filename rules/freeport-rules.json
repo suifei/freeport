@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "revision": 1,
+  "rules": [
+    {
+      "id": "claude",
+      "name": "Claude CLI 数据",
+      "category": "ai_tool",
+      "suffix": ".claude",
+      "processes": [
+        "claude.exe"
+      ]
+    },
+    {
+      "id": "kimi",
+      "name": "Kimi CLI 数据",
+      "category": "ai_tool",
+      "suffix": ".kimi-code",
+      "processes": [
+        "kimi.exe"
+      ]
+    },
+    {
+      "id": "dsh",
+      "name": "DeepSeek DSH",
+      "category": "ai_tool",
+      "suffix": ".dsh",
+      "processes": [
+        "dsh.exe"
+      ]
+    },
+    {
+      "id": "grok",
+      "name": "Grok 数据",
+      "category": "ai_tool",
+      "suffix": ".grok",
+      "processes": [
+        "grok.exe"
+      ]
+    },
+    {
+      "id": "grokbot",
+      "name": "Grok Bot",
+      "category": "ai_tool",
+      "suffix": ".grokbot",
+      "processes": [
+        "node.exe"
+      ]
+    },
+    {
+      "id": "vscode-extensions",
+      "name": "VS Code 扩展",
+      "category": "extensions",
+      "suffix": ".vscode/extensions",
+      "processes": [
+        "code.exe"
+      ]
+    },
+    {
+      "id": "cursor-extensions",
+      "name": "Cursor 扩展与配置",
+      "category": "extensions",
+      "suffix": ".cursor",
+      "processes": [
+        "cursor.exe"
+      ]
+    },
+    {
+      "id": "obsidian-plugins",
+      "name": "Obsidian 插件",
+      "category": "extensions",
+      "suffix": ".obsidian/plugins",
+      "processes": [
+        "obsidian.exe"
+      ]
+    },
+    {
+      "id": "vcpkg-downloads",
+      "name": "vcpkg 下载缓存",
+      "category": "build_cache",
+      "suffix": "vcpkg/downloads",
+      "processes": [
+        "vcpkg.exe"
+      ]
+    },
+    {
+      "id": "vcpkg-buildtrees",
+      "name": "vcpkg 编译缓存",
+      "category": "build_cache",
+      "suffix": "vcpkg/buildtrees",
+      "processes": [
+        "vcpkg.exe"
+      ]
+    },
+    {
+      "id": "go-build",
+      "name": "Go 编译缓存",
+      "category": "build_cache",
+      "suffix": "AppData/Local/go-build",
+      "processes": [
+        "go.exe"
+      ]
+    },
+    {
+      "id": "cargo-registry",
+      "name": "Cargo 包缓存",
+      "category": "build_cache",
+      "suffix": ".cargo/registry",
+      "processes": [
+        "cargo.exe"
+      ]
+    },
+    {
+      "id": "pip-cache",
+      "name": "pip 缓存",
+      "category": "package_cache",
+      "suffix": "AppData/Local/pip/Cache",
+      "processes": [
+        "python.exe"
+      ]
+    },
+    {
+      "id": "npm-cache",
+      "name": "npm 缓存",
+      "category": "package_cache",
+      "suffix": "AppData/Local/npm-cache",
+      "processes": [
+        "node.exe"
+      ]
+    },
+    {
+      "id": "hf-models",
+      "name": "Hugging Face 模型",
+      "category": "models",
+      "suffix": ".cache/huggingface",
+      "processes": [
+        "python.exe"
+      ]
+    },
+    {
+      "id": "wxwork",
+      "name": "企业微信数据",
+      "category": "app_data",
+      "suffix": "AppData/Roaming/Tencent/WXWork",
+      "processes": [
+        "wxwork.exe"
+      ]
+    }
+  ]
+}

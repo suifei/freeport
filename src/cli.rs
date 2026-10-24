@@ -1,0 +1,319 @@
+use crate::{
+    engine::{self, Control, Plan},
+    fail, handles, rules, scan, Result,
+};
+use std::{
+    fs,
+    io::{self, Write},
+    path::{Path, PathBuf},
+};
+pub fn run() -> Result<()> {
+    let mut args: Vec<String> = std::env::args().skip(1).collect();
+    let explicit = if let Some(i) = args.iter().position(|a| a == "--lang") {
+        if args.iter().filter(|a| a.as_str() == "--lang").count() != 1 {
+            return fail(
+                "Invalid language option. Use --lang auto, en, zh-CN, zh-TW, ja, ko, or de.",
+            );
+        }
+        let value = args
+            .get(i + 1)
+            .cloned()
+            .ok_or("Missing --lang value. Choose auto, en, zh-CN, zh-TW, ja, ko, or de.")?;
+        args.drain(i..=i + 1);
+        Some(value)
+    } else {
+        None
+    };
+    let choice = crate::i18n::init(explicit.as_deref())?;
+    if choice.source == "invalid_preference" {
+        eprintln!("{}", crate::i18n::t("language.corrupt"));
+    }
+    if args.is_empty() || args.iter().any(|a| a == "--help" || a == "-h") {
+        print_help();
+        return Ok(());
+    }
+    let command = &args[0];
+    let value_flags = [
+        "--scan",
+        "--select",
+        "--destination",
+        "--out",
+        "--mode",
+        "--state",
+        "--source",
+        "--target",
+        "--plan",
+        "--transaction",
+        "--path",
+        "--import",
+        "--volumes",
+    ];
+    let boolean_flags = [
+        "--yes",
+        "--measure",
+        "--batches",
+        "--request-app-exit",
+        "--force-close-handles",
+    ];
+    let mut seen = std::collections::HashSet::new();
+    let mut i = 1;
+    while i < args.len() {
+        let flag = &args[i];
+        if !seen.insert(flag.clone()) {
+            return fail(crate::i18n::format("option.unknown", &[flag.clone()]));
+        }
+        if boolean_flags.contains(&flag.as_str()) {
+            i += 1;
+        } else if value_flags.contains(&flag.as_str()) {
+            if args.get(i + 1).is_none() || args[i + 1].starts_with("--") {
+                return fail(crate::i18n::format("msg.37f9824aeb", &[flag.clone()]));
+            }
+            i += 2;
+        } else {
+            return fail(crate::i18n::format("option.unknown", &[flag.clone()]));
+        }
+    }
+
+    let value = |flag: &str| -> Option<String> {
+        args.iter()
+            .position(|a| a == flag)
+            .and_then(|i| args.get(i + 1))
+            .cloned()
+    };
+    let path = |flag: &str| -> Result<PathBuf> {
+        value(flag)
+            .map(PathBuf::from)
+            .ok_or_else(|| crate::i18n::format("msg.37f9824aeb", &[format!("{}", flag)]).into())
+    };
+    let store = value("--state")
+        .map(PathBuf::from)
+        .unwrap_or_else(engine::default_store);
+    let yes = args.iter().any(|a| a == "--yes");
+    let control = Control {
+        options: handles::Options {
+            request_app_exit: args.iter().any(|a| a == "--request-app-exit"),
+            force_close_handles: args.iter().any(|a| a == "--force-close-handles"),
+        },
+        ..Control::default()
+    };
+    let progress = |s: String| eprintln!("{s}");
+    match command.as_str() {
+        "--version" | "version" => println!("FreePort {}", env!("CARGO_PKG_VERSION")),
+        "volumes" => println!("{}", serde_json::to_string_pretty(&scan::volumes())?),
+        "scan" => {
+            let roots = if let Some(p) = value("--path") {
+                vec![PathBuf::from(p)]
+            } else {
+                value("--volumes")
+                    .ok_or(crate::i18n::t("msg.317959053e"))?
+                    .split(',')
+                    .map(|v| {
+                        PathBuf::from(if v.ends_with(':') {
+                            format!("{v}\\")
+                        } else {
+                            v.into()
+                        })
+                    })
+                    .collect()
+            };
+            let mode = value("--mode").unwrap_or_else(|| "migrate".into());
+            let mut report = scan::run_with_store(&roots, &mode, &progress, &control, &store)?;
+            if args.iter().any(|a| a == "--measure") {
+                scan::measure(&mut report.rows, &progress);
+            }
+            output(&value("--out"), &report)?;
+        }
+        "plan" => {
+            let report: scan::Report = serde_json::from_slice(&fs::read(path("--scan")?)?)?;
+            let ids = value("--select")
+                .ok_or(crate::i18n::t("msg.1d0f86d60a"))?
+                .split(',')
+                .map(str::to_string)
+                .collect::<Vec<_>>();
+            let plan = engine::make_plan(&report.rows, &ids, &path("--destination")?)?;
+            output(&value("--out"), &plan)?;
+        }
+        "migrate" | "apply" => {
+            let plan = if command == "migrate" {
+                engine::custom_plan(&path("--source")?, &path("--target")?, &store)?
+            } else {
+                serde_json::from_slice::<Plan>(&fs::read(path("--plan")?)?)?
+            };
+            for i in &plan.items {
+                eprintln!("{} -> {}", i.source.display(), i.target.display());
+            }
+            if control.options.force_close_handles {
+                eprintln!("{}", handles::warning());
+            }
+            confirm(yes)?;
+            let records = engine::migrate(&plan, &store, &control, &progress)?;
+            println!("{}", serde_json::to_string_pretty(&records)?);
+        }
+        "restore" => {
+            let sources = if let Some(p) = value("--source") {
+                vec![PathBuf::from(p)]
+            } else {
+                let r: scan::Report = serde_json::from_slice(&fs::read(path("--scan")?)?)?;
+                let ids = value("--select")
+                    .ok_or(crate::i18n::t("msg.0d3976df88"))?
+                    .split(',')
+                    .map(str::to_string)
+                    .collect::<Vec<_>>();
+                ids.iter()
+                    .map(|id| {
+                        r.rows
+                            .iter()
+                            .find(|r| &r.candidate.id == id)
+                            .map(|r| r.candidate.source.clone())
+                            .ok_or_else(|| crate::i18n::t("msg.5f5c222eab").into())
+                    })
+                    .collect::<Result<Vec<_>>>()?
+            };
+            if control.options.force_close_handles {
+                eprintln!("{}", handles::warning());
+            }
+            eprintln!("{}", crate::i18n::t("msg.5960ff2c33"));
+            confirm(yes)?;
+            for r in engine::restore_many(&sources, &store, &control, &progress)? {
+                println!("{}", serde_json::to_string(&r)?);
+            }
+        }
+        "history" => {
+            if args.iter().any(|a| a == "--batches") {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&crate::batch::history(&store)?)?
+                );
+            } else {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&engine::history(&store)?)?
+                );
+            }
+        }
+        "recover" => {
+            let id = value("--transaction").ok_or(crate::i18n::t("msg.99e1d53c23"))?;
+            confirm(yes)?;
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&engine::recover(&store, &id, &control, &progress)?)?
+            );
+        }
+        "handles" => println!(
+            "{}",
+            serde_json::to_string_pretty(&handles::discover(&[path("--path")?])?)?
+        ),
+        "rules" => {
+            if let Some(file) = value("--import") {
+                let p = rules::import(Path::new(&file), &store)?;
+                println!(
+                    "{}",
+                    crate::i18n::format("msg.15f28763a9", &[format!("{}", p.revision)])
+                );
+            } else {
+                println!("{}", serde_json::to_string_pretty(&rules::active(&store)?)?);
+            }
+        }
+        #[cfg(debug_assertions)]
+        "__lock-test" => {
+            use std::os::windows::fs::OpenOptionsExt;
+            let f = fs::OpenOptions::new()
+                .read(true)
+                .write(true)
+                .share_mode(0)
+                .open(path("--path")?)?;
+            let other = value("--target")
+                .map(|p| {
+                    fs::OpenOptions::new()
+                        .read(true)
+                        .write(true)
+                        .share_mode(0)
+                        .open(p)
+                })
+                .transpose()?;
+            println!("locked");
+            io::stdout().flush()?;
+            let mut s = String::new();
+            io::stdin().read_line(&mut s)?;
+            std::mem::forget(f);
+            std::mem::forget(other);
+        }
+        #[cfg(debug_assertions)]
+        "__junction-test" => {
+            let source = path("--source")?;
+            let target = path("--target")?;
+            fixture_boundary(&source)?;
+            fixture_boundary(&target)?;
+            crate::platform::create_junction(&source, &target)?;
+        }
+        #[cfg(debug_assertions)]
+        "__force-test" => {
+            let root = path("--path")?;
+            fixture_boundary(&root)?;
+            if !yes || !control.options.force_close_handles {
+                return fail("Test helper requires explicit --yes --force-close-handles.");
+            }
+            let n = handles::force_close(
+                &[root.clone()],
+                &root
+                    .parent()
+                    .ok_or("fixture parent")?
+                    .join("fixture-handles.jsonl"),
+                &progress,
+            )?;
+            println!("{n}");
+        }
+        _ => {
+            return fail(crate::i18n::format(
+                "msg.1008985df9",
+                &[format!("{}", command)],
+            ))
+        }
+    }
+    Ok(())
+}
+#[cfg(debug_assertions)]
+fn fixture_boundary(path: &Path) -> Result<()> {
+    let absolute = crate::platform::absolute(path)?;
+    let parent = absolute.parent().ok_or("fixture parent")?;
+    if fs::read(parent.join("freeport-fixture.marker"))? != b"FreePort test fixture\n" {
+        return fail("Missing test-fixture marker.");
+    }
+    Ok(())
+}
+fn output<T: serde::Serialize>(path: &Option<String>, value: &T) -> Result<()> {
+    if let Some(p) = path {
+        crate::platform::atomic_json(Path::new(p), value)?;
+    } else {
+        println!("{}", serde_json::to_string_pretty(value)?);
+    }
+    Ok(())
+}
+fn confirm(yes: bool) -> Result<()> {
+    if yes {
+        return Ok(());
+    }
+    eprint!("{}", crate::i18n::t("msg.c0fa62a422"));
+    io::stderr().flush()?;
+    let mut s = String::new();
+    io::stdin().read_line(&mut s)?;
+    if s.trim() != "yes" {
+        return fail(crate::i18n::t("msg.a37778f17c"));
+    }
+    Ok(())
+}
+fn print_help() {
+    const COMMANDS: &str = r"fp volumes
+fp scan --volumes C:,D: --mode migrate|restore [--measure] [--out scan.json]
+fp scan --path E:\test --mode migrate [--measure]
+fp plan --scan scan.json --select id1,id2 --destination D:\Dev --out plan.json
+fp apply --plan plan.json [--yes]
+fp migrate --source C:\cache --target D:\Dev\cache [--yes]
+fp restore --source C:\cache [--yes]
+fp restore --scan links.json --select id1,id2 [--yes]
+fp history [--state E:\fp-state] [--batches]
+fp recover --transaction ID [--yes]
+fp handles --path C:\cache
+fp rules [--import rules.json]";
+    print!("{}", crate::i18n::format("cli.help", &[COMMANDS.into()]));
+}

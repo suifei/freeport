@@ -1,0 +1,16 @@
+#!/usr/bin/env python
+from identity_policy import EXPECTED, check_commit_message, git, reject
+import sys
+
+for line in sys.stdin:
+    local_ref, local_oid, remote_ref, remote_oid = line.split()
+    if not local_oid.strip("0"):
+        continue
+    known = remote_oid.strip("0") and git("cat-file", "-e", remote_oid + "^{commit}", check=False).returncode == 0
+    revision = remote_oid + ".." + local_oid if known else local_oid
+    for oid in git("rev-list", revision).stdout.splitlines():
+        author = git("show", "-s", "--format=%an <%ae>", oid).stdout.strip()
+        committer = git("show", "-s", "--format=%cn <%ce>", oid).stdout.strip()
+        if author != EXPECTED or committer != EXPECTED:
+            reject("owner identity mismatch in " + oid)
+        check_commit_message(git("show", "-s", "--format=%B", oid).stdout)

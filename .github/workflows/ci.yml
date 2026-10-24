@@ -1,0 +1,43 @@
+name: build-and-boundaries
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: rust-src, rustfmt
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-binutils
+          path-type: inherit
+      - name: Add the MSVCRT MinGW toolchain
+        shell: msys2 {0}
+        run: cygpath -w /mingw64/bin >> "$GITHUB_PATH"
+      - name: Unit and boundary tests (failures are never skipped)
+        shell: pwsh
+        run: cargo +nightly test --locked --lib --target x86_64-win7-windows-gnu -Zbuild-std=std,panic_abort
+      - name: Build Windows 7 release and audit imports
+        shell: pwsh
+        run: ./scripts/build.ps1
+      - name: Six-language CLI and native GUI checks
+        run: python scripts/smoke.py --cli target/x86_64-win7-windows-gnu/release/fp.exe --gui target/x86_64-win7-windows-gnu/release/freeport.exe
+      - name: Build fault-injection executable
+        shell: pwsh
+        run: ./scripts/build.ps1 -Profile dev
+      - name: Real NTFS, cross-volume, crash recovery and handle scope
+        shell: pwsh
+        run: ./scripts/test-native.ps1 -Cli target/x86_64-win7-windows-gnu/debug/fp.exe
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: validation-evidence
+          path: |
+            .build/*result.json
+            .build/pe-audit.json
+            .build/native-acceptance.json
+      # No automatic release: actual Windows 7 and VM power-loss evidence are separate gates.

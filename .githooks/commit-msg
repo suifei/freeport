@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+from identity_policy import check_commit_message, check_current_identity
+import pathlib
+import sys
+
+check_current_identity()
+check_commit_message(pathlib.Path(sys.argv[1]).read_text(encoding="utf-8"))
