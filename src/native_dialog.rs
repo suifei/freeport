@@ -104,28 +104,32 @@ unsafe extern "system" fn message_proc(hwnd: HWND, m: u32, w: usize, param: isiz
             r.right - 36,
             r.bottom - 76,
         );
-        let cancel = d.flags & MB_OKCANCEL != 0;
-        control(
-            hwnd,
-            IDOK as usize,
-            "BUTTON",
-            l::t("common.ok"),
-            WS_TABSTOP | BS_DEFPUSHBUTTON as u32,
-            r.right - if cancel { 244 } else { 130 },
-            r.bottom - 46,
-            112,
-            30,
-        );
-        if cancel {
+        let choices: Vec<(i32, &str)> = if d.flags & 0xf == MB_YESNOCANCEL {
+            vec![
+                (IDYES, "common.yes"),
+                (IDNO, "common.no"),
+                (IDCANCEL, "common.cancel"),
+            ]
+        } else if d.flags & 0xf == MB_OKCANCEL {
+            vec![(IDOK, "common.ok"), (IDCANCEL, "common.cancel")]
+        } else {
+            vec![(IDOK, "common.ok")]
+        };
+        for (i, (id, key)) in choices.iter().enumerate() {
             control(
                 hwnd,
-                IDCANCEL as usize,
+                *id as usize,
                 "BUTTON",
-                l::t("common.cancel"),
-                WS_TABSTOP | BS_PUSHBUTTON as u32,
-                r.right - 122,
+                l::t(key),
+                WS_TABSTOP
+                    | if i == 0 {
+                        BS_DEFPUSHBUTTON as u32
+                    } else {
+                        BS_PUSHBUTTON as u32
+                    },
+                r.right - 18 - (choices.len() - i) as i32 * 122,
                 r.bottom - 46,
-                104,
+                112,
                 30,
             );
         }
@@ -133,7 +137,14 @@ unsafe extern "system" fn message_proc(hwnd: HWND, m: u32, w: usize, param: isiz
     }
     if m == WM_COMMAND {
         let id = w & 0xffff;
-        if id == IDOK as usize || id == IDCANCEL as usize {
+        if [
+            IDOK as usize,
+            IDCANCEL as usize,
+            IDYES as usize,
+            IDNO as usize,
+        ]
+        .contains(&id)
+        {
             EndDialog(hwnd, id as isize);
             return 1;
         }

@@ -303,13 +303,15 @@ pub fn run_with_store(
                 }
                 Err(e) => {
                     control.check()?;
-                    warnings.push(crate::i18n::format(
+                    let warning = crate::i18n::format(
                         "msg.94008b276b",
                         &[
                             format!("{}", root.display()),
                             crate::i18n::describe_error(e.as_ref()),
                         ],
-                    ));
+                    );
+                    progress(warning.clone());
+                    warnings.push(warning);
                     let (v, n) = fallback(&root, progress, control)?;
                     if n > 0 {
                         warnings.push(crate::i18n::format(
@@ -469,6 +471,8 @@ pub fn measure_with_control(
         row.stats = inventory::measure_with_control(&row.candidate.source, control)?;
         row.status = if row.stats.errors > 0 {
             "unreadable"
+        } else if row.stats.links > 0 {
+            "nested_links"
         } else {
             "ready"
         }

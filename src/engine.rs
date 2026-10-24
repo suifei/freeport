@@ -311,16 +311,30 @@ fn validate_paths(source: &Path, target: &Path, store: &Path, allow_link: bool) 
     Ok(())
 }
 pub fn make_plan(rows: &[Row], ids: &[String], destination: &Path) -> Result<Plan> {
+    make_plan_with_store(rows, ids, destination, &default_store())
+}
+pub fn make_plan_with_store(
+    rows: &[Row],
+    ids: &[String],
+    destination: &Path,
+    store: &Path,
+) -> Result<Plan> {
     if ids.is_empty() {
         return fail(crate::i18n::t("msg.c42783dc92"));
     }
     let destination = p::absolute(destination)?;
     let mut items = vec![];
-    for id in ids {
+    let selected = crate::selection::Selection::from_ids(rows, ids)?;
+    let roots = crate::selection::roots(selected.include);
+    for root in &roots {
         let row = rows
             .iter()
-            .find(|r| &r.candidate.id == id)
+            .find(|r| p::same(&r.candidate.source, root))
             .ok_or(crate::i18n::t("msg.5f5c222eab"))?;
+        let id = &row.candidate.id;
+        if row.stats.links > 0 || row.status == "nested_links" {
+            return fail(crate::i18n::t("selection.link"));
+        }
         let source = p::absolute(&row.candidate.source)?;
         if p::reparse(&fs::symlink_metadata(&row.candidate.source)?) {
             return fail(crate::i18n::t("msg.2d7b3f7d01"));
@@ -336,7 +350,7 @@ pub fn make_plan(rows: &[Row], ids: &[String], destination: &Path) -> Result<Pla
         });
     }
     let plan = Plan { version: 1, items };
-    validate_plan(&plan, &default_store())?;
+    validate_plan(&plan, store)?;
     Ok(plan)
 }
 pub fn custom_plan(source: &Path, target: &Path, store: &Path) -> Result<Plan> {

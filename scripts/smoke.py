@@ -126,6 +126,8 @@ class InterfaceTests(unittest.TestCase):
         self.assertEqual(p.returncode, 0, p.stderr.decode("utf-8", errors="replace"))
         report = json.loads(p.stdout.decode("utf-8", errors="strict"))
         self.assertTrue(report["window_is_native"])
+        self.assertTrue(report["tree_checks"])
+        self.assertFalse(report["administrator_option"])
         self.assertEqual(report["language"], "ja")
         self.assertFalse(report["request_app_exit"])
         self.assertFalse(report["force_close_handles"])
@@ -134,6 +136,32 @@ class InterfaceTests(unittest.TestCase):
         self.assertTrue(report["dialogs_localized"])
         self.assertEqual(set(report["labels"]), set(TAGS))
         self.assertEqual(len(set(report["labels"].values())), 6)
+
+    def test_selection_file_rejections_are_readonly(self):
+        report = json.loads(invoke("scan", "--path", str(FIXTURE), "--state", str(STATE), lang="en")[0])
+        scan = ROOT / "selection-scan.json"
+        scan.write_text(json.dumps(report), encoding="utf-8")
+        selection = ROOT / "selection.json"
+        for value in [
+            {"version": 99, "include": [str(FIXTURE)]},
+            {"version": 1, "include": []},
+            {"version": 1, "include": [str(ROOT)]},
+            {"version": 1, "include": [str(FIXTURE)], "execute": "must never execute"},
+        ]:
+            selection.write_text(json.dumps(value), encoding="utf-8")
+            invoke("plan", "--scan", str(scan), "--selection", str(selection),
+                   "--destination", str(ROOT / "destination"), "--state", str(STATE), lang="en", code=1)
+        selection.write_text(" " * (1024 * 1024 + 1), encoding="utf-8")
+        invoke("plan", "--scan", str(scan), "--selection", str(selection),
+               "--destination", str(ROOT / "destination"), "--state", str(STATE), lang="en", code=1)
+        self.assertFalse((ROOT / "destination").exists())
+        self.assertFalse(STATE.exists())
+
+    def test_explicit_elevation_does_not_change_defaults_or_parameter_validation(self):
+        version, _ = invoke("--version", "--elevate", lang="en")
+        self.assertIn("FreePort", version)
+        invoke("scan", "--elevate", "--elevate", lang="en", code=1)
+        invoke("plan", "--select", "x", "--selection", "missing.json", lang="en", code=1)
 
 
 if __name__ == "__main__":

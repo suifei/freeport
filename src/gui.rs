@@ -1,6 +1,11 @@
 #![windows_subsystem = "windows"]
+mod folder_tree;
 mod native_dialog;
 use freeport::i18n as l;
+use freeport::{
+    elevation::{self, Job, Update},
+    selection,
+};
 use freeport::{
     engine::{self, Control},
     handles,
@@ -24,6 +29,10 @@ use windows_sys::Win32::{
     UI::{Controls::*, Input::KeyboardAndMouse::EnableWindow, WindowsAndMessaging::*},
 };
 const LANG: usize = 113;
+const ELEVATE: usize = 114;
+const SAVE_SELECTION: usize = 115;
+const LOAD_SELECTION: usize = 116;
+const TREE_SYNC: u32 = WM_APP + 9;
 const SCAN: usize = 101;
 const ADD: usize = 102;
 const APPLY: usize = 103;
@@ -37,10 +46,18 @@ const FORCE: usize = 110;
 const RULES: usize = 111;
 const RECOVER: usize = 112;
 enum Event {
+    Invalidate,
     Report(scan::Report),
+    Prepared(std::result::Result<Prepared, String>),
     Measured(usize, Row),
     Progress(String),
     Done(std::result::Result<String, String>),
+}
+struct Prepared {
+    job: Job,
+    preview: String,
+    control: Control,
+    elevate: bool,
 }
 struct Ui {
     hwnd: HWND,
@@ -51,6 +68,8 @@ struct Ui {
     drives: Vec<(PathBuf, HWND)>,
     mode: HWND,
     list: HWND,
+    tree: Option<folder_tree::Tree>,
+    elevate: HWND,
     target: HWND,
     force: HWND,
     request: HWND,
@@ -76,6 +95,8 @@ impl Default for Ui {
             drives: vec![],
             mode: ptr::null_mut(),
             list: ptr::null_mut(),
+            tree: None,
+            elevate: ptr::null_mut(),
             target: ptr::null_mut(),
             force: ptr::null_mut(),
             request: ptr::null_mut(),
@@ -217,37 +238,25 @@ unsafe fn init(ui: &mut Ui) {
     button(ui, ADD, l::t("msg.568626f4b7"));
     button(ui, ALL, l::t("msg.3a5040b68a"));
     button(ui, NONE, l::t("msg.ab9084a640"));
+    button(ui, SAVE_SELECTION, l::t("selection.save"));
+    button(ui, LOAD_SELECTION, l::t("selection.load"));
     button(ui, RULES, l::t("msg.4bf5e1709a"));
     button(ui, RECOVER, l::t("msg.5cc23ae008"));
     ui.list = child(
         ui,
         3,
-        "SysListView32",
+        "SysTreeView32",
         "",
-        WS_BORDER | WS_TABSTOP | LVS_REPORT | LVS_SHOWSELALWAYS,
+        WS_BORDER
+            | WS_TABSTOP
+            | TVS_HASBUTTONS
+            | TVS_HASLINES
+            | TVS_LINESATROOT
+            | TVS_SHOWSELALWAYS,
     );
-    SendMessageW(
-        ui.list,
-        LVM_SETEXTENDEDLISTVIEWSTYLE,
-        0,
-        (LVS_EX_CHECKBOXES | LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER) as isize,
-    );
-    for (i, (s, width)) in [
-        (l::t("msg.403f528bf2"), 160),
-        (l::t("msg.4265f23e53"), 490),
-        (l::t("msg.59899b92d9"), 100),
-        (l::t("msg.7e9aad99d0"), 350),
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        let mut name = p::wide(s);
-        let mut col: LVCOLUMNW = std::mem::zeroed();
-        col.mask = LVCF_TEXT | LVCF_WIDTH;
-        col.cx = width;
-        col.pszText = name.as_mut_ptr();
-        SendMessageW(ui.list, LVM_INSERTCOLUMNW, i, &col as *const _ as isize);
-    }
+    let tree = folder_tree::Tree::new(ui.list);
+    tree.init();
+    ui.tree = Some(tree);
     child(ui, 4, "STATIC", l::t("msg.134b2da520"), 0);
     ui.target = child(
         ui,
@@ -271,6 +280,14 @@ unsafe fn init(ui: &mut Ui) {
         l::t("msg.f8077addd1"),
         BS_AUTOCHECKBOX as u32 | BS_MULTILINE as u32 | WS_TABSTOP,
     );
+    ui.elevate = child(
+        ui,
+        ELEVATE,
+        "BUTTON",
+        l::t("elevation.option"),
+        BS_AUTOCHECKBOX as u32 | BS_MULTILINE as u32 | WS_TABSTOP,
+    );
+    setcheck(ui.elevate, false);
     setcheck(ui.request, false);
     setcheck(ui.force, false);
     button(ui, APPLY, l::t("msg.f6fa97faea"));
@@ -324,16 +341,34 @@ unsafe fn layout(ui: &Ui) {
     let bar = 112 + ui.drives.len().div_ceil(cols) as i32 * 25 + 10;
     move_id(ui, SCAN, pad, bar, 165, 30);
     move_id(ui, ADD, pad + 175, bar, 190, 30);
+    let extra = if w < 1050 { 35 } else { 0 };
+    move_id(
+        ui,
+        SAVE_SELECTION,
+        if extra > 0 { pad } else { pad + 375 },
+        bar + extra,
+        140,
+        30,
+    );
+    move_id(
+        ui,
+        LOAD_SELECTION,
+        if extra > 0 { pad + 150 } else { pad + 525 },
+        bar + extra,
+        140,
+        30,
+    );
     move_id(ui, ALL, w - 258, bar, 120, 30);
     move_id(ui, NONE, w - 128, bar, 110, 30);
-    let top = bar + 40;
+    let top = bar + 40 + extra;
     move_id(ui, 3, pad, top, w - 36, (h - 280 - top).max(80));
     let offset = (80 - (h - 280 - top)).max(0);
     let h = h + offset;
     move_id(ui, 4, pad, h - 268, w - 36, 22);
     move_id(ui, 5, pad, h - 242, w - 200, 28);
     move_id(ui, BROWSE, w - 172, h - 242, 154, 28);
-    move_id(ui, REQUEST, pad, h - 206, w - 36, 28);
+    move_id(ui, REQUEST, pad, h - 206, w / 2 - 24, 28);
+    move_id(ui, ELEVATE, w / 2, h - 206, w / 2 - 18, 28);
     move_id(ui, FORCE, pad, h - 176, w - 330, 34);
     move_id(ui, APPLY, w - 304, h - 176, 180, 32);
     move_id(ui, STOP, w - 114, h - 176, 96, 32);
@@ -341,20 +376,26 @@ unsafe fn layout(ui: &Ui) {
     move_id(ui, 7, pad, h - 108, w - 36, (90 - offset).max(20));
 }
 unsafe fn refresh(ui: &mut Ui) {
-    let ids = selected(ui);
+    let _ids = selected(ui);
     let mode = SendMessageW(ui.mode, CB_GETCURSEL, 0, 0);
-    text(ui.hwnd, l::t("msg.7540ee4199"));
+    text(
+        ui.hwnd,
+        &format!("{} — {}", l::t("msg.7540ee4199"), env!("CARGO_PKG_VERSION")),
+    );
     for (id, key) in [
         (2, "msg.1918b38f27"),
         (SCAN, "msg.63dec1aba1"),
         (ADD, "msg.568626f4b7"),
         (ALL, "msg.3a5040b68a"),
         (NONE, "msg.ab9084a640"),
+        (SAVE_SELECTION, "selection.save"),
+        (LOAD_SELECTION, "selection.load"),
         (RULES, "msg.4bf5e1709a"),
         (RECOVER, "msg.5cc23ae008"),
         (4, "msg.134b2da520"),
         (BROWSE, "msg.e7f468a900"),
         (REQUEST, "msg.1ace177481"),
+        (ELEVATE, "elevation.option"),
         (FORCE, "msg.f8077addd1"),
         (APPLY, "msg.f6fa97faea"),
         (STOP, "msg.ca4d973c0b"),
@@ -390,90 +431,21 @@ unsafe fn refresh(ui: &mut Ui) {
         },
         0,
     );
-    for (i, key) in [
-        "msg.403f528bf2",
-        "msg.4265f23e53",
-        "msg.59899b92d9",
-        "msg.7e9aad99d0",
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        let mut name = p::wide(l::t(key));
-        let col = LVCOLUMNW {
-            mask: LVCF_TEXT,
-            pszText: name.as_mut_ptr(),
-            ..std::mem::zeroed()
-        };
-        SendMessageW(ui.list, LVM_SETCOLUMNW, i, &col as *const _ as isize);
-    }
     scan::relabel(&mut ui.rows);
-    SendMessageW(ui.list, LVM_DELETEALLITEMS, 0, 0);
-    for i in 0..ui.rows.len() {
-        row(ui, i);
-        if ids.contains(&ui.rows[i].candidate.id) {
-            let item = LVITEMW {
-                stateMask: LVIS_STATEIMAGEMASK,
-                state: 2 << 12,
-                ..std::mem::zeroed()
-            };
-            SendMessageW(ui.list, LVM_SETITEMSTATE, i, &item as *const _ as isize);
-        }
-    }
+    ui.tree.as_mut().unwrap().rebuild(&ui.rows, mode != 0);
     text(ui.status, l::t("language.changed"));
     layout(ui);
 }
 unsafe fn selected(ui: &Ui) -> Vec<String> {
+    let selection = &ui.tree.as_ref().unwrap().selection;
     ui.rows
         .iter()
-        .enumerate()
-        .filter(|(i, _)| {
-            ((SendMessageW(ui.list, LVM_GETITEMSTATE, *i, LVIS_STATEIMAGEMASK as isize) as u32)
-                >> 12)
-                == 2
-        })
-        .map(|(_, r)| r.candidate.id.clone())
+        .filter(|r| selection.state(&r.candidate.source) == 2)
+        .map(|r| r.candidate.id.clone())
         .collect()
 }
 unsafe fn row(ui: &Ui, i: usize) {
-    let r = &ui.rows[i];
-    let state = if let Some(t) = &r.link_target {
-        l::format("msg.0ca6431378", &[format!("{}", t.display())])
-    } else if !r.busy.is_empty() {
-        l::format("msg.bfa79d8418", &[format!("{}", r.busy.join(", "))])
-    } else {
-        let key = format!("status.{}", r.status);
-        if l::has_key(&key) {
-            l::t(&key).into()
-        } else {
-            l::t("status.unknown").into()
-        }
-    };
-    for (col, s) in [
-        r.candidate.name.clone(),
-        r.candidate.source.display().to_string(),
-        if r.status == "unmeasured" {
-            l::t("msg.8284301049").into()
-        } else {
-            freeport::human(r.stats.bytes)
-        },
-        state,
-    ]
-    .into_iter()
-    .enumerate()
-    {
-        let mut s = p::wide(s);
-        let mut item: LVITEMW = std::mem::zeroed();
-        item.iItem = i as i32;
-        item.iSubItem = col as i32;
-        item.pszText = s.as_mut_ptr();
-        item.mask = LVIF_TEXT;
-        if col == 0 {
-            SendMessageW(ui.list, LVM_INSERTITEMW, 0, &item as *const _ as isize);
-        } else {
-            SendMessageW(ui.list, LVM_SETITEMTEXTW, i, &item as *const _ as isize);
-        }
-    }
+    ui.tree.as_ref().unwrap().update(&ui.rows, i);
 }
 unsafe fn log(ui: &mut Ui, s: String) {
     text(ui.status, &s);
@@ -492,7 +464,22 @@ unsafe fn busy(ui: &mut Ui, on: bool) {
     ui.busy = on;
     for (id, h) in &ui.controls {
         if [
-            SCAN, ADD, APPLY, RULES, RECOVER, MODE, REQUEST, FORCE, BROWSE, LANG,
+            SCAN,
+            ADD,
+            APPLY,
+            RULES,
+            RECOVER,
+            MODE,
+            REQUEST,
+            FORCE,
+            BROWSE,
+            LANG,
+            ELEVATE,
+            ALL,
+            NONE,
+            SAVE_SELECTION,
+            LOAD_SELECTION,
+            3,
         ]
         .contains(id)
         {
@@ -519,125 +506,170 @@ unsafe fn start_scan(ui: &mut Ui, roots: Vec<PathBuf>) {
         msg(ui.hwnd, l::t("msg.619d2feebb"), MB_OK | MB_ICONINFORMATION);
         return;
     }
+    let mut elevate = check(ui.elevate);
+    if !elevate
+        && !elevation::is_elevated().unwrap_or(false)
+        && elevation::needs_volume_access(&roots)
+    {
+        match msg(
+            ui.hwnd,
+            l::t("elevation.scan_prompt"),
+            MB_YESNOCANCEL | MB_ICONQUESTION,
+        ) {
+            IDYES => elevate = true,
+            IDNO => {}
+            _ => return,
+        }
+    }
     let mode = if SendMessageW(ui.mode, CB_GETCURSEL, 0, 0) == 0 {
         "migrate"
     } else {
         "restore"
     }
     .to_string();
+    ui.tree.as_mut().unwrap().selection = Default::default();
+    setcheck(ui.request, false);
+    setcheck(ui.force, false);
+    setcheck(ui.elevate, false);
+    let job = Job::Scan {
+        roots,
+        mode,
+        store: engine::default_store(),
+        measure: true,
+    };
+    launch(ui, job, Control::default(), elevate);
+}
+unsafe fn launch(ui: &mut Ui, job: Job, control: Control, elevate: bool) {
     let (tx, rx) = mpsc::channel();
     ui.receiver = Some(rx);
-    ui.control = Control::default();
-    let control = ui.control.clone();
+    ui.control = control.clone();
     busy(ui, true);
-    log(ui, l::t("msg.75bcc287ac").into());
+    let scan = matches!(job, Job::Scan { .. });
+    log(
+        ui,
+        l::t(if scan {
+            "msg.75bcc287ac"
+        } else {
+            "operation.running"
+        })
+        .into(),
+    );
     thread::spawn(move || {
-        let result = (|| -> freeport::Result<()> {
-            let progress = |s| {
-                let _ = tx.send(Event::Progress(s));
+        let update = |u| {
+            let event = match u {
+                Update::Progress(s) => Event::Progress(s),
+                Update::Report(r) => Event::Report(r),
+                Update::Measured(i, r) => Event::Measured(i, r),
             };
-            let mut report = scan::run_with_control(&roots, &mode, &progress, &control)?;
-            let _ = tx.send(Event::Report(report.clone()));
-            if mode == "migrate" {
-                for (i, r) in report.rows.iter_mut().enumerate() {
-                    control.check()?;
-                    scan::measure_with_control(std::slice::from_mut(r), &progress, &control)?;
-                    let _ = tx.send(Event::Measured(i, r.clone()));
-                }
-            }
-            Ok(())
-        })();
+            let _ = tx.send(event);
+        };
+        let result = elevation::execute(&job, elevate, &control, &update);
+        if !scan {
+            let _ = tx.send(Event::Invalidate);
+        }
         let _ = tx.send(Event::Done(
             result
-                .map(|_| l::t("msg.7af6958306").into())
+                .map(|_| {
+                    l::t(if scan {
+                        "msg.7af6958306"
+                    } else {
+                        "operation.rescan"
+                    })
+                    .into()
+                })
                 .map_err(|e| l::describe_error(e.as_ref())),
         ));
     });
 }
 unsafe fn apply(ui: &mut Ui) {
-    let ids = selected(ui);
-    if ids.is_empty() {
+    let restore = SendMessageW(ui.mode, CB_GETCURSEL, 0, 0) != 0;
+    let choice = ui.tree.as_ref().unwrap().selection.clone();
+    if choice.include.is_empty() {
         msg(ui.hwnd, l::t("msg.5c3c8200cc"), MB_OK | MB_ICONINFORMATION);
         return;
     }
-    let restore = SendMessageW(ui.mode, CB_GETCURSEL, 0, 0) != 0;
-    let store = engine::default_store();
     let rows = ui.rows.clone();
     let destination = PathBuf::from(read(ui.target));
+    let store = engine::default_store();
     let control = Control {
         options: handles::Options {
             request_app_exit: check(ui.request),
             force_close_handles: check(ui.force),
         },
-        ..Control::default()
+        ..Default::default()
     };
-    let plan = if restore {
-        None
-    } else {
-        match engine::make_plan(&rows, &ids, &destination) {
-            Ok(p) => Some(p),
-            Err(e) => {
-                msg(
-                    ui.hwnd,
-                    &l::describe_error(e.as_ref()),
-                    MB_OK | MB_ICONERROR,
-                );
-                return;
-            }
-        }
-    };
-    let selected: Vec<_> = rows
-        .iter()
-        .filter(|r| ids.contains(&r.candidate.id))
-        .map(|r| r.candidate.source.clone())
-        .collect();
-    let mut preview = if restore {
-        l::t("msg.d0b032ac5c").to_string()
-    } else {
-        l::t("msg.5a514567e2").to_string()
-    };
-    if let Some(p) = &plan {
-        for i in &p.items {
-            preview.push_str(&format!(
-                "\n{}\n→ {}\n",
-                i.source.display(),
-                i.target.display()
-            ));
-        }
-    } else {
-        for p in &selected {
-            preview.push_str(&format!("\n{}", p.display()));
-        }
-    }
-    if control.options.force_close_handles {
-        preview.push_str(l::t("msg.f4c54ea5fb"));
-    }
-    if msg(ui.hwnd, &preview, MB_OKCANCEL | MB_ICONQUESTION) != IDOK {
-        return;
-    }
+    let elevate = check(ui.elevate);
     let (tx, rx) = mpsc::channel();
     ui.receiver = Some(rx);
     ui.control = control.clone();
-    setcheck(ui.force, false);
-    setcheck(ui.request, false);
     busy(ui, true);
+    log(ui, l::t("selection.preparing").into());
     thread::spawn(move || {
-        let p = |s| {
-            let _ = tx.send(Event::Progress(s));
-        };
-        let result = (|| -> freeport::Result<()> {
-            if let Some(plan) = plan {
-                engine::migrate(&plan, &store, &control, &p)?;
+        let result = (|| -> freeport::Result<Prepared> {
+            let mut preview = l::t(if restore {
+                "msg.d0b032ac5c"
             } else {
-                engine::restore_many(&selected, &store, &control, &p)?;
+                "msg.5a514567e2"
+            })
+            .to_string();
+            let job = if restore {
+                let sources = choice.restore_sources(&rows)?;
+                if sources.is_empty() {
+                    return freeport::fail(l::t("selection.invalid"));
+                }
+                for p in &sources {
+                    preview.push_str(&format!("\n{}", p.display()));
+                }
+                Job::Restore {
+                    sources,
+                    store,
+                    options: control.options.clone(),
+                }
+            } else {
+                let request = Job::Plan {
+                    rows,
+                    selection: choice,
+                    destination,
+                    store: store.clone(),
+                };
+                let planned = elevation::execute(&request, elevate, &control, &|u| {
+                    if let Update::Progress(s) = u {
+                        let _ = tx.send(Event::Progress(s));
+                    }
+                })?;
+                let planned: selection::Planned = serde_json::from_value(planned)?;
+                let plan = planned.plan;
+                for i in &plan.items {
+                    preview.push_str(&format!(
+                        "\n{}\n→ {}\n",
+                        i.source.display(),
+                        i.target.display()
+                    ));
+                }
+                if !planned.retained.is_empty() {
+                    preview.push_str(l::t("selection.retained"));
+                    for p in planned.retained {
+                        preview.push_str(&format!("\n{}", p.display()));
+                    }
+                }
+                Job::Migrate {
+                    plan,
+                    store,
+                    options: control.options.clone(),
+                }
+            };
+            if control.options.force_close_handles {
+                preview.push_str(handles::warning());
             }
-            Ok(())
-        })();
-        let _ = tx.send(Event::Done(
-            result
-                .map(|_| l::t("msg.899db705a6").into())
-                .map_err(|e| l::describe_error(e.as_ref())),
-        ));
+            Ok(Prepared {
+                job,
+                preview,
+                control,
+                elevate,
+            })
+        })()
+        .map_err(|e| l::describe_error(e.as_ref()));
+        let _ = tx.send(Event::Prepared(result));
     });
 }
 unsafe fn recover(ui: &mut Ui) {
@@ -671,30 +703,32 @@ unsafe fn recover(ui: &mut Ui) {
             {
                 return;
             }
-            let (tx, rx) = mpsc::channel();
-            ui.receiver = Some(rx);
-            ui.control = Control::default();
-            let c = ui.control.clone();
-            busy(ui, true);
-            thread::spawn(move || {
-                let p = |s| {
-                    let _ = tx.send(Event::Progress(s));
-                };
-                let result = engine::recover(&store, &record.id, &c, &p)
-                    .map(|r| l::format("msg.e47730b6da", &[format!("{}", r.phase)]))
-                    .map_err(|e| l::describe_error(e.as_ref()));
-                let _ = tx.send(Event::Done(result));
-            });
+            let c = Control::default();
+            launch(
+                ui,
+                Job::Recover {
+                    id: record.id,
+                    store,
+                    options: c.options.clone(),
+                },
+                c,
+                check(ui.elevate),
+            );
         }
     }
 }
 unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> isize {
+    if message == WM_NOTIFY && folder_tree::internal() {
+        return 0;
+    }
     if message == WM_NCCREATE {
         let c = &*(l as *const CREATESTRUCTW);
         SetWindowLongPtrW(hwnd, GWLP_USERDATA, c.lpCreateParams as isize);
     }
     if ![
         WM_CREATE,
+        WM_NOTIFY,
+        TREE_SYNC,
         WM_SIZE,
         WM_GETMINMAXINFO,
         WM_COMMAND,
@@ -713,6 +747,51 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
     let ui = &mut *ptr;
     ui.hwnd = hwnd;
     match message {
+        TREE_SYNC => {
+            ui.tree.as_ref().unwrap().sync();
+            0
+        }
+        WM_NOTIFY => {
+            let hdr = &*(l as *const NMHDR);
+            if hdr.hwndFrom != ui.list || ui.busy {
+                return 0;
+            }
+            if hdr.code == TVN_ITEMEXPANDINGW {
+                let n = &*(l as *const NMTREEVIEWW);
+                if n.action == TVE_EXPAND {
+                    if let Err(e) = ui.tree.as_mut().unwrap().expand(n.itemNew.hItem, &ui.rows) {
+                        log(ui, l::describe_error(e.as_ref()));
+                        return 1;
+                    }
+                }
+            } else if hdr.code == NM_CLICK {
+                let pos = GetMessagePos();
+                let mut pt = POINT {
+                    x: (pos as u16 as i16) as i32,
+                    y: ((pos >> 16) as u16 as i16) as i32,
+                };
+                ScreenToClient(ui.list, &mut pt);
+                let mut hit = TVHITTESTINFO {
+                    pt,
+                    ..std::mem::zeroed()
+                };
+                SendMessageW(ui.list, TVM_HITTEST, 0, &mut hit as *mut _ as isize);
+                if hit.flags & TVHT_ONITEMSTATEICON != 0 {
+                    ui.tree.as_mut().unwrap().toggle(hit.hItem, &ui.rows);
+                    PostMessageW(hwnd, TREE_SYNC, 0, 0);
+                    return 1;
+                }
+            } else if hdr.code == TVN_KEYDOWN {
+                let n = &*(l as *const NMTVKEYDOWN);
+                if n.wVKey == 0x20 {
+                    let item = SendMessageW(ui.list, TVM_GETNEXTITEM, TVGN_CARET as usize, 0);
+                    ui.tree.as_mut().unwrap().toggle(item, &ui.rows);
+                    PostMessageW(hwnd, TREE_SYNC, 0, 0);
+                    return 1;
+                }
+            }
+            0
+        }
         WM_CREATE => {
             init(ui);
             if ui.controls.iter().any(|(_, h)| h.is_null()) {
@@ -763,13 +842,56 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
                     log(ui, l::t("msg.32d5908bc7").into());
                 }
                 ALL | NONE => {
-                    for i in 0..ui.rows.len() {
-                        let mut item: LVITEMW = std::mem::zeroed();
-                        item.stateMask = LVIS_STATEIMAGEMASK;
-                        item.state = if id == ALL { 2 << 12 } else { 1 << 12 };
-                        SendMessageW(ui.list, LVM_SETITEMSTATE, i, &item as *const _ as isize);
+                    ui.tree.as_mut().unwrap().all(&ui.rows, id == ALL);
+                }
+                SAVE_SELECTION => {
+                    let selection = &ui.tree.as_ref().unwrap().selection;
+                    if selection.include.is_empty() {
+                        msg(hwnd, l::t("selection.invalid"), MB_OK | MB_ICONINFORMATION);
+                        return 0;
+                    }
+                    let choice = selection.clone();
+                    if let Some(folder) = browse(hwnd) {
+                        let path = folder.join("FreePort-selection.json");
+                        if msg(
+                            hwnd,
+                            &format!("{}\n{}", l::t("selection.save_confirm"), path.display()),
+                            MB_OKCANCEL | MB_ICONQUESTION,
+                        ) == IDOK
+                        {
+                            if let Err(e) = p::atomic_json(&path, &choice) {
+                                msg(hwnd, &l::describe_error(e.as_ref()), MB_OK | MB_ICONERROR);
+                            }
+                        }
                     }
                 }
+                LOAD_SELECTION => {
+                    if let Some(path) = rule_file(hwnd) {
+                        let result = (|| -> freeport::Result<selection::Selection> {
+                            let bytes = std::fs::read(path)?;
+                            if bytes.len() > 1024 * 1024 {
+                                return freeport::fail(l::t("selection.limit"));
+                            }
+                            let choice: selection::Selection = serde_json::from_slice(&bytes)?;
+                            if SendMessageW(ui.mode, CB_GETCURSEL, 0, 0) == 0 {
+                                choice.validate(&ui.rows)?;
+                            } else {
+                                choice.restore_sources(&ui.rows)?;
+                            }
+                            Ok(choice)
+                        })();
+                        match result {
+                            Ok(choice) => {
+                                ui.tree.as_mut().unwrap().selection = choice;
+                                ui.tree.as_ref().unwrap().sync();
+                            }
+                            Err(e) => {
+                                msg(hwnd, &l::describe_error(e.as_ref()), MB_OK | MB_ICONERROR);
+                            }
+                        }
+                    }
+                }
+
                 FORCE => {
                     if check(ui.force)
                         && msg(hwnd, handles::warning(), MB_OKCANCEL | MB_ICONWARNING) != IDOK
@@ -780,7 +902,8 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
                 MODE => {
                     if w >> 16 == CBN_SELCHANGE as usize {
                         ui.rows.clear();
-                        SendMessageW(ui.list, LVM_DELETEALLITEMS, 0, 0);
+                        ui.tree.as_mut().unwrap().selection = Default::default();
+                        ui.tree.as_mut().unwrap().rebuild(&ui.rows, false);
                         setcheck(ui.force, false);
                         setcheck(ui.request, false);
                         EnableWindow(
@@ -846,11 +969,17 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
                 .unwrap_or_default();
             for event in events {
                 match event {
+                    Event::Invalidate => {
+                        ui.rows.clear();
+                        ui.tree.as_mut().unwrap().selection = Default::default();
+                        ui.tree.as_mut().unwrap().rebuild(&ui.rows, false);
+                    }
                     Event::Report(report) => {
+                        let restore = report.mode == "restore";
                         ui.rows = report.rows;
-                        SendMessageW(ui.list, LVM_DELETEALLITEMS, 0, 0);
-                        for i in 0..ui.rows.len() {
-                            row(ui, i);
+                        ui.tree.as_mut().unwrap().rebuild(&ui.rows, restore);
+                        for backend in report.backends {
+                            log(ui, backend);
                         }
                         for warning in report.warnings {
                             log(ui, warning);
@@ -858,30 +987,30 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
                     }
                     Event::Measured(i, r) => {
                         if i < ui.rows.len() {
-                            let checked = ((SendMessageW(
-                                ui.list,
-                                LVM_GETITEMSTATE,
-                                i,
-                                LVIS_STATEIMAGEMASK as isize,
-                            ) as u32)
-                                >> 12)
-                                == 2;
                             ui.rows[i] = r;
-                            SendMessageW(ui.list, LVM_DELETEITEM, i, 0);
                             row(ui, i);
-                            if checked {
-                                let mut item: LVITEMW = std::mem::zeroed();
-                                item.stateMask = LVIS_STATEIMAGEMASK;
-                                item.state = 2 << 12;
-                                SendMessageW(
-                                    ui.list,
-                                    LVM_SETITEMSTATE,
-                                    i,
-                                    &item as *const _ as isize,
-                                );
+                        }
+                    }
+                    Event::Prepared(result) => {
+                        busy(ui, false);
+                        match result {
+                            Ok(prepared) => {
+                                if msg(hwnd, &prepared.preview, MB_OKCANCEL | MB_ICONQUESTION)
+                                    == IDOK
+                                {
+                                    setcheck(ui.request, false);
+                                    setcheck(ui.force, false);
+                                    setcheck(ui.elevate, false);
+                                    launch(ui, prepared.job, prepared.control, prepared.elevate);
+                                }
+                            }
+                            Err(e) => {
+                                log(ui, e.clone());
+                                msg(hwnd, &e, MB_OK | MB_ICONERROR);
                             }
                         }
                     }
+
                     Event::Progress(s) => log(ui, s),
                     Event::Done(result) => {
                         busy(ui, false);
@@ -908,6 +1037,7 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
         }
         WM_DESTROY => {
             KillTimer(hwnd, 1);
+            ui.tree.as_ref().unwrap().dispose();
             DeleteObject(ui.font);
             PostQuitMessage(0);
             0
@@ -916,6 +1046,9 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
     }
 }
 fn main() {
+    if elevation::maybe_worker() {
+        return;
+    }
     if handles::maybe_helper() {
         return;
     }
@@ -942,7 +1075,7 @@ fn main() {
         SetProcessDPIAware();
         let common = INITCOMMONCONTROLSEX {
             dwSize: std::mem::size_of::<INITCOMMONCONTROLSEX>() as u32,
-            dwICC: ICC_LISTVIEW_CLASSES,
+            dwICC: ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES,
         };
         InitCommonControlsEx(&common);
         let class = p::wide("FreePortNativeWindow");
@@ -958,7 +1091,12 @@ fn main() {
         let hwnd = CreateWindowExW(
             WS_EX_CONTROLPARENT,
             class.as_ptr(),
-            p::wide(l::t("msg.7540ee4199")).as_ptr(),
+            p::wide(format!(
+                "{} — {}",
+                l::t("msg.7540ee4199"),
+                env!("CARGO_PKG_VERSION")
+            ))
+            .as_ptr(),
             WS_OVERLAPPEDWINDOW,
             80,
             40,
@@ -999,13 +1137,13 @@ fn main() {
                 link_target: None,
                 busy: vec![],
             });
-            row(&ui, 0);
-            let item = LVITEMW {
-                stateMask: LVIS_STATEIMAGEMASK,
-                state: 2 << 12,
-                ..std::mem::zeroed()
-            };
-            SendMessageW(ui.list, LVM_SETITEMSTATE, 0, &item as *const _ as isize);
+            ui.tree.as_mut().unwrap().rebuild(&ui.rows, false);
+            ui.tree
+                .as_mut()
+                .unwrap()
+                .selection
+                .set(&ui.rows[0].candidate.source, true);
+            ui.tree.as_ref().unwrap().sync();
             setcheck(ui.request, true);
             setcheck(ui.force, true);
             let ids = selected(&ui);
@@ -1022,9 +1160,10 @@ fn main() {
                 labels.insert(tag, read(ui.description));
             }
             let dialogs_localized = native_dialog::self_test(hwnd);
+            let tree_checks = ui.tree.as_mut().unwrap().self_test(&ui.rows);
             println!(
                 "{}",
-                serde_json::json!({"window_is_native":true,"language":initial_language,"request_app_exit":!defaults.0,"force_close_handles":!defaults.1,"selected_count":if defaults.2{0}else{1},"controls_count":ui.controls.len(),"language_switch_preserves_state":switches_preserved,"dialogs_localized":dialogs_localized,"labels":labels})
+                serde_json::json!({"window_is_native":true,"tree_checks":tree_checks,"administrator_option":check(ui.elevate),"language":initial_language,"request_app_exit":!defaults.0,"force_close_handles":!defaults.1,"selected_count":if defaults.2{0}else{1},"controls_count":ui.controls.len(),"language_switch_preserves_state":switches_preserved,"dialogs_localized":dialogs_localized,"labels":labels})
             );
             DestroyWindow(hwnd);
             return;

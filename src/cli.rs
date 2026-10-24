@@ -1,6 +1,7 @@
 use crate::{
+    elevation::{self, Job, Update},
     engine::{self, Control, Plan},
-    fail, handles, rules, scan, Result,
+    fail, handles, rules, scan, selection, Result,
 };
 use std::{
     fs,
@@ -36,6 +37,7 @@ pub fn run() -> Result<()> {
     let value_flags = [
         "--scan",
         "--select",
+        "--selection",
         "--destination",
         "--out",
         "--mode",
@@ -50,6 +52,7 @@ pub fn run() -> Result<()> {
     ];
     let boolean_flags = [
         "--yes",
+        "--elevate",
         "--measure",
         "--batches",
         "--request-app-exit",
@@ -96,7 +99,17 @@ pub fn run() -> Result<()> {
         },
         ..Control::default()
     };
+    #[cfg(debug_assertions)]
     let progress = |s: String| eprintln!("{s}");
+    let elevate = args.iter().any(|a| a == "--elevate");
+    let updates = |u| {
+        if let Update::Progress(s) = u {
+            eprintln!("{s}");
+        }
+    };
+    if value("--select").is_some() && value("--selection").is_some() {
+        return fail(crate::i18n::t("selection.invalid"));
+    }
     match command.as_str() {
         "--version" | "version" => println!("FreePort {}", env!("CARGO_PKG_VERSION")),
         "volumes" => println!("{}", serde_json::to_string_pretty(&scan::volumes())?),
@@ -117,20 +130,57 @@ pub fn run() -> Result<()> {
                     .collect()
             };
             let mode = value("--mode").unwrap_or_else(|| "migrate".into());
-            let mut report = scan::run_with_store(&roots, &mode, &progress, &control, &store)?;
-            if args.iter().any(|a| a == "--measure") {
-                scan::measure(&mut report.rows, &progress);
-            }
-            output(&value("--out"), &report)?;
+            let result = elevation::execute(
+                &Job::Scan {
+                    roots,
+                    mode,
+                    store,
+                    measure: args.iter().any(|a| a == "--measure"),
+                },
+                elevate,
+                &control,
+                &updates,
+            )?;
+            output(&value("--out"), &result)?;
         }
         "plan" => {
             let report: scan::Report = serde_json::from_slice(&fs::read(path("--scan")?)?)?;
-            let ids = value("--select")
-                .ok_or(crate::i18n::t("msg.1d0f86d60a"))?
-                .split(',')
-                .map(str::to_string)
-                .collect::<Vec<_>>();
-            let plan = engine::make_plan(&report.rows, &ids, &path("--destination")?)?;
+            if report.mode != "migrate" {
+                return fail(crate::i18n::t("selection.invalid"));
+            }
+            let selected = if let Some(file) = value("--selection") {
+                let bytes = fs::read(file)?;
+                if bytes.len() > 1024 * 1024 {
+                    return fail(crate::i18n::t("selection.limit"));
+                }
+                serde_json::from_slice::<selection::Selection>(&bytes)?
+            } else {
+                let ids = value("--select")
+                    .ok_or(crate::i18n::t("msg.1d0f86d60a"))?
+                    .split(',')
+                    .map(str::to_string)
+                    .collect::<Vec<_>>();
+                selection::Selection::from_ids(&report.rows, &ids)?
+            };
+            let planned = elevation::execute(
+                &Job::Plan {
+                    rows: report.rows,
+                    selection: selected,
+                    destination: path("--destination")?,
+                    store,
+                },
+                elevate,
+                &control,
+                &updates,
+            )?;
+            let planned: selection::Planned = serde_json::from_value(planned)?;
+            if !planned.retained.is_empty() {
+                eprintln!("{}", crate::i18n::t("selection.retained"));
+                for p in &planned.retained {
+                    eprintln!("{}", p.display());
+                }
+            }
+            let plan = planned.plan;
             output(&value("--out"), &plan)?;
         }
         "migrate" | "apply" => {
@@ -146,7 +196,16 @@ pub fn run() -> Result<()> {
                 eprintln!("{}", handles::warning());
             }
             confirm(yes)?;
-            let records = engine::migrate(&plan, &store, &control, &progress)?;
+            let records = elevation::execute(
+                &Job::Migrate {
+                    plan,
+                    store,
+                    options: control.options.clone(),
+                },
+                elevate,
+                &control,
+                &updates,
+            )?;
             println!("{}", serde_json::to_string_pretty(&records)?);
         }
         "restore" => {
@@ -154,28 +213,39 @@ pub fn run() -> Result<()> {
                 vec![PathBuf::from(p)]
             } else {
                 let r: scan::Report = serde_json::from_slice(&fs::read(path("--scan")?)?)?;
-                let ids = value("--select")
-                    .ok_or(crate::i18n::t("msg.0d3976df88"))?
-                    .split(',')
-                    .map(str::to_string)
-                    .collect::<Vec<_>>();
-                ids.iter()
-                    .map(|id| {
-                        r.rows
-                            .iter()
-                            .find(|r| &r.candidate.id == id)
-                            .map(|r| r.candidate.source.clone())
-                            .ok_or_else(|| crate::i18n::t("msg.5f5c222eab").into())
-                    })
-                    .collect::<Result<Vec<_>>>()?
+                let selection = if let Some(file) = value("--selection") {
+                    let bytes = fs::read(file)?;
+                    if bytes.len() > 1024 * 1024 {
+                        return fail(crate::i18n::t("selection.limit"));
+                    }
+                    serde_json::from_slice::<selection::Selection>(&bytes)?
+                } else {
+                    let ids = value("--select")
+                        .ok_or(crate::i18n::t("msg.0d3976df88"))?
+                        .split(',')
+                        .map(str::to_string)
+                        .collect::<Vec<_>>();
+                    selection::Selection::from_ids(&r.rows, &ids)?
+                };
+                selection.restore_sources(&r.rows)?
             };
             if control.options.force_close_handles {
                 eprintln!("{}", handles::warning());
             }
             eprintln!("{}", crate::i18n::t("msg.5960ff2c33"));
             confirm(yes)?;
-            for r in engine::restore_many(&sources, &store, &control, &progress)? {
-                println!("{}", serde_json::to_string(&r)?);
+            let result = elevation::execute(
+                &Job::Restore {
+                    sources,
+                    store,
+                    options: control.options.clone(),
+                },
+                elevate,
+                &control,
+                &updates,
+            )?;
+            for r in result.as_array().ok_or("Invalid worker result")? {
+                println!("{}", serde_json::to_string(r)?);
             }
         }
         "history" => {
@@ -196,7 +266,16 @@ pub fn run() -> Result<()> {
             confirm(yes)?;
             println!(
                 "{}",
-                serde_json::to_string_pretty(&engine::recover(&store, &id, &control, &progress)?)?
+                serde_json::to_string_pretty(&elevation::execute(
+                    &Job::Recover {
+                        id,
+                        store,
+                        options: control.options.clone()
+                    },
+                    elevate,
+                    &control,
+                    &updates
+                )?)?
             );
         }
         "handles" => println!(
@@ -307,6 +386,9 @@ fn print_help() {
 fp scan --volumes C:,D: --mode migrate|restore [--measure] [--out scan.json]
 fp scan --path E:\test --mode migrate [--measure]
 fp plan --scan scan.json --select id1,id2 --destination D:\Dev --out plan.json
+fp plan --scan scan.json --selection selection.json --destination D:\Dev --out plan.json
+fp scan --volumes C: --elevate --out scan.json
+fp apply --plan plan.json --elevate
 fp apply --plan plan.json [--yes]
 fp migrate --source C:\cache --target D:\Dev\cache [--yes]
 fp restore --source C:\cache [--yes]

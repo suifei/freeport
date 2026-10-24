@@ -1,4 +1,7 @@
 fn main() {
+    if freeport::elevation::maybe_worker() {
+        return;
+    }
     if freeport::handles::maybe_helper() {
         return;
     }
