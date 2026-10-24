@@ -9,6 +9,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: PowerShell 5.1 and 7 script encoding and syntax
         run: python scripts/check-powershell.py
+      - name: Offline publisher encoding and resume checks
+        run: python scripts/test-publisher.py
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rust-src, rustfmt
