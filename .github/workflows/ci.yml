@@ -24,7 +24,9 @@ jobs:
         run: cygpath -w /mingw64/bin >> "$GITHUB_PATH"
       - name: Unit and boundary tests (failures are never skipped)
         shell: pwsh
-        run: cargo +nightly test --locked --lib --target x86_64-win7-windows-gnu -Zbuild-std=std,panic_abort
+        # pwsh treats an unquoted comma as a parameter separator and aborts
+        # before cargo starts. Keep this argument one token.
+        run: cargo +nightly test --locked --lib --target x86_64-win7-windows-gnu '-Zbuild-std=std,panic_abort'
       - name: Build Windows 7 release and audit imports
         shell: pwsh
         run: ./scripts/build.ps1

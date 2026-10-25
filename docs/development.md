@@ -16,7 +16,7 @@ python scripts/smoke.py --cli target/x86_64-win7-windows-gnu/release/fp.exe --gu
 边界单元测试不能跳过原生失败项：
 
 ```powershell
-cargo +nightly test --locked --lib --target x86_64-win7-windows-gnu -Zbuild-std=std,panic_abort
+cargo +nightly test --locked --lib --target x86_64-win7-windows-gnu '-Zbuild-std=std,panic_abort'
 ./scripts/build.ps1 -Profile dev
 ./scripts/test-native.ps1 -Cli target/x86_64-win7-windows-gnu/debug/fp.exe
 ```
