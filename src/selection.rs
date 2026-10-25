@@ -313,10 +313,13 @@ mod tests {
     }
     #[test]
     fn partial_compilation_retains_direct_files_and_excluded_subtrees() {
-        let dir = std::env::temp_dir().join(format!("fp-selection-{}", std::process::id()));
-        fs::create_dir_all(dir.join("one/deep")).unwrap();
-        fs::create_dir_all(dir.join("two")).unwrap();
-        fs::write(dir.join("direct.txt"), b"unchanged").unwrap();
+        let raw = std::env::temp_dir().join(format!("fp-selection-{}", std::process::id()));
+        fs::create_dir_all(raw.join("one/deep")).unwrap();
+        fs::create_dir_all(raw.join("two")).unwrap();
+        fs::write(raw.join("direct.txt"), b"unchanged").unwrap();
+        // Scan stores platform::absolute paths. temp_dir() on the Windows runner is an
+        // 8.3 alias, and validation rejects that spelling before compilation.
+        let dir = p::absolute(&raw).unwrap();
         let row = Row {
             candidate: catalog::custom(&dir, "fixture", "custom"),
             stats: Default::default(),
