@@ -9,7 +9,14 @@ try {
     if (-not (Get-Command windres -ErrorAction SilentlyContinue)) { throw 'MinGW-w64 gcc and windres must be on PATH (MSVCRT, not UCRT, for Windows 7).' }
     $env:RUSTFLAGS='-C target-feature=+crt-static -C link-arg=-static'
     $cargoArguments=@("+$Toolchain",'build','--locked','--target','x86_64-win7-windows-gnu','-Zbuild-std=std,panic_abort','-Zbuild-std-features=optimize_for_size')
-    if ($Profile -eq 'release') { $cargoArguments+='--release' }
+    if ($Profile -eq 'release') {
+        $cargoArguments+='--release'
+    } else {
+        # build-std-features replaces the default panic-unwind feature. The dev
+        # profile would still compile std for unwind and then fail to find
+        # panic_unwind. Abort matches the Win7 release std and keeps debug_assertions.
+        $cargoArguments+=@('--config','profile.dev.panic="abort"')
+    }
     & cargo @cargoArguments
     if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
     $folder=if($Profile -eq 'release'){'release'}else{'debug'}
