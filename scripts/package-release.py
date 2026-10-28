@@ -24,10 +24,10 @@ smoke = json.loads((REPORT / "smoke-result.json").read_text(encoding="utf-8"))
 if not smoke["passed"] or not all(x["passed"] for x in pe):
     raise SystemExit("PE audit or interface checks did not pass")
 name = f"SaveMyCDrive-v{VERSION}-windows-x64"
-readme = f"""SaveMyCDrive {VERSION}
+readme = f"""SaveMyCDrive (C盘救星) {VERSION}
 
 SaveMyCDrive.exe  Windows GUI / 图形界面
-smcd.exe        command line / 命令行
+smcd.exe          command line / 命令行
 
 Moves selected folders to another drive with robocopy and leaves a directory
 junction (mklink /J) at the original path; restore reverses it.
@@ -35,7 +35,7 @@ junction (mklink /J) at the original path; restore reverses it.
 
 Requires Windows 10 or 11 x64. Close the programs SaveMyCDrive names as using a
 folder before migrating it. SaveMyCDrive never ends processes itself.
-需要 Windows 10/11 x64。迁移前请关闭 SaveMyCDrive 提示正在使用该目录的程序。
+需要 Windows 10/11 x64。迁移前请关闭 C盘救星提示正在使用该目录的程序。
 
 License: MIT OR Apache-2.0 (LICENSE-MIT, LICENSE-APACHE).
 Dependencies keep their own terms (third-party-notices/).
