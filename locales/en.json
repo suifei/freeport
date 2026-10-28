@@ -330,5 +330,6 @@
   "handles.users": "These programs are using {0}; quit them completely first:\n",
   "handles.user": "  {0} ({1}, {2} processes)\n",
   "handles.user_inside": "  {0} ({1}, {2} processes, started from this directory)\n",
-  "handles.users_stop": "Copying has not started; the original directory is unchanged."
+  "handles.users_stop": "Copying has not started; the original directory is unchanged.",
+  "system.residue_at": "robocopy left {0} in place (not copied, changed or new); stopped and kept the data."
 }

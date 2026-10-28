@@ -422,14 +422,14 @@ class NativeAcceptance(unittest.TestCase):
                                         "--state", state, "--yes", success=False).returncode, 0)
                 self.assertEqual(contents(nested), before)
                 self.assertFalse((root / "t-nested").exists())
-            with self.subTest(migrate="external hard link"):
+            with self.subTest(migrate="external hard link is not lost"):
                 shared = root / "shared"
                 populate(shared)
                 os.link(shared / "日本語-한국어.txt", root / "outside-link.txt")
-                self.assertNotEqual(run("migrate", "--source", shared, "--target", root / "t-hard",
-                                        "--state", state, "--yes", success=False).returncode, 0)
+                # robocopy copies the name's data; the outside name keeps its own copy.
+                run("migrate", "--source", shared, "--target", root / "t-hard", "--state", state, "--yes")
                 verify(shared)
-                self.assertIsNone(junction_target(shared))
+                self.assertEqual((root / "outside-link.txt").read_bytes(), b"verified data" * 1000)
             with self.subTest(apply="parent/child overlap"):
                 parent = root / "parent"
                 populate(parent)
