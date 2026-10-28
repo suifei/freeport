@@ -35,4 +35,15 @@ cargo +stable-x86_64-pc-windows-gnu test --locked --lib --target x86_64-pc-windo
 
 它只配置本仓库身份、安装并执行身份检查、提交允许的源码目录、核验 GitHub `suifei` / `7343085` 后发布 `suifei/freeport`。它不重写历史、不改变全局 Git 配置、不选择项目许可证、不创建稳定版二进制 Release。任何步骤失败都会停止；运行前应检查 [实现状态](implementation-status.md) 中未通过的投产门槛。
 
+稳定版二进制包（版本号须为 `X.Y.Z`，工作区无未提交改动）：
+
+```powershell
+./scripts/build.ps1
+python scripts/smoke.py --cli target/x86_64-pc-windows-gnu/release/fp.exe --gui target/x86_64-pc-windows-gnu/release/freeport.exe
+python scripts/package-release.py
+gh release create vX.Y.Z dist/FreePort-vX.Y.Z-windows-x64.zip dist/FreePort-vX.Y.Z-windows-x64.sha256 --target <已通过 CI 的提交> --title "FreePort X.Y.Z" --notes-file <说明>
+```
+
+`package-release.py` 核对两份 EXE 与 PE 审计、接口冒烟记录的 SHA-256 一致，只打包 EXE、说明、许可证和 `third-party-notices`，拒绝源码与报告文件；条目时间取 HEAD 提交时间，同一构建得到相同 ZIP。构建记录写入被忽略的 `.build/release-X.Y.Z-build-report.json`。
+
 参考：[Rust Windows GNU target](https://doc.rust-lang.org/rustc/platform-support/windows-gnu.html)、[MSYS2 Action](https://github.com/msys2/setup-msys2)。
