@@ -2,7 +2,7 @@
 
 版本：1.0（以原始批处理为基准的精简版）
 日期：2026-10-28
-状态：首版目标为核心迁移/恢复投产可用。本文取代 0.7 及之前的需求；`technical-design.md`、`elevation-and-selection.md` 中与本文冲突的范围（强关句柄、多语言、扩展验收等）以本文为准，搬运参数以 [系统命令后端](system-command-backend.md) 为准。
+状态：首版目标为核心迁移/恢复投产可用。本文是范围与验收的权威依据；设计见[技术方案](technical-design.md)，搬运参数见[系统命令后端](system-command-backend.md)，当前进度见[实现状态](implementation-status.md)。
 
 ## 1. 核心目标
 

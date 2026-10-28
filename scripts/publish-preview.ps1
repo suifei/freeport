@@ -100,7 +100,7 @@ if ($null -ne $existing) {
 }
 if ($null -ne $tagRef) { Assert-TagSource $tagRef }
 Invoke-Checked python @('.githooks/setup.py')
-$paths=@('Cargo.toml','Cargo.lock','resources/freeport.manifest','src/cli.rs','src/engine.rs','src/elevation.rs','src/folder_tree.rs','src/gui.rs','src/lib.rs','src/main.rs','src/native_dialog.rs','src/scan.rs','src/selection.rs','docs/elevation-and-selection.md','docs/implementation-status.md','docs/requirements.md','docs/technical-design.md','locales/en.json','locales/zh-CN.json','locales/zh-TW.json','locales/ja.json','locales/ko.json','locales/de.json','scripts/smoke.py','scripts/package-preview.py','scripts/publish-preview.ps1','scripts/check-powershell.py','scripts/test-publisher.py','.github/workflows/ci.yml')
+$paths=@('Cargo.toml','Cargo.lock','resources/freeport.manifest','src/cli.rs','src/engine.rs','src/elevation.rs','src/folder_tree.rs','src/gui.rs','src/lib.rs','src/main.rs','src/native_dialog.rs','src/scan.rs','src/selection.rs','docs/implementation-status.md','docs/requirements.md','docs/technical-design.md','locales/en.json','locales/zh-CN.json','locales/zh-TW.json','locales/ja.json','locales/ko.json','locales/de.json','scripts/smoke.py','scripts/package-preview.py','scripts/publish-preview.ps1','scripts/check-powershell.py','scripts/test-publisher.py','.github/workflows/ci.yml')
 $changed=@(& git diff --name-only) + @(& git diff --cached --name-only) + @(& git ls-files --others --exclude-standard)
 foreach ($path in $changed) { if ($path -and $path -notin $paths) { throw "Unrelated change: $path" } }
 Invoke-Checked git (@('add','--')+$paths)

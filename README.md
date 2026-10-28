@@ -1,19 +1,12 @@
 # FreePort — Set your C: drive free
 
-The migration backend uses Windows' own robocopy and `mklink /J`. It verifies a staged copy before `/MOVE`, removes only empty source directories, then creates the junction. DAT copying follows the original batch defaults; destination permissions are inherited. See the [command order and parameter contract](docs/system-command-backend.md).
-
-> Development preview: UAC interaction, Windows 7 and power-loss acceptance were reported passed by the owner on 2026-10-24. Other native safety checks remain open. See [implementation status](docs/implementation-status.md) before running write operations.
-
-Migration discovery focuses on user folders, including AppData, using application evidence and a versioned knowledge pack. See the [storage research](docs/application-storage-research.md) and [directory list](docs/application-storage-list.md). Restore discovery starts from the selected drive; other migration paths can be added manually.
-
-
 **Move your data. Keep your workflow.**
 
 **English** · [简体中文](README.zh-CN.md)
 
 A Windows tool for moving space-hungry folders to another drive while keeping their original paths. Choose what to move, choose its new home, then start the move. Want it back? Restore it to the original location.
 
-> **Current goal: production-ready core migration and restoration.** There is no stable release for real data yet; production acceptance criteria are in section 8 of the [requirements](docs/requirements.md) (Chinese).
+> **Status: development preview.** The current goal is production-ready core migration and restoration. There is no stable release for real data yet; the acceptance criteria are in section 8 of the [requirements](docs/requirements.md) (Chinese), and current progress is in the [implementation status](docs/implementation-status.md) (Chinese).
 
 ## “I installed my apps on D:. Why is C: full again?”
 
@@ -145,6 +138,6 @@ The first release targets supported directories on local NTFS volumes. Network p
 
 If this sounds like your machine, a **Star** helps the next person with a full C: drive find FreePort. Tell us which folder keeps filling yours, and which app you need to keep working afterward.
 
-For engineering details, see the [requirements](docs/requirements.md), [technical design](docs/technical-design.md), and [repository conventions](AGENTS.md). Windows CLI and native GUI development target Rust and share one core.
+For engineering details, see the [requirements](docs/requirements.md), [technical design](docs/technical-design.md), the [robocopy / `mklink /J` command contract](docs/system-command-backend.md), the [storage research](docs/application-storage-research.md) and [directory list](docs/application-storage-list.md), and the [repository conventions](AGENTS.md). Windows CLI and native GUI development target Rust and share one core.
 
 **You bought that extra storage to use it. Your tools should be able to use it too.**

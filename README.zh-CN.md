@@ -1,12 +1,5 @@
 # FreePort · 自由港
 
-搬运后端使用 Windows 自带的 robocopy 和 `mklink /J`：先验证副本，再 `/MOVE` 收尾、移除空源目录，最后创建连接。复制采用原批处理 DAT 默认语义，目标权限继承目标父目录。逐条参数和顺序见[系统命令后端](docs/system-command-backend.md)。
-
-> 开发预览：用户已于 2026-10-24 反馈 UAC 实际交互、Windows 7 和断电验收通过，其他原生安全验证仍有待完成。写操作前请查看 [实现与验证状态](docs/implementation-status.md)。
-
-迁移扫描聚焦**用户目录及其中的 AppData**，按应用归属和本机证据识别目标。见 [应用存储调研](docs/application-storage-research.md) 与 [逐项目录清单](docs/application-storage-list.md)。恢复仍从所选盘查找连接，其他迁移位置可以手动添加。
-
-
 **你的 C 盘，不该替所有默认设置买单。**
 
 **把数据搬走，把工作环境留下。**
@@ -15,7 +8,7 @@
 
 Windows 目录迁移与恢复工具。选好目录和去处，一键开始迁移；想搬回来，一键开始恢复。数据换个地方，软件继续通过原路径访问。
 
-> **当前目标：核心迁移/恢复投产可用。** 尚未发布可用于真实数据的稳定版；投产验收条件见[需求](docs/requirements.md)第 8 节。
+> **状态：开发预览。** 当前目标是核心迁移/恢复投产可用，尚未发布可用于真实数据的稳定版；投产验收条件见[需求](docs/requirements.md)第 8 节，当前进度见[实现状态](docs/implementation-status.md)。
 
 ## 「我明明把软件装在 D 盘，怎么 C 盘又满了？」
 
@@ -147,6 +140,6 @@ MFT 快速扫描需要管理员权限，FreePort 会按需请求 UAC；拒绝后
 
 如果你也经历过这些，欢迎 **Star**。也欢迎告诉我们：到底是哪个目录一直在长，你最希望迁完以后哪个软件还能照常工作。
 
-工程细节见[需求分析](docs/requirements.md)、[技术方案](docs/technical-design.md)与[仓库约定](AGENTS.md)。Windows CLI 与原生 GUI 以 Rust 为目标实现，共享同一核心。
+工程细节见[需求](docs/requirements.md)、[技术方案](docs/technical-design.md)、[robocopy / `mklink /J` 命令约定](docs/system-command-backend.md)、[应用存储调研](docs/application-storage-research.md)、[逐项目录清单](docs/application-storage-list.md)与[仓库约定](AGENTS.md)。Windows CLI 与原生 GUI 以 Rust 为目标实现，共享同一核心。
 
 **你买来的硬盘空间，应该真的能用起来。**
