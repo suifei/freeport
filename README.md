@@ -22,7 +22,7 @@ FreePort moves the space-hungry folders under `AppData` and your home directory 
 
 ## Download and use
 
-Get `FreePort-v1.0.0-windows-x64.zip` from [Releases](https://github.com/suifei/freeport/releases/latest), unzip, and run. No installer and no runtime to install.
+Get `FreePort-v<version>-windows-x64.zip` from [Releases](https://github.com/suifei/freeport/releases/latest), unzip, and run. No installer and no runtime to install.
 
 | File | Purpose |
 | --- | --- |

@@ -22,7 +22,7 @@ FreePort 把 `AppData`、用户目录里那些越长越大的文件夹搬到其�
 
 ## 下载与使用
 
-到 [Releases](https://github.com/suifei/freeport/releases/latest) 下载 `FreePort-v1.0.0-windows-x64.zip`，解压即用，无需安装，也不依赖任何运行库。
+到 [Releases](https://github.com/suifei/freeport/releases/latest) 下载 `FreePort-v<版本>-windows-x64.zip`，解压即用，无需安装，也不依赖任何运行库。
 
 | 文件 | 用途 |
 | --- | --- |
