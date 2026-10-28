@@ -3,7 +3,11 @@ use freeport::{i18n as l, inventory::Row, platform as p, selection::Selection};
 use std::{collections::BTreeMap, fs, path::PathBuf};
 use windows_sys::Win32::{
     Foundation::*,
-    Graphics::Gdi::InvalidateRect,
+    Graphics::Gdi::{
+        DrawTextW, FillRect, GetSysColor, GetSysColorBrush, InvalidateRect, ScreenToClient,
+        SetBkMode, SetTextColor, COLOR_HIGHLIGHT, COLOR_HIGHLIGHTTEXT, COLOR_WINDOW,
+        COLOR_WINDOWTEXT, DT_END_ELLIPSIS, DT_NOPREFIX, DT_SINGLELINE, DT_VCENTER, TRANSPARENT,
+    },
     Storage::FileSystem::FILE_ATTRIBUTE_DIRECTORY,
     UI::{Controls::*, Shell::*, WindowsAndMessaging::*},
 };
@@ -29,12 +33,17 @@ struct Node {
     row: Option<usize>,
     loaded: bool,
     navigation: bool,
+    bytes: Option<u64>,
+    application: String,
+    status: String,
 }
 pub struct Tree {
     pub hwnd: HWND,
     pub selection: Selection,
     nodes: Vec<Node>,
     restore: bool,
+    header: std::cell::Cell<HWND>,
+    width: std::cell::Cell<i32>,
 }
 impl Tree {
     pub fn new(hwnd: HWND) -> Self {
@@ -43,12 +52,58 @@ impl Tree {
             selection: Selection::default(),
             nodes: vec![],
             restore: false,
+            header: std::cell::Cell::new(std::ptr::null_mut()),
+            width: std::cell::Cell::new(0),
         }
     }
     pub unsafe fn init(&self) {
+        let header = CreateWindowExW(
+            0,
+            p::wide("SysHeader32").as_ptr(),
+            std::ptr::null(),
+            WS_CHILD | WS_VISIBLE | HDS_FULLDRAG,
+            0,
+            0,
+            0,
+            0,
+            GetParent(self.hwnd),
+            std::ptr::null_mut(),
+            std::ptr::null_mut(),
+            std::ptr::null(),
+        );
+        self.header.set(header);
+        SendMessageW(
+            header,
+            WM_SETFONT,
+            SendMessageW(self.hwnd, WM_GETFONT, 0, 0) as usize,
+            0,
+        );
+        for (i, key) in [
+            "column.folder",
+            "column.total",
+            "column.application",
+            "column.status",
+        ]
+        .iter()
+        .enumerate()
+        {
+            let mut title = p::wide(l::t(key));
+            let item = HDITEMW {
+                mask: HDI_TEXT | HDI_WIDTH | HDI_FORMAT,
+                cxy: 100,
+                pszText: title.as_mut_ptr(),
+                fmt: HDF_LEFT as i32,
+                ..std::mem::zeroed()
+            };
+            SendMessageW(header, HDM_INSERTITEMW, i, &item as *const _ as isize);
+        }
         // Common Controls v6 supplies checked/unchecked/partial state images on Win7.
         let style = GetWindowLongPtrW(self.hwnd, GWL_STYLE) as u32;
-        SetWindowLongPtrW(self.hwnd, GWL_STYLE, (style | TVS_CHECKBOXES) as isize);
+        SetWindowLongPtrW(
+            self.hwnd,
+            GWL_STYLE,
+            (style | TVS_CHECKBOXES | TVS_NOHSCROLL) as isize,
+        );
         SendMessageW(
             self.hwnd,
             TVM_SETEXTENDEDSTYLE,
@@ -106,6 +161,9 @@ impl Tree {
             }
         }
         self.sync();
+        self.refresh_metrics(rows);
+        self.sort();
+        self.relabel_header();
         SendMessageW(self.hwnd, WM_SETREDRAW, 1, 0);
         InvalidateRect(self.hwnd, std::ptr::null(), 1);
     }
@@ -141,7 +199,7 @@ impl Tree {
         };
         let insertion = TVINSERTSTRUCTW {
             hParent: parent,
-            hInsertAfter: TVI_SORT,
+            hInsertAfter: TVI_LAST,
             Anonymous: TVINSERTSTRUCTW_0 { item },
         };
         let handle = SendMessageW(
@@ -156,9 +214,12 @@ impl Tree {
             row,
             loaded: linked,
             navigation,
+            bytes: None,
+            application: String::new(),
+            status: String::new(),
         });
     }
-    pub unsafe fn update(&self, rows: &[Row], index: usize) {
+    pub unsafe fn update(&mut self, rows: &[Row], index: usize) {
         let _internal = Internal::enter();
         if let Some(n) = self.nodes.iter().find(|n| n.row == Some(index)) {
             let mut s = p::wide(label(&n.path, rows.get(index)));
@@ -170,6 +231,9 @@ impl Tree {
             };
             SendMessageW(self.hwnd, TVM_SETITEMW, 0, &item as *const _ as isize);
         }
+        self.refresh_metrics(rows);
+        self.sort();
+        InvalidateRect(self.hwnd, std::ptr::null(), 0);
         self.sync();
     }
     pub unsafe fn sync(&self) {
@@ -272,7 +336,280 @@ impl Tree {
             }
         }
         self.sync();
+        self.refresh_metrics(rows);
+        self.sort();
         Ok(())
+    }
+    unsafe fn relabel_header(&self) {
+        for (i, key) in [
+            "column.folder",
+            "column.total",
+            "column.application",
+            "column.status",
+        ]
+        .iter()
+        .enumerate()
+        {
+            let mut title = p::wide(l::t(key));
+            let item = HDITEMW {
+                mask: HDI_TEXT,
+                pszText: title.as_mut_ptr(),
+                ..std::mem::zeroed()
+            };
+            SendMessageW(
+                self.header.get(),
+                HDM_SETITEMW,
+                i,
+                &item as *const _ as isize,
+            );
+        }
+    }
+    pub unsafe fn layout_header(&self, dpi: i32) {
+        let mut rect: RECT = std::mem::zeroed();
+        GetWindowRect(self.hwnd, &mut rect);
+        let mut origin = POINT {
+            x: rect.left,
+            y: rect.top,
+        };
+        ScreenToClient(GetParent(self.hwnd), &mut origin);
+        let width = rect.right - rect.left;
+        let height = rect.bottom - rect.top;
+        let header_height = 25 * dpi / 96;
+        MoveWindow(
+            self.header.get(),
+            origin.x,
+            origin.y,
+            width,
+            header_height,
+            1,
+        );
+        MoveWindow(
+            self.hwnd,
+            origin.x,
+            origin.y + header_height,
+            width,
+            (height - header_height).max(1),
+            1,
+        );
+        if self.width.replace(width) != width {
+            for (i, percent) in [40, 15, 20, 25].iter().enumerate() {
+                let item = HDITEMW {
+                    mask: HDI_WIDTH,
+                    cxy: width * percent / 100,
+                    ..std::mem::zeroed()
+                };
+                SendMessageW(
+                    self.header.get(),
+                    HDM_SETITEMW,
+                    i,
+                    &item as *const _ as isize,
+                );
+            }
+        }
+    }
+    pub unsafe fn header_notification(&self, hdr: &NMHDR) -> bool {
+        if hdr.hwndFrom != self.header.get() {
+            return false;
+        }
+        InvalidateRect(self.hwnd, std::ptr::null(), 1);
+        true
+    }
+    pub fn details(&self, item: HTREEITEM, rows: &[Row]) -> String {
+        let Some(n) = self.nodes.iter().find(|n| n.item == item) else {
+            return String::new();
+        };
+        let mut details = vec![n.path.display().to_string(), n.status.clone()];
+        for r in rows {
+            if p::within(&n.path, &r.candidate.source) || p::within(&r.candidate.source, &n.path) {
+                if p::same(&n.path, &r.candidate.source) {
+                    if let Some(k) = &r.candidate.knowledge {
+                        details.push(k.purpose.clone());
+                    }
+                }
+                for link in &r.stats.link_details {
+                    if p::within(&link.path, &n.path) {
+                        details.push(format!(
+                            "{} → {}",
+                            link.path.display(),
+                            link.target
+                                .as_ref()
+                                .map(|t| t.display().to_string())
+                                .unwrap_or_else(|| l::t("status.unreadable").into())
+                        ));
+                    }
+                }
+            }
+        }
+        details.join("\r\n")
+    }
+    fn refresh_metrics(&mut self, rows: &[Row]) {
+        let mut totals = BTreeMap::new();
+        let mut links = BTreeMap::new();
+        for r in rows {
+            for total in &r.stats.directory_totals {
+                totals.insert(
+                    p::key(&total.path),
+                    (total.bytes, total.links, total.errors),
+                );
+            }
+            for link in &r.stats.link_details {
+                links.insert(p::key(&link.path), link.target.clone());
+            }
+        }
+        for n in &mut self.nodes {
+            n.bytes = None;
+            n.application.clear();
+            n.status.clear();
+            if let Some(i) = n.row {
+                let r = &rows[i];
+                if !["unmeasured", "linked"].contains(&r.status.as_str()) {
+                    n.bytes = Some(r.stats.bytes);
+                }
+                n.application = r
+                    .candidate
+                    .knowledge
+                    .as_ref()
+                    .map(|k| k.application.clone())
+                    .unwrap_or_else(|| r.candidate.name.clone());
+                n.status = r
+                    .link_target
+                    .as_ref()
+                    .map(|target| l::format("msg.0ca6431378", &[target.display().to_string()]))
+                    .unwrap_or_else(|| l::t(&format!("status.{}", r.status)).into());
+                if r.stats.links > 0 {
+                    n.status.push_str(&format!(" ({})", r.stats.links));
+                }
+            } else if let Some((bytes, count, errors)) = totals.get(&p::key(&n.path)) {
+                n.bytes = Some(*bytes);
+                n.status = l::t(if *errors > 0 {
+                    "status.unreadable"
+                } else if *count > 0 {
+                    "status.nested_links"
+                } else {
+                    "status.ready"
+                })
+                .into();
+            } else if let Some(target) = links.get(&p::key(&n.path)) {
+                n.status = target
+                    .as_ref()
+                    .map(|t| l::format("msg.0ca6431378", &[t.display().to_string()]))
+                    .unwrap_or_else(|| l::t("status.linked").into());
+            } else if n.navigation {
+                let mut covered: Vec<&std::path::Path> = vec![];
+                let mut total = 0u64;
+                let mut pending = false;
+                let mut children: Vec<_> = rows
+                    .iter()
+                    .filter(|r| p::within(&r.candidate.source, &n.path))
+                    .collect();
+                children.sort_by_key(|r| r.candidate.source.components().count());
+                for r in children {
+                    if covered.iter().any(|p| p::within(&r.candidate.source, p)) {
+                        continue;
+                    }
+                    covered.push(&r.candidate.source);
+                    pending |= ["unmeasured", "linked"].contains(&r.status.as_str());
+                    total = total.saturating_add(r.stats.bytes);
+                }
+                if !pending {
+                    n.bytes = Some(total);
+                }
+                n.status = l::t("column.candidate_total").into();
+            }
+        }
+    }
+    unsafe fn sort(&self) {
+        unsafe extern "system" fn compare(a: isize, b: isize, context: isize) -> i32 {
+            let tree = &*(context as *const Tree);
+            let Some(a) = tree.nodes.get(a as usize) else {
+                return 0;
+            };
+            let Some(b) = tree.nodes.get(b as usize) else {
+                return 0;
+            };
+            let order = b
+                .bytes
+                .cmp(&a.bytes)
+                .then_with(|| p::key(&a.path).cmp(&p::key(&b.path)));
+            match order {
+                std::cmp::Ordering::Less => -1,
+                std::cmp::Ordering::Equal => 0,
+                std::cmp::Ordering::Greater => 1,
+            }
+        }
+        // SORTCHILDRENCB requires wParam=0 and sorts only one sibling group.
+        // Explicitly visit each loaded parent; item IDs and intent stay stable.
+        for parent in std::iter::once(TVI_ROOT).chain(self.nodes.iter().map(|n| n.item)) {
+            let sorting = TVSORTCB {
+                hParent: parent,
+                lpfnCompare: Some(compare),
+                lParam: self as *const _ as isize,
+            };
+            SendMessageW(
+                self.hwnd,
+                TVM_SORTCHILDRENCB,
+                0,
+                &sorting as *const _ as isize,
+            );
+        }
+    }
+    pub unsafe fn draw(&self, address: isize) -> isize {
+        let draw = &*(address as *const NMTVCUSTOMDRAW);
+        match draw.nmcd.dwDrawStage {
+            CDDS_PREPAINT => CDRF_NOTIFYITEMDRAW as isize,
+            stage if stage == CDDS_ITEMPREPAINT => CDRF_NOTIFYPOSTPAINT as isize,
+            stage if stage == CDDS_ITEMPOSTPAINT => {
+                let Some(node) = self.nodes.get(draw.nmcd.lItemlParam as usize) else {
+                    return CDRF_DODEFAULT as isize;
+                };
+                let selected = draw.nmcd.uItemState & CDIS_SELECTED != 0;
+                let background = if selected {
+                    COLOR_HIGHLIGHT
+                } else {
+                    COLOR_WINDOW
+                };
+                SetBkMode(draw.nmcd.hdc, TRANSPARENT as i32);
+                SetTextColor(
+                    draw.nmcd.hdc,
+                    GetSysColor(if selected {
+                        COLOR_HIGHLIGHTTEXT
+                    } else {
+                        COLOR_WINDOWTEXT
+                    }),
+                );
+                let values = [
+                    node.bytes
+                        .map(freeport::human)
+                        .unwrap_or_else(|| l::t("msg.8284301049").into()),
+                    node.application.clone(),
+                    node.status.clone(),
+                ];
+                for (column, value) in values.iter().enumerate() {
+                    let mut rect: RECT = std::mem::zeroed();
+                    SendMessageW(
+                        self.header.get(),
+                        HDM_GETITEMRECT,
+                        column + 1,
+                        &mut rect as *mut _ as isize,
+                    );
+                    rect.top = draw.nmcd.rc.top;
+                    rect.bottom = draw.nmcd.rc.bottom;
+                    FillRect(draw.nmcd.hdc, &rect, GetSysColorBrush(background));
+                    rect.left += 6;
+                    rect.right -= 5;
+                    let mut value = p::wide(value);
+                    DrawTextW(
+                        draw.nmcd.hdc,
+                        value.as_mut_ptr(),
+                        -1,
+                        &mut rect,
+                        DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX,
+                    );
+                }
+                CDRF_DODEFAULT as isize
+            }
+            _ => CDRF_DODEFAULT as isize,
+        }
     }
     pub unsafe fn dispose(&self) {
         let images = SendMessageW(self.hwnd, TVM_GETIMAGELIST, TVSIL_STATE as usize, 0);
@@ -310,7 +647,47 @@ impl Tree {
         let mixed = (item.state >> 12) == 3;
         self.selection.set(&path, true);
         self.sync();
-        native && partial && mixed
+        let saved = self.selection.clone();
+        let root = PathBuf::from(r"E:\freeport-sort-fixture");
+        let make = |relative: &str, bytes: u64| Row {
+            candidate: freeport::catalog::custom(&root.join(relative), "sort fixture", "custom"),
+            stats: freeport::inventory::Stats {
+                bytes,
+                ..Default::default()
+            },
+            status: "ready".into(),
+            link_target: None,
+            busy: vec![],
+        };
+        let fixture = vec![
+            make("small", 2),
+            make("large", 100),
+            make("large/small", 3),
+            make("large/large", 90),
+        ];
+        self.rebuild(&fixture, false);
+        let first_is = |parent: &std::path::Path, expected: &std::path::Path| {
+            let parent = self
+                .nodes
+                .iter()
+                .find(|n| p::same(&n.path, parent))
+                .unwrap()
+                .item;
+            let first = SendMessageW(self.hwnd, TVM_GETNEXTITEM, TVGN_CHILD as usize, parent);
+            self.nodes
+                .iter()
+                .any(|n| n.item == first && p::same(&n.path, expected))
+        };
+        let sorted = first_is(&root, &root.join("large"))
+            && first_is(&root.join("large"), &root.join("large/large"));
+        self.rebuild(rows, false);
+        self.selection = saved;
+        self.sync();
+        native
+            && partial
+            && mixed
+            && sorted
+            && SendMessageW(self.header.get(), HDM_GETITEMCOUNT, 0, 0) == 4
     }
 }
 fn label(path: &std::path::Path, row: Option<&Row>) -> String {
@@ -318,24 +695,6 @@ fn label(path: &std::path::Path, row: Option<&Row>) -> String {
         .file_name()
         .map(|s| s.to_string_lossy().into_owned())
         .unwrap_or_else(|| path.display().to_string());
-    if let Some(r) = row {
-        let status = if let Some(target) = &r.link_target {
-            l::format("msg.0ca6431378", &[target.display().to_string()])
-        } else {
-            l::t(&format!("status.{}", r.status)).to_string()
-        };
-        format!(
-            "{} — {}   [{}]   {}",
-            name,
-            r.candidate.name,
-            if r.status == "unmeasured" {
-                l::t("msg.8284301049").into()
-            } else {
-                freeport::human(r.stats.bytes)
-            },
-            status
-        )
-    } else {
-        name
-    }
+    let _ = row;
+    name
 }

@@ -195,6 +195,7 @@ pub fn run() -> Result<()> {
             if control.options.force_close_handles {
                 eprintln!("{}", handles::warning());
             }
+            eprintln!("{}", crate::i18n::t("system.policy"));
             confirm(yes)?;
             let records = elevation::execute(
                 &Job::Migrate {
@@ -233,6 +234,7 @@ pub fn run() -> Result<()> {
                 eprintln!("{}", handles::warning());
             }
             eprintln!("{}", crate::i18n::t("msg.5960ff2c33"));
+            eprintln!("{}", crate::i18n::t("system.policy"));
             confirm(yes)?;
             let result = elevation::execute(
                 &Job::Restore {

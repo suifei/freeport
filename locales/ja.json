@@ -308,5 +308,20 @@
   "operation.rescan": "完了しました。フォルダーとリンクの状態を更新するには再検索してください。",
   "selection.save": "選択を保存…",
   "selection.load": "選択を読込…",
-  "selection.save_confirm": "選択ファイルをここに保存・置換しますか？"
+  "selection.save_confirm": "選択ファイルをここに保存・置換しますか？",
+  "column.folder": "フォルダー",
+  "column.total": "合計サイズ ↓",
+  "column.application": "アプリ",
+  "column.status": "状態 / リンク先",
+  "column.candidate_total": "検出候補のみの合計",
+  "rules.legacy": "名前のみで一致する旧ルールは無効です。バージョン 2 のアプリ知識パックをインポートしてください。",
+  "scan.scope": "移行はユーザーフォルダー（AppData を含む）を検索します。他の場所は手動で追加できます。",
+  "scan.no_profiles": "{0} にユーザープロファイルがありません。必要に応じてフォルダーを追加してください。",
+  "system.copy": "Robocopy コピー: {0} → {1}",
+  "system.move": "Robocopy /E /MOVE: {0} → {1}",
+  "system.command_failed": "システムツール {0} が失敗しました（終了コード {1}）。{2}",
+  "system.path": "コマンドのパスは絶対パスとし、パーセント記号、引用符、改行は使用できません。",
+  "system.residue": "元のフォルダーに残存または新規データがあります。削除を停止し、データを保持しました。",
+  "system.changed": "フォルダーの内容または識別情報が変わりました。処理を停止し、データを保持しました。",
+  "system.policy": "データ、属性、ファイル時刻を保持します。権限は移行先から継承します。"
 }

@@ -1,6 +1,10 @@
 # FreePort · 自由港
 
-> 开发预览：CLI、原生 GUI 与六语资源已实现，但原生数据安全、Windows 7 实机及断电验收尚未完成。写入操作前请查看 [实现与验证状态](docs/implementation-status.md)。
+搬运后端使用 Windows 自带的 robocopy 和 `mklink /J`：先验证副本，再 `/MOVE` 收尾、移除空源目录，最后创建连接。复制采用原批处理 DAT 默认语义，目标权限继承目标父目录。逐条参数和顺序见[系统命令后端](docs/system-command-backend.md)。
+
+> 开发预览：用户已于 2026-10-24 反馈 UAC 实际交互、Windows 7 和断电验收通过，其他原生安全验证仍有待完成。写操作前请查看 [实现与验证状态](docs/implementation-status.md)。
+
+迁移扫描聚焦**用户目录及其中的 AppData**，按应用归属和本机证据识别目标。见 [应用存储调研](docs/application-storage-research.md) 与 [逐项目录清单](docs/application-storage-list.md)。恢复仍从所选盘查找连接，其他迁移位置可以手动添加。
 
 
 **你的 C 盘，不该替所有默认设置买单。**

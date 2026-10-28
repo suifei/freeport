@@ -1,10 +1,48 @@
 use std::{env, fs, path::PathBuf, process::Command};
 fn main() {
+    let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
+    // Keep the reviewed JSON readable in Git; omit insignificant whitespace from
+    // embedded data. No runtime decoder, compression library or extra DLL.
+    for source in [
+        "rules/freeport-rules.json",
+        "locales/en.json",
+        "locales/zh-CN.json",
+        "locales/zh-TW.json",
+        "locales/ja.json",
+        "locales/ko.json",
+        "locales/de.json",
+    ] {
+        println!("cargo:rerun-if-changed={source}");
+        let input = fs::read(source).unwrap();
+        let (mut quoted, mut escaped) = (false, false);
+        let mut compact = Vec::with_capacity(input.len());
+        for byte in input {
+            if quoted {
+                compact.push(byte);
+                if escaped {
+                    escaped = false;
+                } else if byte == b'\\' {
+                    escaped = true;
+                } else if byte == b'"' {
+                    quoted = false;
+                }
+            } else if byte == b'"' {
+                quoted = true;
+                compact.push(byte);
+            } else if !byte.is_ascii_whitespace() {
+                compact.push(byte);
+            }
+        }
+        fs::write(
+            out.join(PathBuf::from(source).file_name().unwrap()),
+            compact,
+        )
+        .unwrap();
+    }
     println!("cargo:rerun-if-changed=resources/freeport.manifest");
     if env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
-    let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
     let manifest = env::current_dir()
         .unwrap()
         .join("resources/freeport.manifest");

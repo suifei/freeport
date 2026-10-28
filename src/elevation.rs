@@ -147,6 +147,12 @@ pub fn perform(job: &Job, control: &Control, update: &dyn Fn(Update)) -> Result<
                     scan::measure_with_control(std::slice::from_mut(row), &progress, control)?;
                     update(Update::Measured(i, row.clone()));
                 }
+                report.rows.sort_by(|a, b| {
+                    b.stats
+                        .bytes
+                        .cmp(&a.stats.bytes)
+                        .then_with(|| p::key(&a.candidate.source).cmp(&p::key(&b.candidate.source)))
+                });
             }
             Ok(serde_json::to_value(report)?)
         }

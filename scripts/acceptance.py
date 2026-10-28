@@ -22,7 +22,8 @@ CLI = str(Path(args.cli).resolve())
 BASE = Path(tempfile.mkdtemp(prefix="native-", dir=Path(".build").resolve()))
 ENV = dict(os.environ, LOCALAPPDATA=str(BASE / "local"), USERPROFILE=str(BASE / "home"))
 PHASES = ["prepared", "copying", "verified", "target_commit_intent", "target_ready",
-          "source_rename_intent", "source_held", "link_intent", "linked", "completed"]
+          "source_rename_intent", "source_held", "source_cleanup_intent", "source_cleaned",
+          "link_intent", "linked", "completed"]
 RESTORE_PHASES = ["prepared", "copying", "verified", "source_rename_intent", "source_held",
                   "materialize_intent", "materialized", "restored"]
 

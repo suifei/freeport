@@ -123,33 +123,6 @@ pub fn security(path: &Path) -> Result<Vec<u8>> {
     }
     Ok(b)
 }
-pub fn set_security(path: &Path, b: &[u8]) -> Result<()> {
-    use windows_sys::Win32::Security::*;
-    if b.len() < 4 {
-        return fail(crate::i18n::t("error.security"));
-    }
-    let control = u16::from_le_bytes([b[2], b[3]]);
-    let inheritance = if control & 0x1000 != 0 {
-        PROTECTED_DACL_SECURITY_INFORMATION
-    } else {
-        UNPROTECTED_DACL_SECURITY_INFORMATION
-    };
-    if unsafe {
-        SetFileSecurityW(
-            path_wide(path).as_ptr(),
-            OWNER_SECURITY_INFORMATION
-                | GROUP_SECURITY_INFORMATION
-                | DACL_SECURITY_INFORMATION
-                | inheritance,
-            b.as_ptr() as _,
-        )
-    } == 0
-    {
-        return Err(std::io::Error::last_os_error().into());
-    }
-    Ok(())
-}
-
 pub fn wide(s: impl AsRef<std::ffi::OsStr>) -> Vec<u16> {
     s.as_ref().encode_wide().chain(Some(0)).collect()
 }
@@ -434,8 +407,7 @@ pub fn blockers(names: &[String]) -> Vec<String> {
         .collect()
 }
 pub fn create_junction(link: &Path, target: &Path) -> Result<()> {
-    junction::create(target, link)?;
-    Ok(())
+    crate::system_ops::junction(link, target, &crate::engine::Control::default())
 }
 pub fn check_junction(link: &Path, target: &Path) -> Result<()> {
     if !junction::exists(link)?

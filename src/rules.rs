@@ -15,6 +15,22 @@ pub struct Rule {
     pub suffix: String,
     #[serde(default)]
     pub processes: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub knowledge: Option<Knowledge>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Knowledge {
+    pub application: String,
+    pub purpose: String,
+    pub kind: String,
+    pub confidence: String,
+    pub migration: String,
+    pub scope: String,
+    pub owner_suffix: String,
+    pub markers: Vec<Vec<String>>,
+    pub sources: Vec<String>,
+    pub relocation_env: Vec<String>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -24,11 +40,14 @@ pub struct Pack {
     pub rules: Vec<Rule>,
 }
 pub fn builtin() -> Pack {
-    serde_json::from_str(include_str!("../rules/freeport-rules.json"))
-        .expect("validated bundled rules")
+    serde_json::from_str(include_str!(concat!(
+        env!("OUT_DIR"),
+        "/freeport-rules.json"
+    )))
+    .expect("validated bundled rules")
 }
 pub fn validate(pack: &Pack) -> Result<()> {
-    if pack.schema_version != 1
+    if ![1, 2].contains(&pack.schema_version)
         || pack.revision == 0
         || pack.rules.is_empty()
         || pack.rules.len() > 4096
@@ -59,11 +78,7 @@ pub fn validate(pack: &Pack) -> Result<()> {
         }
         let s = r.suffix.replace('\\', "/");
         let parts: Vec<_> = s.split('/').collect();
-        if parts.len() > 64
-            || parts.iter().any(|c| {
-                c.is_empty() || *c == "." || *c == ".." || c.contains(['*', '?', '<', '>', '|'])
-            })
-        {
+        if parts.len() > 64 || parts.iter().any(|c| !safe_component(c, true)) {
             return fail(crate::i18n::t("msg.bc9f4f58ba"));
         }
         if r.processes.len() > 32
@@ -74,6 +89,62 @@ pub fn validate(pack: &Pack) -> Result<()> {
             })
         {
             return fail(crate::i18n::t("msg.cc25be369c"));
+        }
+        if let Some(k) = &r.knowledge {
+            if k.application.is_empty()
+                || k.application.len() > 128
+                || k.purpose.is_empty()
+                || k.purpose.len() > 2048
+                || ![
+                    "cache",
+                    "logs",
+                    "history",
+                    "models",
+                    "extensions",
+                    "toolchain",
+                    "runtime",
+                    "mixed",
+                ]
+                .contains(&k.kind.as_str())
+                || !["documented", "local", "unverified"].contains(&k.confidence.as_str())
+                || !["candidate", "review", "exclude"].contains(&k.migration.as_str())
+                || (k.confidence == "unverified" && k.migration == "candidate")
+                || !["home", "project"].contains(&k.scope.as_str())
+                || k.markers.is_empty()
+                || k.markers.len() > 16
+                || k.sources.is_empty()
+                || k.sources.len() > 16
+                || k.sources.iter().any(|s| {
+                    s.len() > 2048
+                        || !(s.starts_with("https://") || s == "local-metadata:2026-10-24")
+                })
+                || k.relocation_env.len() > 8
+                || k.relocation_env.iter().any(|v| {
+                    v.is_empty()
+                        || v.len() > 64
+                        || !v
+                            .bytes()
+                            .all(|c| c.is_ascii_uppercase() || c.is_ascii_digit() || c == b'_')
+                })
+                || (k.scope == "home" && k.owner_suffix.is_empty())
+                || (!k.owner_suffix.is_empty() && !safe_relative(&k.owner_suffix, true))
+                || k.markers.iter().any(|group| {
+                    group.is_empty()
+                        || group.len() > 16
+                        || group.iter().any(|m| !safe_relative(m, false))
+                })
+            {
+                return fail(crate::i18n::t("msg.e83a4cb32d"));
+            }
+            let owner = k.owner_suffix.replace('\\', "/").to_lowercase();
+            let suffix = r.suffix.replace('\\', "/").to_lowercase();
+            if (!owner.is_empty() && suffix != owner && !suffix.starts_with(&(owner + "/")))
+                || suffix.split('/').last() == Some("*")
+            {
+                return fail(crate::i18n::t("msg.bc9f4f58ba"));
+            }
+        } else if pack.schema_version == 2 {
+            return fail(crate::i18n::t("msg.e83a4cb32d"));
         }
     }
     Ok(())
@@ -110,7 +181,130 @@ pub fn import(path: &Path, store: &Path) -> Result<Pack> {
 pub fn matches(path: &Path, rule: &Rule) -> bool {
     let suffix = rule.suffix.replace('/', "\\").to_lowercase();
     let p = platform::key(path);
-    p.ends_with(&("\\".to_owned() + &suffix))
+    let actual: Vec<_> = p.split('\\').collect();
+    let expected: Vec<_> = suffix.split('\\').collect();
+    actual.len() > expected.len()
+        && actual[actual.len() - expected.len()..]
+            .iter()
+            .zip(expected)
+            .all(|(a, b)| b == "*" || *a == b)
+}
+fn safe_component(s: &str, wildcard: bool) -> bool {
+    if wildcard && s == "*" {
+        return true;
+    }
+    let stem = s.split('.').next().unwrap_or("").to_ascii_uppercase();
+    !s.is_empty()
+        && ![".", ".."].contains(&s)
+        && !s.ends_with([' ', '.'])
+        && !s
+            .chars()
+            .any(|c| c.is_control() || "*?:<>|/\\\"".contains(c))
+        && !["CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$", "CLOCK$"].contains(&stem.as_str())
+        && !(stem.len() == 4
+            && (stem.starts_with("COM") || stem.starts_with("LPT"))
+            && matches!(stem.as_bytes()[3], b'1'..=b'9'))
+}
+fn safe_relative(s: &str, wildcard: bool) -> bool {
+    s.len() <= 1024
+        && s.replace('\\', "/").split('/').count() <= 64
+        && s.replace('\\', "/")
+            .split('/')
+            .all(|c| safe_component(c, wildcard))
+}
+fn plain_chain(path: &Path, allow_link_leaf: bool) -> bool {
+    for (i, ancestor) in path.ancestors().enumerate() {
+        let Ok(meta) = fs::symlink_metadata(ancestor) else {
+            return false;
+        };
+        if platform::reparse(&meta) && !(i == 0 && allow_link_leaf) {
+            return false;
+        }
+    }
+    true
+}
+fn owned(path: &Path, rule: &Rule, homes: &[std::path::PathBuf]) -> bool {
+    let Some(k) = &rule.knowledge else {
+        return false;
+    };
+    if k.migration != "candidate" || !matches(path, rule) {
+        return false;
+    }
+    let owner_count = if k.owner_suffix.is_empty() {
+        0
+    } else {
+        k.owner_suffix.replace('\\', "/").split('/').count()
+    };
+    let suffix_count = rule.suffix.replace('\\', "/").split('/').count();
+    let Some(owner) = path.ancestors().nth(suffix_count - owner_count) else {
+        return false;
+    };
+    if k.scope == "home" {
+        let Some(home) = owner.ancestors().nth(owner_count) else {
+            return false;
+        };
+        if !homes.iter().any(|h| platform::same(h, home)) {
+            return false;
+        }
+    }
+    if !plain_chain(owner, false) || !plain_chain(path, true) {
+        return false;
+    }
+    // Test existence only: never inspect credentials, settings or transcripts.
+    k.markers.iter().any(|group| {
+        group
+            .iter()
+            .all(|marker| plain_chain(&owner.join(marker), false))
+    })
+}
+pub fn discover(
+    pack: &Pack,
+    homes: &[std::path::PathBuf],
+    paths: &[std::path::PathBuf],
+) -> Vec<Candidate> {
+    use std::{collections::HashMap, path::PathBuf};
+    let mut by_leaf: HashMap<String, Vec<&Rule>> = HashMap::new();
+    let mut probe = paths.to_vec();
+    for rule in &pack.rules {
+        if rule
+            .knowledge
+            .as_ref()
+            .is_some_and(|k| k.migration == "candidate")
+        {
+            let suffix = rule.suffix.replace('\\', "/");
+            by_leaf
+                .entry(suffix.rsplit('/').next().unwrap().to_lowercase())
+                .or_default()
+                .push(rule);
+            if rule.knowledge.as_ref().unwrap().scope == "home" && !suffix.contains('*') {
+                for home in homes {
+                    probe.push(home.join(PathBuf::from(suffix.clone())));
+                }
+            }
+        }
+    }
+    let mut seen = HashSet::new();
+    let mut found = vec![];
+    for path in probe {
+        if !seen.insert(platform::key(&path)) {
+            continue;
+        }
+        let Some(leaf) = path.file_name().map(|n| n.to_string_lossy().to_lowercase()) else {
+            continue;
+        };
+        if let Some(rules) = by_leaf.get(&leaf) {
+            for rule in rules {
+                if owned(&path, rule, homes)
+                    && fs::symlink_metadata(&path)
+                        .is_ok_and(|m| m.is_dir() || platform::reparse(&m))
+                {
+                    found.push(candidate(&path, rule));
+                    break;
+                }
+            }
+        }
+    }
+    found
 }
 pub fn candidate(path: &Path, rule: &Rule) -> Candidate {
     let key = format!("rule.{}", rule.id);
@@ -122,6 +316,7 @@ pub fn candidate(path: &Path, rule: &Rule) -> Candidate {
     let mut c = custom(path, name, &rule.category);
     c.note = crate::i18n::format("msg.d71de96a80", &[format!("{}", rule.id)]);
     c.processes = rule.processes.clone();
+    c.knowledge = rule.knowledge.clone();
     c
 }
 #[cfg(test)]
@@ -130,19 +325,99 @@ mod tests {
     #[test]
     fn builtin_is_valid() {
         validate(&builtin()).unwrap();
+        let source: serde_json::Value =
+            serde_json::from_str(include_str!("../rules/freeport-rules.json")).unwrap();
+        assert_eq!(serde_json::to_value(builtin()).unwrap(), source);
+    }
+    #[test]
+    fn owned_application_requires_scoped_evidence() {
+        let root = std::env::temp_dir().join(format!("fp-knowledge-{}", std::process::id()));
+        let home = root.join("home");
+        let leaf = home.join(".claude/projects");
+        fs::create_dir_all(&leaf).unwrap();
+        let rule = builtin()
+            .rules
+            .into_iter()
+            .find(|r| r.id == "claude-projects")
+            .unwrap();
+        assert!(!owned(&leaf, &rule, &[home.clone()]));
+        fs::write(
+            home.join(".claude/settings.json"),
+            b"not parsed: credentials must never be read",
+        )
+        .unwrap();
+        assert!(owned(&leaf, &rule, &[home.clone()]));
+        assert!(!owned(&leaf, &rule, &[root.join("other")]));
+        assert!(!owned(&leaf.join("child"), &rule, &[home.clone()]));
+        fs::remove_file(home.join(".claude/settings.json")).unwrap();
+        fs::remove_dir(&leaf).unwrap();
+        fs::remove_dir(home.join(".claude")).unwrap();
+        fs::remove_dir(&home).unwrap();
+        fs::remove_dir(&root).unwrap();
+    }
+    #[test]
+    fn legacy_name_only_rules_never_become_candidates() {
+        let mut rule = builtin().rules.remove(0);
+        rule.knowledge = None;
+        assert!(!owned(
+            Path::new(r"C:\Users\someone\.claude\projects"),
+            &rule,
+            &[]
+        ));
+    }
+    #[test]
+    fn profiles_match_exactly_one_component() {
+        let rule = builtin()
+            .rules
+            .into_iter()
+            .find(|r| r.id == "edge-cache")
+            .unwrap();
+        assert!(matches(
+            Path::new(r"C:\Users\x\AppData\Local\Microsoft\Edge\User Data\Default\Cache"),
+            &rule
+        ));
+        assert!(!matches(
+            Path::new(r"C:\Users\x\AppData\Local\Microsoft\Edge\User Data\Default\nested\Cache"),
+            &rule
+        ));
+    }
+    #[test]
+    fn ownership_and_policy_boundaries_are_strict() {
+        for bad in [
+            "../secret",
+            "C:/secret",
+            "a:stream",
+            "a/CON.txt",
+            "a/NUL",
+            "a/..",
+            "a/leaf.",
+            "a/leaf ",
+            "a/\nleaf",
+            "a/*",
+        ] {
+            let mut pack = builtin();
+            pack.rules[0].knowledge.as_mut().unwrap().markers = vec![vec![bad.into()]];
+            assert!(validate(&pack).is_err(), "{bad:?}");
+        }
+        let mut pack = builtin();
+        pack.rules[0].knowledge.as_mut().unwrap().confidence = "unverified".into();
+        assert!(validate(&pack).is_err());
+        let mut pack = builtin();
+        pack.rules[0].knowledge.as_mut().unwrap().markers.clear();
+        assert!(validate(&pack).is_err());
     }
     #[test]
     fn patterns_do_not_match_name_prefixes() {
         let r = builtin()
             .rules
             .into_iter()
-            .find(|r| r.suffix == ".claude")
+            .find(|r| r.id == "claude-projects")
             .unwrap();
-        assert!(matches(Path::new(r"E:\Users\other\.claude"), &r));
+        assert!(matches(Path::new(r"E:\Users\other\.claude\projects"), &r));
         for n in [
-            r"E:\Users\other\.claudex",
-            r"E:\Users\other\x.claude",
-            r"E:\Users\other\.claude\child",
+            r"E:\Users\other\.claudex\projects",
+            r"E:\Users\other\x.claude\projects",
+            r"E:\Users\other\.claude\projects\child",
         ] {
             assert!(!matches(Path::new(n), &r));
         }
@@ -157,7 +432,7 @@ mod tests {
             r"C:\data",
             r"\\server\data",
             "a//b",
-            "a/*",
+            "a/pre*fix",
             "a/?",
             "a\0b",
             "./a",
@@ -188,6 +463,7 @@ mod tests {
             category: "test".into(),
             suffix: "cache/leaf".into(),
             processes: vec![],
+            knowledge: None,
         };
         for i in 0..5000 {
             assert!(matches(Path::new(&format!(r"E:\root\{i}\cache\leaf")), &r));

@@ -23,6 +23,91 @@ pub struct Volume {
     pub filesystem: String,
     pub free: u64,
 }
+/// Actual registered/current user profiles on a selected local drive. A portable
+/// Users/<name> profile also qualifies if NTUSER.DAT exists. No recursive search.
+pub fn profile_roots(volume: &Path) -> Vec<PathBuf> {
+    use windows_sys::Win32::{Foundation::ERROR_SUCCESS, System::Registry::*};
+    let mut found = vec![];
+    if let Some(home) = std::env::var_os("USERPROFILE") {
+        found.push(PathBuf::from(home));
+    }
+    unsafe {
+        let mut key = std::ptr::null_mut();
+        if RegOpenKeyExW(
+            HKEY_LOCAL_MACHINE,
+            p::wide(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\ProfileList").as_ptr(),
+            0,
+            KEY_READ,
+            &mut key,
+        ) == ERROR_SUCCESS
+        {
+            let mut index = 0;
+            loop {
+                let mut name = [0u16; 256];
+                let mut length = name.len() as u32;
+                let result = RegEnumKeyExW(
+                    key,
+                    index,
+                    name.as_mut_ptr(),
+                    &mut length,
+                    std::ptr::null(),
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                    std::ptr::null_mut(),
+                );
+                if result != ERROR_SUCCESS {
+                    break;
+                }
+                index += 1;
+                let sid = String::from_utf16_lossy(&name[..length as usize]);
+                if !(sid.starts_with("S-1-5-21-") || sid.starts_with("S-1-12-1-")) {
+                    continue;
+                }
+                let mut value = vec![0u16; 32768];
+                let mut bytes = (value.len() * 2) as u32;
+                if RegGetValueW(
+                    key,
+                    name.as_ptr(),
+                    p::wide("ProfileImagePath").as_ptr(),
+                    RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ,
+                    std::ptr::null_mut(),
+                    value.as_mut_ptr() as _,
+                    &mut bytes,
+                ) == ERROR_SUCCESS
+                {
+                    let n = value.iter().position(|c| *c == 0).unwrap_or(value.len());
+                    if let Ok(path) = String::from_utf16(&value[..n]) {
+                        found.push(PathBuf::from(path));
+                    }
+                }
+            }
+            RegCloseKey(key);
+        }
+    }
+    let users = volume.join("Users");
+    if fs::symlink_metadata(&users).is_ok_and(|m| m.is_dir() && !p::reparse(&m)) {
+        if let Ok(entries) = fs::read_dir(&users) {
+            for entry in entries.flatten() {
+                if fs::symlink_metadata(entry.path()).is_ok_and(|m| m.is_dir() && !p::reparse(&m))
+                    && fs::symlink_metadata(entry.path().join("NTUSER.DAT")).is_ok()
+                {
+                    found.push(entry.path());
+                }
+            }
+        }
+    }
+    let mut seen = HashSet::new();
+    found.retain(|home| {
+        p::within(home, volume)
+            && seen.insert(p::key(home))
+            && fs::symlink_metadata(home).is_ok_and(|m| m.is_dir() && !p::reparse(&m))
+            && home
+                .ancestors()
+                .all(|a| fs::symlink_metadata(a).is_ok_and(|m| !p::reparse(&m)))
+    });
+    found.sort_by_key(|h| p::key(h));
+    found
+}
 pub fn volumes() -> Vec<Volume> {
     let mut out = vec![];
     for n in b'A'..=b'Z' {
@@ -59,6 +144,8 @@ pub struct Report {
     pub rows: Vec<Row>,
     pub warnings: Vec<String>,
     pub backends: Vec<String>,
+    #[serde(default)]
+    pub scope_roots: Vec<PathBuf>,
 }
 #[derive(Clone, Debug)]
 struct Name {
@@ -284,6 +371,7 @@ pub fn run_with_store(
     let mut paths = vec![];
     let mut warnings = vec![];
     let mut backends = vec![];
+    let mut scope_roots: Vec<PathBuf> = vec![];
     let mut seen = HashSet::new();
     for input in roots {
         let root = p::absolute(input)?;
@@ -294,12 +382,31 @@ pub fn run_with_store(
             "msg.66a30391b5",
             &[format!("{}", root.display())],
         ));
+        let scopes = if mode == "migrate" && root.parent().is_none() {
+            profile_roots(&root)
+        } else {
+            vec![root.clone()]
+        };
+        if scopes.is_empty() {
+            warnings.push(crate::i18n::format(
+                "scan.no_profiles",
+                &[root.display().to_string()],
+            ));
+            continue;
+        }
+        for scope in &scopes {
+            if !scope_roots.iter().any(|p| p::same(p, scope)) {
+                scope_roots.push(scope.clone());
+            }
+        }
         let list = if root.parent().is_none() {
             match mft(&root, progress, control) {
                 Ok(v) => {
                     backends.push(format!("{}: NTFS MFT/USN", root.display()));
                     warnings.push(crate::i18n::t("msg.ac53280a0d").into());
-                    v
+                    v.into_iter()
+                        .filter(|(path, _)| scopes.iter().any(|scope| p::within(path, scope)))
+                        .collect()
                 }
                 Err(e) => {
                     control.check()?;
@@ -312,7 +419,13 @@ pub fn run_with_store(
                     );
                     progress(warning.clone());
                     warnings.push(warning);
-                    let (v, n) = fallback(&root, progress, control)?;
+                    let mut v = vec![];
+                    let mut n = 0;
+                    for scope in &scopes {
+                        let (part, errors) = fallback(scope, progress, control)?;
+                        v.extend(part);
+                        n += errors;
+                    }
                     if n > 0 {
                         warnings.push(crate::i18n::format(
                             "msg.fd0c0bf5a8",
@@ -334,7 +447,15 @@ pub fn run_with_store(
         paths.extend(list);
     }
     let mut candidates = vec![];
-    let pack = crate::rules::active(store)?;
+    let mut pack = if mode == "restore" {
+        crate::rules::builtin()
+    } else {
+        crate::rules::active(store)?
+    };
+    if mode == "migrate" && pack.schema_version == 1 {
+        warnings.push(crate::i18n::t("rules.legacy").into());
+        pack = crate::rules::builtin();
+    }
     if mode == "restore" {
         for (path, a) in &paths {
             if a & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
@@ -352,13 +473,6 @@ pub fn run_with_store(
             }
         }
     } else {
-        for (path, _) in &paths {
-            for rule in &pack.rules {
-                if crate::rules::matches(path, rule) {
-                    candidates.push(crate::rules::candidate(path, rule));
-                }
-            }
-        }
         for root in roots {
             if root.parent().is_some() {
                 candidates.push(catalog::custom(
@@ -372,40 +486,18 @@ pub fn run_with_store(
         if let Some(h) = std::env::var_os("USERPROFILE") {
             homes.insert(PathBuf::from(h));
         }
-        for (path, _) in &paths {
-            if path.file_name().is_some_and(|n| n == "AppData") {
-                if let Some(h) = path.parent() {
-                    homes.insert(h.to_path_buf());
-                }
+        for root in roots {
+            if root.parent().is_none() {
+                homes.extend(profile_roots(root));
             }
         }
-        for home in homes {
-            candidates.extend(
-                catalog::discover(&home, &[])
-                    .into_iter()
-                    .filter(|c| roots.iter().any(|r| p::within(&c.source, r))),
-            );
-        }
-        for (path, a) in &paths {
-            if a & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-                continue;
-            }
-            let k = p::key(path);
-            if k.ends_with("\\.obsidian\\plugins")
-                || k.ends_with("\\.vs")
-                || (k.ends_with("\\target")
-                    && path.parent().is_some_and(|p| p.join("Cargo.toml").exists()))
-                || k.ends_with("\\vcpkg\\downloads")
-                || k.ends_with("\\vcpkg\\buildtrees")
-                || k.ends_with("\\vcpkg\\packages")
-            {
-                candidates.push(catalog::custom(
-                    path,
-                    crate::i18n::t("msg.aaf839a1b1"),
-                    "project_cache",
-                ));
-            }
-        }
+        let homes: Vec<_> = homes.into_iter().collect();
+        let indexed: Vec<_> = paths.iter().map(|(p, _)| p.clone()).collect();
+        candidates.extend(
+            crate::rules::discover(&pack, &homes, &indexed)
+                .into_iter()
+                .filter(|c| roots.iter().any(|r| p::within(&c.source, r))),
+        );
     }
     let ps = p::processes();
     let mut rows = vec![];
@@ -450,6 +542,7 @@ pub fn run_with_store(
         rows,
         warnings,
         backends,
+        scope_roots,
     })
 }
 pub fn measure(rows: &mut [Row], progress: &dyn Fn(String)) {
@@ -468,7 +561,7 @@ pub fn measure_with_control(
             "msg.09382fcf4c",
             &[format!("{}", row.candidate.name)],
         ));
-        row.stats = inventory::measure_with_control(&row.candidate.source, control)?;
+        row.stats = inventory::measure_for_display(&row.candidate.source, control)?;
         row.status = if row.stats.errors > 0 {
             "unreadable"
         } else if row.stats.links > 0 {
@@ -486,11 +579,9 @@ pub fn relabel(rows: &mut [Row]) {
     let home = std::env::var_os("USERPROFILE").map(PathBuf::from);
     let known = home.map(|h| catalog::discover(&h, &[])).unwrap_or_default();
     for row in rows {
-        if let Some(rule) = pack
-            .rules
-            .iter()
-            .find(|r| crate::rules::matches(&row.candidate.source, r))
-        {
+        if let Some(rule) = pack.rules.iter().find(|r| {
+            row.candidate.knowledge.is_some() && crate::rules::matches(&row.candidate.source, r)
+        }) {
             let candidate = crate::rules::candidate(&row.candidate.source, rule);
             row.candidate.name = candidate.name;
             row.candidate.note = candidate.note;
@@ -510,6 +601,31 @@ pub fn relabel(rows: &mut [Row]) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn automatic_scope_requires_a_real_user_profile() {
+        let root = std::env::temp_dir().join(format!("fp-profiles-{}", std::process::id()));
+        fs::create_dir_all(root.join("Users/alice/AppData/Local")).unwrap();
+        fs::create_dir_all(root.join("Users/not-a-profile/AppData")).unwrap();
+        fs::create_dir_all(root.join("Windows/cache")).unwrap();
+        fs::write(root.join("Users/alice/NTUSER.DAT"), b"metadata only").unwrap();
+        let profiles = profile_roots(&root);
+        assert_eq!(profiles.len(), 1);
+        assert!(p::same(&profiles[0], &root.join("Users/alice")));
+        fs::remove_file(root.join("Users/alice/NTUSER.DAT")).unwrap();
+        for dir in [
+            "Users/alice/AppData/Local",
+            "Users/alice/AppData",
+            "Users/alice",
+            "Users/not-a-profile/AppData",
+            "Users/not-a-profile",
+            "Users",
+            "Windows/cache",
+            "Windows",
+            "",
+        ] {
+            fs::remove_dir(root.join(dir)).unwrap();
+        }
+    }
     #[test]
     fn rejects_malformed_records() {
         assert!(parse(&[0; 7]).is_err());
