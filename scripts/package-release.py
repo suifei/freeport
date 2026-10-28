@@ -64,6 +64,9 @@ crates = [c for c in inventory if (c["name"], "v" + c["version"]) in linked]
 if len(crates) != len(linked):
     raise SystemExit("Missing notices for linked crates: " + ", ".join(sorted(
         f"{n} {v}" for n, v in linked - {(c["name"], "v" + c["version"]) for c in crates})))
+for c in crates:
+    if not c["notices"] or not all((NOTICES / f'{c["name"]}-{c["version"]}' / n).is_file() for n in c["notices"]):
+        raise SystemExit(f'Missing notice files for linked crate {c["name"]} {c["version"]}')
 allowed = {f'{c["name"]}-{c["version"]}' for c in crates} | {"rust-licenses", "crt", "gcc-libs", "libwinpthread"}
 for path in sorted(NOTICES.rglob("*")):
     relative = path.relative_to(NOTICES)
