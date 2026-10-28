@@ -10,12 +10,13 @@ use std::{
     },
     path::{Path, PathBuf},
     process::{Command, Stdio},
+    sync::mpsc,
     time::{Duration, Instant},
 };
 use windows_sys::Win32::{
     Foundation::*,
     Storage::FileSystem::*,
-    System::{LibraryLoader::*, Threading::*},
+    System::{LibraryLoader::*, Threading::*, IO::CancelSynchronousIo},
 };
 
 pub fn warning() -> &'static str {
@@ -88,7 +89,9 @@ fn entries() -> Result<Vec<Entry>> {
             .collect());
     }
 }
-fn process(pid: u32) -> Result<(File, u64)> {
+/// Critical processes are never opened. System-folder binaries (Explorer, shells) are
+/// still listed as holders, but `closable` refuses them for remote handle closure.
+fn process(pid: u32, closable: bool) -> Result<(File, u64)> {
     let h = unsafe {
         OpenProcess(
             PROCESS_DUP_HANDLE | PROCESS_QUERY_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION,
@@ -114,6 +117,10 @@ fn process(pid: u32) -> Result<(File, u64)> {
     if unsafe { IsProcessCritical(h, &mut critical) } == 0 || critical != 0 {
         return fail(crate::i18n::t("msg.4dfff48e3e"));
     }
+    let created = ((a.dwHighDateTime as u64) << 32) | a.dwLowDateTime as u64;
+    if !closable {
+        return Ok((f, created));
+    }
     // Keep system binaries excluded in addition to checking critical-process state.
     let mut image = vec![0u16; 32768];
     let mut len = image.len() as u32;
@@ -127,10 +134,7 @@ fn process(pid: u32) -> Result<(File, u64)> {
     if image.starts_with(&(system + "\\")) {
         return fail(crate::i18n::t("msg.7cf7a3bbfa"));
     }
-    Ok((
-        f,
-        ((a.dwHighDateTime as u64) << 32) | a.dwLowDateTime as u64,
-    ))
+    Ok((f, created))
 }
 fn duplicate(proc: &File, value: u64, close: bool) -> Result<File> {
     let mut h = std::ptr::null_mut();
@@ -151,22 +155,63 @@ fn duplicate(proc: &File, value: u64, close: bool) -> Result<File> {
     }
     Ok(unsafe { File::from_raw_handle(h) })
 }
-fn resolve(proc: &File, pid: u32, created: u64, handle: u64) -> Result<OpenHandle> {
-    let f = duplicate(proc, handle, false)?;
+fn name(f: &File) -> Result<(PathBuf, p::Identity)> {
     if unsafe { GetFileType(f.as_raw_handle() as _) } != FILE_TYPE_DISK {
         return fail(crate::i18n::t("msg.ddeb1eb7f0"));
     }
-    let path = p::final_path(&f)?;
+    let path = p::final_path(f)?;
     if path.to_string_lossy().starts_with(r"\\") {
         return fail(crate::i18n::t("msg.dfa93a5017"));
     }
+    Ok((path, p::identity_file(f)?.0))
+}
+fn resolve(proc: &File, pid: u32, created: u64, handle: u64) -> Result<OpenHandle> {
+    let (path, identity) = name(&duplicate(proc, handle, false)?)?;
     Ok(OpenHandle {
         pid,
         created,
         handle,
         path,
-        identity: p::identity_file(&f)?.0,
+        identity,
     })
+}
+
+/// Name queries can block indefinitely on some handles (synchronous pipes, cloud-sync
+/// files held under oplock), so each runs on a worker with a deadline. A stuck worker
+/// gets CancelSynchronousIo and, if still stuck, is abandoned until the helper exits.
+struct Resolver {
+    jobs: mpsc::Sender<File>,
+    done: mpsc::Receiver<Option<(PathBuf, p::Identity)>>,
+    worker: std::thread::JoinHandle<()>,
+}
+impl Resolver {
+    const DEADLINE: Duration = Duration::from_millis(500);
+    fn new() -> Self {
+        let (jobs, queue) = mpsc::channel::<File>();
+        let (reply, done) = mpsc::channel();
+        let worker = std::thread::spawn(move || {
+            for f in queue {
+                if reply.send(name(&f).ok()).is_err() {
+                    break;
+                }
+            }
+        });
+        Self { jobs, done, worker }
+    }
+    /// `None` means the query did not finish in time; the handle stays unresolved.
+    fn query(&mut self, f: File) -> Option<Option<(PathBuf, p::Identity)>> {
+        if self.jobs.send(f).is_ok() {
+            if let Ok(r) = self.done.recv_timeout(Self::DEADLINE) {
+                return Some(r);
+            }
+            unsafe { CancelSynchronousIo(self.worker.as_raw_handle() as _) };
+            if self.done.recv_timeout(Duration::from_millis(100)).is_ok() {
+                return None;
+            }
+        }
+        *self = Self::new();
+        None
+    }
 }
 
 /// Child query process bounds potentially blocking file-name queries. It never closes remote handles.
@@ -189,6 +234,9 @@ pub fn maybe_helper() -> bool {
             .ok_or(crate::i18n::t("msg.59103ea0f6"))?;
         let mut current = 0;
         let mut proc = None;
+        let mut resolver = Resolver::new();
+        // After two stalls in one process the rest of its handles are counted, not queried.
+        let (mut stalls, mut unresolved) = (0, 0usize);
         for e in es
             .into_iter()
             .filter(|e| e.kind == kind && e.pid > 4 && e.pid != own as usize)
@@ -196,16 +244,41 @@ pub fn maybe_helper() -> bool {
             let pid = e.pid as u32;
             if pid != current {
                 current = pid;
-                proc = process(pid).ok();
+                proc = process(pid, false).ok();
+                stalls = 0;
             }
-            if let Some((f, created)) = &proc {
-                if let Ok(h) = resolve(f, pid, *created, e.handle as u64) {
-                    if roots.iter().any(|root| p::within(&h.path, root)) {
-                        println!("{}", serde_json::to_string(&h)?);
-                        std::io::stdout().flush()?;
-                    }
+            let Some((f, created)) = &proc else { continue };
+            if stalls >= 2 {
+                unresolved += 1;
+                continue;
+            }
+            let Ok(d) = duplicate(f, e.handle as u64, false) else {
+                continue;
+            };
+            match resolver.query(d) {
+                Some(Some((path, identity))) if roots.iter().any(|r| p::within(&path, r)) => {
+                    let h = OpenHandle {
+                        pid,
+                        created: *created,
+                        handle: e.handle as u64,
+                        path,
+                        identity,
+                    };
+                    println!("{}", serde_json::to_string(&h)?);
+                    std::io::stdout().flush()?;
+                }
+                Some(_) => {}
+                None => {
+                    stalls += 1;
+                    unresolved += 1;
                 }
             }
+        }
+        if unresolved > 0 {
+            eprintln!(
+                "{}",
+                crate::i18n::format("handles.unresolved", &[unresolved.to_string()])
+            );
         }
         Ok(())
     })();
@@ -270,7 +343,10 @@ pub fn discover(roots: &[PathBuf]) -> Result<Vec<OpenHandle>> {
                     errors.join().unwrap_or_default().trim()
                 ));
             }
-            let _ = errors.join();
+            let note = errors.join().unwrap_or_default();
+            if !note.trim().is_empty() {
+                eprintln!("{}", note.trim());
+            }
             return Ok(rows
                 .into_iter()
                 .filter(|h| h.pid != std::process::id())
@@ -292,7 +368,7 @@ pub fn force_close(roots: &[PathBuf], audit: &Path, progress: &dyn Fn(String)) -
     let mut log = OpenOptions::new().create(true).append(true).open(audit)?;
     let mut closed = 0;
     for h in discover(roots)? {
-        let (proc, created) = match process(h.pid) {
+        let (proc, created) = match process(h.pid, true) {
             Ok(p) => p,
             Err(e) => {
                 progress(crate::i18n::format(
@@ -359,7 +435,9 @@ pub fn release(
     // Deferred to the next milestone (docs/requirements.md 2.1). Refuse here as
     // well so a crafted plan or worker request cannot enable them.
     if options.request_app_exit || options.force_close_handles {
-        return fail("Requesting app exit and force-closing handles are not available in this release.");
+        return fail(
+            "Requesting app exit and force-closing handles are not available in this release.",
+        );
     }
     if options.request_app_exit {
         request_exit(roots, progress)?;

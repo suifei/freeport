@@ -325,5 +325,6 @@
   "system.changed": "Directory content or identity changed. Operation stopped; existing data was retained.",
   "system.policy": "System copying preserves data, attributes and file times. Destination permissions are inherited.",
   "rule.review": "{0} (review first)",
-  "scan.skipped_links": "Not listed for restore: {0} Windows-managed links, {1} package-manager links under node_modules and {2} links whose target is on the same drive."
+  "scan.skipped_links": "Not listed for restore: {0} Windows-managed links, {1} package-manager links under node_modules and {2} links whose target is on the same drive.",
+  "handles.unresolved": "{0} handles could not be resolved in time, so the list may be incomplete; migration still relies on copy, verification and rename checks."
 }

@@ -325,5 +325,6 @@
   "system.changed": "폴더 내용 또는 식별 정보가 변경되었습니다. 작업을 중지하고 데이터를 보존했습니다.",
   "system.policy": "데이터, 속성, 파일 시간을 보존합니다. 권한은 대상 폴더에서 상속합니다.",
   "rule.review": "{0} (review first)",
-  "scan.skipped_links": "Not listed for restore: {0} Windows-managed links, {1} package-manager links under node_modules and {2} links whose target is on the same drive."
+  "scan.skipped_links": "Not listed for restore: {0} Windows-managed links, {1} package-manager links under node_modules and {2} links whose target is on the same drive.",
+  "handles.unresolved": "{0} handles could not be resolved in time, so the list may be incomplete; migration still relies on copy, verification and rename checks."
 }

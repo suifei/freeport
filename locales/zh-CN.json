@@ -325,5 +325,6 @@
   "system.changed": "目录内容或身份发生变化，已停止操作并保留现有数据。",
   "system.policy": "系统复制保留数据、属性和文件时间；权限继承目标目录。",
   "rule.review": "{0}（需确认）",
-  "scan.skipped_links": "未列入恢复：{0} 个 Windows 管理的连接、{1} 个 node_modules 内的包管理器连接、{2} 个目标在同一盘的连接。"
+  "scan.skipped_links": "未列入恢复：{0} 个 Windows 管理的连接、{1} 个 node_modules 内的包管理器连接、{2} 个目标在同一盘的连接。",
+  "handles.unresolved": "有 {0} 个句柄在限时内未能解析，占用列表可能不完整；迁移仍以复制、校验和改名结果为准。"
 }
