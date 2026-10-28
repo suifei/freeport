@@ -44,6 +44,6 @@ python scripts/package-release.py
 gh release create vX.Y.Z dist/FreePort-vX.Y.Z-windows-x64.zip dist/FreePort-vX.Y.Z-windows-x64.sha256 --target <已通过 CI 的提交> --title "FreePort X.Y.Z" --notes-file <说明>
 ```
 
-`package-release.py` 核对两份 EXE 与 PE 审计、接口冒烟记录的 SHA-256 一致，只打包 EXE、说明、许可证和 `third-party-notices`，拒绝源码与报告文件；条目时间取 HEAD 提交时间，同一构建得到相同 ZIP。构建记录写入被忽略的 `.build/release-X.Y.Z-build-report.json`。
+`package-release.py` 核对两份 EXE 与 PE 审计、接口冒烟记录的 SHA-256 一致，只打包 EXE、说明、许可证，以及 `third-party-notices` 中实际链接进 EXE 的 crate（按 `cargo tree -e normal,no-proc-macro` 筛选，排除构建脚本、过程宏和其他平台依赖）、Rust 标准库与 MinGW 运行时声明，拒绝源码与报告文件；条目时间取 HEAD 提交时间，同一构建得到相同 ZIP。构建记录写入被忽略的 `.build/release-X.Y.Z-build-report.json`。
 
 参考：[Rust Windows GNU target](https://doc.rust-lang.org/rustc/platform-support/windows-gnu.html)、[MSYS2 Action](https://github.com/msys2/setup-msys2)。

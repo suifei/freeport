@@ -54,9 +54,22 @@ for filename in ["fp.exe", "freeport.exe"]:
 entries["READ-ME.txt"] = b"\xef\xbb\xbf" + readme.encode("utf-8")
 for filename in ["LICENSE-MIT", "LICENSE-APACHE"]:
     entries[filename] = (ROOT / filename).read_bytes()
-for path in sorted((ROOT / "third-party-notices").rglob("*")):
-    if path.is_file() and "__pycache__" not in path.parts:
-        entries["third-party-notices/" + path.relative_to(ROOT / "third-party-notices").as_posix()] = path.read_bytes()
+# Only crates compiled into the EXEs: no build scripts, proc macros or other-platform crates.
+tree = subprocess.check_output(["cargo", "+stable-x86_64-pc-windows-gnu", "tree", "--locked", "--target",
+    "x86_64-pc-windows-gnu", "-e", "normal,no-proc-macro", "--prefix", "none", "-f", "{p}"], cwd=ROOT, text=True)
+linked = {tuple(line.split()[:2]) for line in tree.splitlines() if line.strip()} - {("freeport", "v" + VERSION)}
+NOTICES = ROOT / "third-party-notices"
+inventory = json.loads((NOTICES / "dependencies.json").read_text(encoding="utf-8"))
+crates = [c for c in inventory if (c["name"], "v" + c["version"]) in linked]
+if len(crates) != len(linked):
+    raise SystemExit("Missing notices for linked crates: " + ", ".join(sorted(
+        f"{n} {v}" for n, v in linked - {(c["name"], "v" + c["version"]) for c in crates})))
+allowed = {f'{c["name"]}-{c["version"]}' for c in crates} | {"rust-licenses", "crt", "gcc-libs", "libwinpthread"}
+for path in sorted(NOTICES.rglob("*")):
+    relative = path.relative_to(NOTICES)
+    if path.is_file() and (len(relative.parts) == 1 or relative.parts[0] in allowed) and relative.name != "dependencies.json":
+        entries["third-party-notices/" + relative.as_posix()] = path.read_bytes()
+entries["third-party-notices/dependencies.json"] = (json.dumps(crates, indent=2) + "\n").encode("utf-8")
 stamp = time.gmtime(int(git("log", "-1", "--format=%ct")))[:6]
 DIST.mkdir(exist_ok=True)
 archive = DIST / (name + ".zip")
