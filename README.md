@@ -141,3 +141,7 @@ If this sounds like your machine, a **Star** helps the next person with a full C
 For engineering details, see the [requirements](docs/requirements.md), [technical design](docs/technical-design.md), the [robocopy / `mklink /J` command contract](docs/system-command-backend.md), the [storage research](docs/application-storage-research.md) and [directory list](docs/application-storage-list.md), and the [repository conventions](AGENTS.md). Windows CLI and native GUI development target Rust and share one core.
 
 **You bought that extra storage to use it. Your tools should be able to use it too.**
+
+## License
+
+Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.

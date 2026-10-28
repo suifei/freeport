@@ -143,3 +143,7 @@ MFT 快速扫描需要管理员权限，FreePort 会按需请求 UAC；拒绝后
 工程细节见[需求](docs/requirements.md)、[技术方案](docs/technical-design.md)、[robocopy / `mklink /J` 命令约定](docs/system-command-backend.md)、[应用存储调研](docs/application-storage-research.md)、[逐项目录清单](docs/application-storage-list.md)与[仓库约定](AGENTS.md)。Windows CLI 与原生 GUI 以 Rust 为目标实现，共享同一核心。
 
 **你买来的硬盘空间，应该真的能用起来。**
+
+## 许可证
+
+可任选 [MIT](LICENSE-MIT) 或 [Apache-2.0](LICENSE-APACHE) 许可证使用。

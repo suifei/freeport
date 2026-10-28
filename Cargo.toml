@@ -3,6 +3,7 @@ name = "freeport"
 version = "1.0.0"
 edition = "2021"
 description = "Windows directory migration with reversible NTFS junctions"
+license = "MIT OR Apache-2.0"
 
 [lib]
 name = "freeport"
