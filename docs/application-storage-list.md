@@ -1,8 +1,8 @@
 # 应用目录知识库逐项清单
 
-调研日期：2026-10-24。由 `scripts/build-knowledge.py` 与运行时 JSON 同源生成；本机调查结论和适用限制见 [调研报告](application-storage-research.md)。
+调研日期：2026-10-24，2026-10-28 补充整目录规则。由 `scripts/build-knowledge.py` 与运行时 JSON 同源生成；本机调查结论和适用限制见 [调研报告](application-storage-research.md)。
 
-`candidate` 表示有证据可进入迁移预检，仍须经过权限、链接、句柄、空间和事务检查；没有默认勾选。`review` 仅列入知识库，暂不自动产生迁移候选；`exclude` 排除自动发现。用户历史、模型和扩展均须保留，不能按可丢弃缓存处理。
+`candidate` 表示有证据可进入迁移预检，仍须经过权限、链接、句柄、空间和事务检查；没有默认勾选。`review` 会列出但标注“需确认”，同样不勾选，用户须先核对说明；`exclude` 排除自动发现。`app` 类型表示整个应用目录，对应原批处理的整目录迁移；与其下叶目录同时勾选时只迁移外层目录。用户历史、模型和扩展均须保留，不能按可丢弃缓存处理。
 
 `home` 路径相对于真实用户目录；`project` 路径相对于经标志文件确认的项目/应用根。`*` 只匹配单层目录。markers 外层是“或”，每组内部是“且”；仅检查存在和路径，绝不读取配置、令牌或会话正文。
 
@@ -40,10 +40,12 @@
 | `.codex/plugins/cache` | 插件下载/版本目录；本机 chrome/latest 是版本目录连接，允许选择其他无链接分支。 | extensions | local | candidate |
 | `.codex/.sandbox` | 沙箱状态和权限关系，不作为缓存自动迁移。 | runtime | local | exclude |
 | `.codex/.sandbox-bin` | 沙箱执行文件，可能关联主机权限和版本绑定，需专门验证。 | runtime | local | review |
+| `.codex` | 整个 Codex 用户目录；含沙箱状态与权限关系（.sandbox 排除自动迁移），整目录迁移前需人工确认。 | app | local | review |
+| `AppData/Local/OpenAI/Codex` | 桌面端运行时与程序副本；升级与版本绑定尚未验证，需人工确认。 | runtime | local | review |
 
-重定位线索：`CODEX_HOME`。
+重定位线索：应用配置或启动参数；未做通用推断。
 
-资料：[官方资料](https://developers.openai.com/codex/config-advanced)；本机元数据观察（非厂商承诺）。
+资料：本机元数据观察（非厂商承诺）。
 
 ## Codex managed runtime
 
@@ -70,6 +72,7 @@
 | `.kimi-code/file-history` | 本机文件恢复快照；不是可丢弃缓存。 | history | local | candidate |
 | `.kimi-code/search-index` | 本机搜索索引；应退出索引写入进程后处理。 | cache | local | candidate |
 | `.kimi-code/server` | 桌面服务运行时，需验证升级器及后台服务停机行为。 | runtime | local | review |
+| `.kimi-code` | 整个 Kimi Code 用户目录（含服务运行时与凭据）；先退出 CLI、桌面及后台服务，需人工确认。 | app | local | review |
 
 重定位线索：`KIMI_CODE_HOME`。
 
@@ -87,6 +90,7 @@
 | `.dsh/dsh-runtimes` | 本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。 | mixed | local | review |
 | `.dsh/storages` | 本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。 | mixed | local | review |
 | `.dsh/profiles` | 本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。 | mixed | local | review |
+| `.dsh` | 整个 DeepSeek Harness 用户目录（含运行时与存储）；先退出 CLI 与桌面，需人工确认。 | app | local | review |
 
 重定位线索：`DSH_HOME`。
 
@@ -103,6 +107,7 @@
 | `.grok/downloads` | 本机下载暂存，先确认升级器未运行。 | cache | local | candidate |
 | `.grok/marketplace-cache` | 本机插件市场缓存。 | extensions | local | candidate |
 | `.grok/bin` | 实际 CLI 程序及升级入口，不能当缓存。 | runtime | local | review |
+| `.grok` | 整个 Grok CLI 用户目录（含程序与升级入口）；先退出全部会话，需人工确认。 | app | local | review |
 
 重定位线索：`GROK_HOME`。
 
@@ -122,51 +127,56 @@
 
 ## VS Code
 
-识别证据：`Preferences`；或 `User`。
+识别证据：`Local State` + `Preferences` + `User/settings.json`；或 `Local State` + `Preferences` + `User/globalStorage`。
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
+| `AppData/Roaming/Code` | 整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。 | app | local | candidate |
 | `AppData/Roaming/Code/Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Code/Code Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Code/GPUCache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Code/CachedData` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Code/CachedExtensionVSIXs` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Code/logs` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | logs | local | candidate |
+| `.vscode` | 编辑器用户目录（扩展、argv.json、CLI 数据）；整目录迁移，完全退出编辑器及扩展宿主后进行。 | app | documented | candidate |
 | `.vscode/extensions` | 已安装扩展，不是缓存；完全退出编辑器及扩展宿主后迁移。 | extensions | documented | candidate |
+| `AppData/Local/Programs/Microsoft VS Code` | 用户级安装的程序目录；升级器按原路径写入，经连接后仍可用。退出编辑器和升级器后迁移。 | app | local | candidate |
 
 重定位线索：应用配置或启动参数；未做通用推断。
 
-资料：[官方资料](https://code.visualstudio.com/docs/configure/extensions/extension-marketplace)；本机元数据观察（非厂商承诺）。
+资料：[官方资料](https://code.visualstudio.com/docs/setup/windows)；本机元数据观察（非厂商承诺）。
 
 ## Cursor
 
-识别证据：`Preferences`；或 `User`。
+识别证据：`Local State` + `Preferences` + `User/settings.json`；或 `Local State` + `Preferences` + `User/globalStorage`。
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
+| `AppData/Roaming/Cursor` | 整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。 | app | local | candidate |
 | `AppData/Roaming/Cursor/Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Cursor/Code Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Cursor/GPUCache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Cursor/CachedData` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Cursor/CachedExtensionVSIXs` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Cursor/logs` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | logs | local | candidate |
+| `.cursor` | 编辑器用户目录（扩展、argv.json、CLI 数据）；整目录迁移，完全退出编辑器及扩展宿主后进行。 | app | documented | candidate |
 | `.cursor/extensions` | 已安装扩展，不是缓存；完全退出编辑器及扩展宿主后迁移。 | extensions | documented | candidate |
+| `AppData/Local/Programs/cursor` | 用户级安装的程序目录；升级器按原路径写入，经连接后仍可用。退出编辑器和升级器后迁移。 | app | local | candidate |
 
 重定位线索：应用配置或启动参数；未做通用推断。
 
-资料：[官方资料](https://code.visualstudio.com/docs/configure/extensions/extension-marketplace)；本机元数据观察（非厂商承诺）。
+资料：[官方资料](https://code.visualstudio.com/docs/setup/windows)；本机元数据观察（非厂商承诺）。
 
 ## Obsidian
 
-识别证据：`Preferences`；或 `User`。
+识别证据：`Local State` + `Preferences` + `obsidian.json`。
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
+| `AppData/Roaming/obsidian` | 整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。 | app | local | candidate |
 | `AppData/Roaming/obsidian/Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/obsidian/Code Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/obsidian/GPUCache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
-| `AppData/Roaming/obsidian/CachedData` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
-| `AppData/Roaming/obsidian/CachedExtensionVSIXs` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/obsidian/logs` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | logs | local | candidate |
 
 重定位线索：应用配置或启动参数；未做通用推断。
@@ -179,6 +189,7 @@
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
+| `.vscode-insiders` | 编辑器用户目录（扩展、argv.json、CLI 数据）；整目录迁移，完全退出编辑器及扩展宿主后进行。 | app | documented | candidate |
 | `.vscode-insiders/extensions` | 已安装扩展，不是缓存；完全退出编辑器及扩展宿主后迁移。 | extensions | documented | candidate |
 
 重定位线索：应用配置或启动参数；未做通用推断。
@@ -205,6 +216,7 @@
 | --- | --- | --- | --- | --- |
 | `.cargo/registry` | 下载依赖、索引及源码缓存；停止所有 cargo/rustc 后迁移，保留全目录关系。 | cache | documented | candidate |
 | `.cargo/git` | 下载依赖、索引及源码缓存；停止所有 cargo/rustc 后迁移，保留全目录关系。 | cache | documented | candidate |
+| `.cargo` | 整个 CARGO_HOME（bin、registry、git、配置）；PATH 中的 .cargo/bin 经连接后保持原路径。停止所有 cargo/rustc 后迁移。 | toolchain | documented | candidate |
 
 重定位线索：`CARGO_HOME`。
 
@@ -217,6 +229,7 @@
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
 | `.rustup/toolchains` | 已安装编译器/标准库，属于工具链，不是构建缓存。 | toolchain | documented | candidate |
+| `.rustup` | 整个 RUSTUP_HOME（工具链、设置、下载）；停止 rustup、cargo、rustc 及 rust-analyzer 后迁移。 | toolchain | documented | candidate |
 | `.rustup/downloads` | 工具链下载/解压暂存，需停止 rustup 更新。 | cache | documented | candidate |
 | `.rustup/tmp` | 工具链下载/解压暂存，需停止 rustup 更新。 | cache | documented | candidate |
 
@@ -288,11 +301,11 @@
 
 ## VS Code C/C++
 
-识别证据：`vscode-cpptools`。
+识别证据：`ipch`。
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
-| `AppData/Local/Microsoft/vscode-cpptools` | IntelliSense/PCH 缓存；可通过 C_Cpp.intelliSenseCachePath 更改位置。 | cache | documented | candidate |
+| `AppData/Local/Microsoft/vscode-cpptools` | IntelliSense/PCH 缓存（ipch 及各工作区数据库）；可通过 C_Cpp.intelliSenseCachePath 更改位置。 | cache | documented | candidate |
 
 重定位线索：应用配置或启动参数；未做通用推断。
 
@@ -318,10 +331,11 @@
 | --- | --- | --- | --- | --- |
 | `AppData/Local/npm-cache` | 内容寻址下载缓存及 npx 暂存；不包含全局安装程序。 | cache | documented | candidate |
 | `npm-cache` | 本机历史配置遗留的用户根缓存；用缓存结构识别。 | cache | documented | candidate |
+| `AppData/Roaming/npm` | npm 全局安装的命令行工具及其 node_modules；PATH 指向原路径，经连接后不变。停止所有 node 进程后迁移。 | toolchain | documented | candidate |
 
-重定位线索：`NPM_CONFIG_CACHE`。
+重定位线索：`NPM_CONFIG_PREFIX`。
 
-资料：[官方资料](https://docs.npmjs.com/cli/v11/commands/npm-cache)；本机元数据观察（非厂商承诺）。
+资料：[官方资料](https://docs.npmjs.com/cli/v11/configuring-npm/folders)；本机元数据观察（非厂商承诺）。
 
 ## Python uv
 
@@ -358,6 +372,30 @@
 重定位线索：`BUN_INSTALL_CACHE_DIR`。
 
 资料：[官方资料](https://bun.sh/docs/pm/global-cache)。
+
+## Python install manager
+
+识别证据：`bin` + `_cache`。
+
+| 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
+| --- | --- | --- | --- | --- |
+| `AppData/Local/Python` | Python 安装管理器的解释器与缓存；注册表与 PATH 仍指向原路径。虚拟环境可能硬编码解释器路径，需人工确认。 | toolchain | local | review |
+
+重定位线索：应用配置或启动参数；未做通用推断。
+
+资料：[官方资料](https://docs.python.org/3/using/windows.html)；本机元数据观察（非厂商承诺）。
+
+## Playwright
+
+识别证据：`.links`。
+
+| 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
+| --- | --- | --- | --- | --- |
+| `AppData/Local/ms-playwright` | Playwright 下载的浏览器二进制，可重新下载。停止测试与浏览器进程后迁移。 | cache | documented | candidate |
+
+重定位线索：`PLAYWRIGHT_BROWSERS_PATH`。
+
+资料：[官方资料](https://playwright.dev/docs/browsers#managing-browser-binaries)。
 
 ## NuGet
 
@@ -537,6 +575,42 @@
 | --- | --- | --- | --- | --- |
 | `AppData/Roaming/Tencent/WXWork` | 聊天、附件、账号与数据库混合。不同版本位置不同，须以本机客户端显示的数据路径核实，暂不自动纳入。 | mixed | unverified | review |
 | `AppData/Roaming/Tencent/WXWork/Log` | 本机独立日志目录；退出企业微信全部后台后预检，保留其他组件和账号数据。 | logs | local | candidate |
+
+重定位线索：应用配置或启动参数；未做通用推断。
+
+资料：本机元数据观察（非厂商承诺）。
+
+## WeChat
+
+识别证据：`config` + `login`。
+
+| 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
+| --- | --- | --- | --- | --- |
+| `AppData/Roaming/Tencent/xwechat` | 账号、配置、数据库与附件混合；须完全退出客户端（含托盘）后整目录迁移，需人工确认。 | mixed | local | review |
+
+重定位线索：应用配置或启动参数；未做通用推断。
+
+资料：本机元数据观察（非厂商承诺）。
+
+## Tencent Meeting
+
+识别证据：`Global` + `config_info.ini`。
+
+| 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
+| --- | --- | --- | --- | --- |
+| `AppData/Roaming/Tencent/WeMeet` | 账号、配置、数据库与附件混合；须完全退出客户端（含托盘）后整目录迁移，需人工确认。 | mixed | local | review |
+
+重定位线索：应用配置或启动参数；未做通用推断。
+
+资料：本机元数据观察（非厂商承诺）。
+
+## WeMail
+
+识别证据：`sqlite` + `config`。
+
+| 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
+| --- | --- | --- | --- | --- |
+| `AppData/Roaming/Tencent/WeMail` | 账号、配置、数据库与附件混合；须完全退出客户端（含托盘）后整目录迁移，需人工确认。 | mixed | local | review |
 
 重定位线索：应用配置或启动参数；未做通用推断。
 

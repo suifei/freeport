@@ -104,6 +104,7 @@ pub fn validate(pack: &Pack) -> Result<()> {
                     "toolchain",
                     "runtime",
                     "mixed",
+                    "app",
                 ]
                 .contains(&k.kind.as_str())
                 || !["documented", "local", "unverified"].contains(&k.confidence.as_str())
@@ -227,7 +228,7 @@ fn owned(path: &Path, rule: &Rule, homes: &[std::path::PathBuf]) -> bool {
     let Some(k) = &rule.knowledge else {
         return false;
     };
-    if k.migration != "candidate" || !matches(path, rule) {
+    if k.migration == "exclude" || !matches(path, rule) {
         return false;
     }
     let owner_count = if k.owner_suffix.is_empty() {
@@ -269,7 +270,7 @@ pub fn discover(
         if rule
             .knowledge
             .as_ref()
-            .is_some_and(|k| k.migration == "candidate")
+            .is_some_and(|k| k.migration != "exclude")
         {
             let suffix = rule.suffix.replace('\\', "/");
             by_leaf
@@ -354,6 +355,31 @@ mod tests {
         fs::remove_dir(home.join(".claude")).unwrap();
         fs::remove_dir(&home).unwrap();
         fs::remove_dir(&root).unwrap();
+    }
+    #[test]
+    fn review_and_application_roots_are_offered_but_exclusions_are_not() {
+        let root = std::env::temp_dir().join(format!("fp-review-{}", std::process::id()));
+        let home = root.join("home");
+        let codex = home.join(".codex");
+        fs::create_dir_all(codex.join("sessions")).unwrap();
+        fs::create_dir_all(codex.join(".sandbox")).unwrap();
+        fs::write(codex.join("config.toml"), b"not parsed").unwrap();
+        let found = discover(&builtin(), &[home.clone()], &[codex.join(".sandbox")]);
+        let ids: Vec<_> = found.iter().map(|c| c.note.clone()).collect();
+        let migration = |path: &Path| {
+            found
+                .iter()
+                .find(|c| platform::same(&c.source, path))
+                .and_then(|c| c.knowledge.as_ref())
+                .map(|k| k.migration.clone())
+        };
+        assert_eq!(migration(&codex).as_deref(), Some("review"), "{ids:?}");
+        assert_eq!(
+            migration(&codex.join("sessions")).as_deref(),
+            Some("candidate")
+        );
+        assert_eq!(migration(&codex.join(".sandbox")), None);
+        fs::remove_dir_all(&root).unwrap();
     }
     #[test]
     fn legacy_name_only_rules_never_become_candidates() {

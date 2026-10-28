@@ -469,7 +469,13 @@ impl Tree {
                     .candidate
                     .knowledge
                     .as_ref()
-                    .map(|k| k.application.clone())
+                    .map(|k| {
+                        if k.migration == "review" {
+                            l::format("rule.review", &[k.application.clone()])
+                        } else {
+                            k.application.clone()
+                        }
+                    })
                     .unwrap_or_else(|| r.candidate.name.clone());
                 n.status = r
                     .link_target

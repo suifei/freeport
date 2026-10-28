@@ -323,5 +323,7 @@
   "system.path": "System command paths must be absolute and cannot contain percent signs, quotes or line breaks.",
   "system.residue": "Source data remains or changed. Cleanup stopped; existing data was retained.",
   "system.changed": "Directory content or identity changed. Operation stopped; existing data was retained.",
-  "system.policy": "System copying preserves data, attributes and file times. Destination permissions are inherited."
+  "system.policy": "System copying preserves data, attributes and file times. Destination permissions are inherited.",
+  "rule.review": "{0} (review first)",
+  "scan.skipped_links": "Not listed for restore: {0} Windows-managed links, {1} package-manager links under node_modules and {2} links whose target is on the same drive."
 }

@@ -1,6 +1,6 @@
 {
   "schema_version": 2,
-  "revision": 2026102401,
+  "revision": 2026102801,
   "rules": [
     {
       "id": "claude-projects",
@@ -110,7 +110,7 @@
     {
       "id": "claude-cache",
       "name": "Claude Code: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".claude/cache",
       "processes": [
         "claude.exe",
@@ -180,7 +180,7 @@
     {
       "id": "claude-debug",
       "name": "Claude Code: debug",
-      "category": "cache",
+      "category": "logs",
       "suffix": ".claude/debug",
       "processes": [
         "claude.exe",
@@ -394,7 +394,7 @@
     {
       "id": "codex-cache",
       "name": "OpenAI Codex: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".codex/cache",
       "processes": [
         "codex.exe",
@@ -466,7 +466,7 @@
     {
       "id": "codex-sandbox",
       "name": "OpenAI Codex: sandbox",
-      "category": "build_cache",
+      "category": "runtime",
       "suffix": ".codex/.sandbox",
       "processes": [
         "codex.exe",
@@ -502,7 +502,7 @@
     {
       "id": "codex-sandbox-bin",
       "name": "OpenAI Codex: sandbox-bin",
-      "category": "build_cache",
+      "category": "runtime",
       "suffix": ".codex/.sandbox-bin",
       "processes": [
         "codex.exe",
@@ -536,9 +536,45 @@
       }
     },
     {
+      "id": "codex-root",
+      "name": "OpenAI Codex: root",
+      "category": "app_data",
+      "suffix": ".codex",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "整个 Codex 用户目录；含沙箱状态与权限关系（.sandbox 排除自动迁移），整目录迁移前需人工确认。",
+        "kind": "app",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".codex",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://developers.openai.com/codex/config-advanced",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "CODEX_HOME"
+        ]
+      }
+    },
+    {
       "id": "codex-runtime-root",
       "name": "Codex managed runtime: root",
-      "category": "build_cache",
+      "category": "runtime",
       "suffix": ".cache/codex-runtimes",
       "processes": [
         "codex.exe",
@@ -598,7 +634,7 @@
     {
       "id": "kimi-logs",
       "name": "Kimi Code: logs",
-      "category": "cache",
+      "category": "logs",
       "suffix": ".kimi-code/logs",
       "processes": [
         "kimi.exe",
@@ -630,7 +666,7 @@
     {
       "id": "kimi-cache",
       "name": "Kimi Code: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".kimi-code/cache",
       "processes": [
         "kimi.exe",
@@ -726,7 +762,7 @@
     {
       "id": "kimi-search-index",
       "name": "Kimi Code: search-index",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".kimi-code/search-index",
       "processes": [
         "kimi.exe",
@@ -758,7 +794,7 @@
     {
       "id": "kimi-server",
       "name": "Kimi Code: server",
-      "category": "build_cache",
+      "category": "runtime",
       "suffix": ".kimi-code/server",
       "processes": [
         "kimi.exe",
@@ -768,6 +804,38 @@
         "application": "Kimi Code",
         "purpose": "桌面服务运行时，需验证升级器及后台服务停机行为。",
         "kind": "runtime",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".kimi-code",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "KIMI_CODE_HOME"
+        ]
+      }
+    },
+    {
+      "id": "kimi-root",
+      "name": "Kimi Code: root",
+      "category": "app_data",
+      "suffix": ".kimi-code",
+      "processes": [
+        "kimi.exe",
+        "kimi code.exe"
+      ],
+      "knowledge": {
+        "application": "Kimi Code",
+        "purpose": "整个 Kimi Code 用户目录（含服务运行时与凭据）；先退出 CLI、桌面及后台服务，需人工确认。",
+        "kind": "app",
         "confidence": "local",
         "migration": "review",
         "scope": "home",
@@ -864,7 +932,7 @@
     {
       "id": "dsh-cache",
       "name": "DeepSeek Harness: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".dsh/cache",
       "processes": [
         "dsh.exe",
@@ -901,7 +969,7 @@
     {
       "id": "dsh-dsh-runtimes",
       "name": "DeepSeek Harness: dsh-runtimes",
-      "category": "build_cache",
+      "category": "app_data",
       "suffix": ".dsh/dsh-runtimes",
       "processes": [
         "dsh.exe",
@@ -938,7 +1006,7 @@
     {
       "id": "dsh-storages",
       "name": "DeepSeek Harness: storages",
-      "category": "build_cache",
+      "category": "app_data",
       "suffix": ".dsh/storages",
       "processes": [
         "dsh.exe",
@@ -975,7 +1043,7 @@
     {
       "id": "dsh-profiles",
       "name": "DeepSeek Harness: profiles",
-      "category": "build_cache",
+      "category": "app_data",
       "suffix": ".dsh/profiles",
       "processes": [
         "dsh.exe",
@@ -986,6 +1054,43 @@
         "application": "DeepSeek Harness",
         "purpose": "本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。",
         "kind": "mixed",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".dsh",
+        "markers": [
+          [
+            "profiles",
+            "sessions"
+          ],
+          [
+            ".credentials.yaml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "DSH_HOME"
+        ]
+      }
+    },
+    {
+      "id": "dsh-root",
+      "name": "DeepSeek Harness: root",
+      "category": "app_data",
+      "suffix": ".dsh",
+      "processes": [
+        "dsh.exe",
+        "dsh-desktop.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "DeepSeek Harness",
+        "purpose": "整个 DeepSeek Harness 用户目录（含运行时与存储）；先退出 CLI 与桌面，需人工确认。",
+        "kind": "app",
         "confidence": "local",
         "migration": "review",
         "scope": "home",
@@ -1048,7 +1153,7 @@
     {
       "id": "grok-logs",
       "name": "Grok CLI: logs",
-      "category": "cache",
+      "category": "logs",
       "suffix": ".grok/logs",
       "processes": [
         "grok.exe"
@@ -1084,7 +1189,7 @@
     {
       "id": "grok-downloads",
       "name": "Grok CLI: downloads",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".grok/downloads",
       "processes": [
         "grok.exe"
@@ -1156,7 +1261,7 @@
     {
       "id": "grok-runtime",
       "name": "Grok CLI: runtime",
-      "category": "build_cache",
+      "category": "runtime",
       "suffix": ".grok/bin",
       "processes": [
         "grok.exe"
@@ -1190,9 +1295,45 @@
       }
     },
     {
+      "id": "grok-root",
+      "name": "Grok CLI: root",
+      "category": "app_data",
+      "suffix": ".grok",
+      "processes": [
+        "grok.exe"
+      ],
+      "knowledge": {
+        "application": "Grok CLI",
+        "purpose": "整个 Grok CLI 用户目录（含程序与升级入口）；先退出全部会话，需人工确认。",
+        "kind": "app",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".grok",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://docs.x.ai/build/settings",
+          "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "GROK_HOME"
+        ]
+      }
+    },
+    {
       "id": "grokbot-attachment-staging",
       "name": "Grok Bot: attachment-staging",
-      "category": "build_cache",
+      "category": "app_data",
       "suffix": ".grokbot/attachment-staging",
       "processes": [
         "grok bot.exe"
@@ -1219,9 +1360,44 @@
       }
     },
     {
+      "id": "vscode-root",
+      "name": "VS Code: root",
+      "category": "app_data",
+      "suffix": "AppData/Roaming/Code",
+      "processes": [
+        "code.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。",
+        "kind": "app",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Code",
+        "markers": [
+          [
+            "Local State",
+            "Preferences",
+            "User/settings.json"
+          ],
+          [
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
       "id": "vscode-cache",
       "name": "VS Code: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Code/Cache",
       "processes": [
         "code.exe"
@@ -1236,10 +1412,14 @@
         "owner_suffix": "AppData/Roaming/Code",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1252,7 +1432,7 @@
     {
       "id": "vscode-code-cache",
       "name": "VS Code: code-cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Code/Code Cache",
       "processes": [
         "code.exe"
@@ -1267,10 +1447,14 @@
         "owner_suffix": "AppData/Roaming/Code",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1283,7 +1467,7 @@
     {
       "id": "vscode-gpucache",
       "name": "VS Code: gpucache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Code/GPUCache",
       "processes": [
         "code.exe"
@@ -1298,10 +1482,14 @@
         "owner_suffix": "AppData/Roaming/Code",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1314,7 +1502,7 @@
     {
       "id": "vscode-cacheddata",
       "name": "VS Code: cacheddata",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Code/CachedData",
       "processes": [
         "code.exe"
@@ -1329,10 +1517,14 @@
         "owner_suffix": "AppData/Roaming/Code",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1345,7 +1537,7 @@
     {
       "id": "vscode-cachedextensionvsixs",
       "name": "VS Code: cachedextensionvsixs",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Code/CachedExtensionVSIXs",
       "processes": [
         "code.exe"
@@ -1360,10 +1552,14 @@
         "owner_suffix": "AppData/Roaming/Code",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1376,7 +1572,7 @@
     {
       "id": "vscode-logs",
       "name": "VS Code: logs",
-      "category": "cache",
+      "category": "logs",
       "suffix": "AppData/Roaming/Code/logs",
       "processes": [
         "code.exe"
@@ -1391,10 +1587,49 @@
         "owner_suffix": "AppData/Roaming/Code",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "cursor-root",
+      "name": "Cursor: root",
+      "category": "app_data",
+      "suffix": "AppData/Roaming/Cursor",
+      "processes": [
+        "cursor.exe"
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。",
+        "kind": "app",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Cursor",
+        "markers": [
+          [
+            "Local State",
+            "Preferences",
+            "User/settings.json"
+          ],
+          [
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1407,7 +1642,7 @@
     {
       "id": "cursor-cache",
       "name": "Cursor: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Cursor/Cache",
       "processes": [
         "cursor.exe"
@@ -1422,10 +1657,14 @@
         "owner_suffix": "AppData/Roaming/Cursor",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1438,7 +1677,7 @@
     {
       "id": "cursor-code-cache",
       "name": "Cursor: code-cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Cursor/Code Cache",
       "processes": [
         "cursor.exe"
@@ -1453,10 +1692,14 @@
         "owner_suffix": "AppData/Roaming/Cursor",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1469,7 +1712,7 @@
     {
       "id": "cursor-gpucache",
       "name": "Cursor: gpucache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Cursor/GPUCache",
       "processes": [
         "cursor.exe"
@@ -1484,10 +1727,14 @@
         "owner_suffix": "AppData/Roaming/Cursor",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1500,7 +1747,7 @@
     {
       "id": "cursor-cacheddata",
       "name": "Cursor: cacheddata",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Cursor/CachedData",
       "processes": [
         "cursor.exe"
@@ -1515,10 +1762,14 @@
         "owner_suffix": "AppData/Roaming/Cursor",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1531,7 +1782,7 @@
     {
       "id": "cursor-cachedextensionvsixs",
       "name": "Cursor: cachedextensionvsixs",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/Cursor/CachedExtensionVSIXs",
       "processes": [
         "cursor.exe"
@@ -1546,10 +1797,14 @@
         "owner_suffix": "AppData/Roaming/Cursor",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1562,7 +1817,7 @@
     {
       "id": "cursor-logs",
       "name": "Cursor: logs",
-      "category": "cache",
+      "category": "logs",
       "suffix": "AppData/Roaming/Cursor/logs",
       "processes": [
         "cursor.exe"
@@ -1577,10 +1832,14 @@
         "owner_suffix": "AppData/Roaming/Cursor",
         "markers": [
           [
-            "Preferences"
+            "Local State",
+            "Preferences",
+            "User/settings.json"
           ],
           [
-            "User"
+            "Local State",
+            "Preferences",
+            "User/globalStorage"
           ]
         ],
         "sources": [
@@ -1591,9 +1850,39 @@
       }
     },
     {
+      "id": "obsidian-root",
+      "name": "Obsidian: root",
+      "category": "app_data",
+      "suffix": "AppData/Roaming/obsidian",
+      "processes": [
+        "obsidian.exe"
+      ],
+      "knowledge": {
+        "application": "Obsidian",
+        "purpose": "整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。",
+        "kind": "app",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/obsidian",
+        "markers": [
+          [
+            "Local State",
+            "Preferences",
+            "obsidian.json"
+          ]
+        ],
+        "sources": [
+          "https://obsidian.md/help/data-storage",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
       "id": "obsidian-cache",
       "name": "Obsidian: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/obsidian/Cache",
       "processes": [
         "obsidian.exe"
@@ -1608,10 +1897,9 @@
         "owner_suffix": "AppData/Roaming/obsidian",
         "markers": [
           [
-            "Preferences"
-          ],
-          [
-            "User"
+            "Local State",
+            "Preferences",
+            "obsidian.json"
           ]
         ],
         "sources": [
@@ -1624,7 +1912,7 @@
     {
       "id": "obsidian-code-cache",
       "name": "Obsidian: code-cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/obsidian/Code Cache",
       "processes": [
         "obsidian.exe"
@@ -1639,10 +1927,9 @@
         "owner_suffix": "AppData/Roaming/obsidian",
         "markers": [
           [
-            "Preferences"
-          ],
-          [
-            "User"
+            "Local State",
+            "Preferences",
+            "obsidian.json"
           ]
         ],
         "sources": [
@@ -1655,7 +1942,7 @@
     {
       "id": "obsidian-gpucache",
       "name": "Obsidian: gpucache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Roaming/obsidian/GPUCache",
       "processes": [
         "obsidian.exe"
@@ -1670,72 +1957,9 @@
         "owner_suffix": "AppData/Roaming/obsidian",
         "markers": [
           [
-            "Preferences"
-          ],
-          [
-            "User"
-          ]
-        ],
-        "sources": [
-          "https://obsidian.md/help/data-storage",
-          "local-metadata:2026-10-24"
-        ],
-        "relocation_env": []
-      }
-    },
-    {
-      "id": "obsidian-cacheddata",
-      "name": "Obsidian: cacheddata",
-      "category": "build_cache",
-      "suffix": "AppData/Roaming/obsidian/CachedData",
-      "processes": [
-        "obsidian.exe"
-      ],
-      "knowledge": {
-        "application": "Obsidian",
-        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
-        "kind": "cache",
-        "confidence": "local",
-        "migration": "candidate",
-        "scope": "home",
-        "owner_suffix": "AppData/Roaming/obsidian",
-        "markers": [
-          [
-            "Preferences"
-          ],
-          [
-            "User"
-          ]
-        ],
-        "sources": [
-          "https://obsidian.md/help/data-storage",
-          "local-metadata:2026-10-24"
-        ],
-        "relocation_env": []
-      }
-    },
-    {
-      "id": "obsidian-cachedextensionvsixs",
-      "name": "Obsidian: cachedextensionvsixs",
-      "category": "build_cache",
-      "suffix": "AppData/Roaming/obsidian/CachedExtensionVSIXs",
-      "processes": [
-        "obsidian.exe"
-      ],
-      "knowledge": {
-        "application": "Obsidian",
-        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
-        "kind": "cache",
-        "confidence": "local",
-        "migration": "candidate",
-        "scope": "home",
-        "owner_suffix": "AppData/Roaming/obsidian",
-        "markers": [
-          [
-            "Preferences"
-          ],
-          [
-            "User"
+            "Local State",
+            "Preferences",
+            "obsidian.json"
           ]
         ],
         "sources": [
@@ -1748,7 +1972,7 @@
     {
       "id": "obsidian-logs",
       "name": "Obsidian: logs",
-      "category": "cache",
+      "category": "logs",
       "suffix": "AppData/Roaming/obsidian/logs",
       "processes": [
         "obsidian.exe"
@@ -1763,14 +1987,41 @@
         "owner_suffix": "AppData/Roaming/obsidian",
         "markers": [
           [
-            "Preferences"
-          ],
-          [
-            "User"
+            "Local State",
+            "Preferences",
+            "obsidian.json"
           ]
         ],
         "sources": [
           "https://obsidian.md/help/data-storage",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-profile",
+      "name": "VS Code: profile",
+      "category": "app_data",
+      "suffix": ".vscode",
+      "processes": [
+        "code.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "编辑器用户目录（扩展、argv.json、CLI 数据）；整目录迁移，完全退出编辑器及扩展宿主后进行。",
+        "kind": "app",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".vscode",
+        "markers": [
+          [
+            "extensions/extensions.json"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/extensions/extension-marketplace",
           "local-metadata:2026-10-24"
         ],
         "relocation_env": []
@@ -1792,6 +2043,34 @@
         "migration": "candidate",
         "scope": "home",
         "owner_suffix": ".vscode",
+        "markers": [
+          [
+            "extensions/extensions.json"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/extensions/extension-marketplace",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-insiders-profile",
+      "name": "VS Code Insiders: profile",
+      "category": "app_data",
+      "suffix": ".vscode-insiders",
+      "processes": [
+        "code - insiders.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code Insiders",
+        "purpose": "编辑器用户目录（扩展、argv.json、CLI 数据）；整目录迁移，完全退出编辑器及扩展宿主后进行。",
+        "kind": "app",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".vscode-insiders",
         "markers": [
           [
             "extensions/extensions.json"
@@ -1833,6 +2112,34 @@
       }
     },
     {
+      "id": "cursor-profile",
+      "name": "Cursor: profile",
+      "category": "app_data",
+      "suffix": ".cursor",
+      "processes": [
+        "cursor.exe"
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "编辑器用户目录（扩展、argv.json、CLI 数据）；整目录迁移，完全退出编辑器及扩展宿主后进行。",
+        "kind": "app",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".cursor",
+        "markers": [
+          [
+            "extensions/extensions.json"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/extensions/extension-marketplace",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
       "id": "cursor-extensions",
       "name": "Cursor: extensions",
       "category": "extensions",
@@ -1855,6 +2162,64 @@
         ],
         "sources": [
           "https://code.visualstudio.com/docs/configure/extensions/extension-marketplace",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-program-root",
+      "name": "VS Code: root",
+      "category": "app_data",
+      "suffix": "AppData/Local/Programs/Microsoft VS Code",
+      "processes": [
+        "code.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "用户级安装的程序目录；升级器按原路径写入，经连接后仍可用。退出编辑器和升级器后迁移。",
+        "kind": "app",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Programs/Microsoft VS Code",
+        "markers": [
+          [
+            "Code.exe",
+            "resources/app"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/setup/windows",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "cursor-program-root",
+      "name": "Cursor: root",
+      "category": "app_data",
+      "suffix": "AppData/Local/Programs/cursor",
+      "processes": [
+        "cursor.exe"
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "用户级安装的程序目录；升级器按原路径写入，经连接后仍可用。退出编辑器和升级器后迁移。",
+        "kind": "app",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Programs/cursor",
+        "markers": [
+          [
+            "Cursor.exe",
+            "resources/app"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/setup/windows",
           "local-metadata:2026-10-24"
         ],
         "relocation_env": []
@@ -1891,7 +2256,7 @@
     {
       "id": "cargo-registry",
       "name": "Rust Cargo: registry",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".cargo/registry",
       "processes": [
         "cargo.exe",
@@ -1926,7 +2291,7 @@
     {
       "id": "cargo-git",
       "name": "Rust Cargo: git",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".cargo/git",
       "processes": [
         "cargo.exe",
@@ -1936,6 +2301,41 @@
         "application": "Rust Cargo",
         "purpose": "下载依赖、索引及源码缓存；停止所有 cargo/rustc 后迁移，保留全目录关系。",
         "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".cargo",
+        "markers": [
+          [
+            "registry",
+            "bin"
+          ],
+          [
+            "registry",
+            "config.toml"
+          ]
+        ],
+        "sources": [
+          "https://doc.rust-lang.org/cargo/guide/cargo-home.html"
+        ],
+        "relocation_env": [
+          "CARGO_HOME"
+        ]
+      }
+    },
+    {
+      "id": "cargo-root",
+      "name": "Rust Cargo: root",
+      "category": "toolchain",
+      "suffix": ".cargo",
+      "processes": [
+        "cargo.exe",
+        "rustc.exe"
+      ],
+      "knowledge": {
+        "application": "Rust Cargo",
+        "purpose": "整个 CARGO_HOME（bin、registry、git、配置）；PATH 中的 .cargo/bin 经连接后保持原路径。停止所有 cargo/rustc 后迁移。",
+        "kind": "toolchain",
         "confidence": "documented",
         "migration": "candidate",
         "scope": "home",
@@ -1991,9 +2391,41 @@
       }
     },
     {
+      "id": "rustup-root",
+      "name": "Rust toolchains: root",
+      "category": "toolchain",
+      "suffix": ".rustup",
+      "processes": [
+        "rustup.exe",
+        "rustc.exe",
+        "cargo.exe"
+      ],
+      "knowledge": {
+        "application": "Rust toolchains",
+        "purpose": "整个 RUSTUP_HOME（工具链、设置、下载）；停止 rustup、cargo、rustc 及 rust-analyzer 后迁移。",
+        "kind": "toolchain",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".rustup",
+        "markers": [
+          [
+            "settings.toml",
+            "toolchains"
+          ]
+        ],
+        "sources": [
+          "https://rust-lang.github.io/rustup/environment-variables.html"
+        ],
+        "relocation_env": [
+          "RUSTUP_HOME"
+        ]
+      }
+    },
+    {
       "id": "rustup-downloads",
       "name": "Rust toolchains: downloads",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".rustup/downloads",
       "processes": [
         "rustup.exe",
@@ -2025,7 +2457,7 @@
     {
       "id": "rustup-tmp",
       "name": "Rust toolchains: tmp",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".rustup/tmp",
       "processes": [
         "rustup.exe",
@@ -2057,7 +2489,7 @@
     {
       "id": "rust-project-target",
       "name": "Cargo project: target",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "target",
       "processes": [
         "cargo.exe",
@@ -2087,7 +2519,7 @@
     {
       "id": "go-build",
       "name": "Go build: build",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/go-build",
       "processes": [
         "go.exe",
@@ -2120,7 +2552,7 @@
     {
       "id": "go-mod-cache",
       "name": "Go modules: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "go/pkg/mod",
       "processes": [
         "go.exe",
@@ -2151,7 +2583,7 @@
     {
       "id": "vcpkg-archives",
       "name": "vcpkg: archives",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/vcpkg/archives",
       "processes": [
         "vcpkg.exe",
@@ -2182,7 +2614,7 @@
     {
       "id": "vcpkg-root-downloads",
       "name": "vcpkg checkout: downloads",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "downloads",
       "processes": [
         "vcpkg.exe",
@@ -2213,7 +2645,7 @@
     {
       "id": "vcpkg-root-buildtrees",
       "name": "vcpkg checkout: buildtrees",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "buildtrees",
       "processes": [
         "vcpkg.exe",
@@ -2244,7 +2676,7 @@
     {
       "id": "vcpkg-root-packages",
       "name": "vcpkg checkout: packages",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "packages",
       "processes": [
         "vcpkg.exe",
@@ -2275,23 +2707,24 @@
     {
       "id": "cpptools-cache",
       "name": "VS Code C/C++: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Microsoft/vscode-cpptools",
       "processes": [
         "code.exe",
-        "cpptools.exe"
+        "cpptools.exe",
+        "cpptools-srv.exe"
       ],
       "knowledge": {
         "application": "VS Code C/C++",
-        "purpose": "IntelliSense/PCH 缓存；可通过 C_Cpp.intelliSenseCachePath 更改位置。",
+        "purpose": "IntelliSense/PCH 缓存（ipch 及各工作区数据库）；可通过 C_Cpp.intelliSenseCachePath 更改位置。",
         "kind": "cache",
         "confidence": "documented",
         "migration": "candidate",
         "scope": "home",
-        "owner_suffix": "AppData/Local/Microsoft",
+        "owner_suffix": "AppData/Local/Microsoft/vscode-cpptools",
         "markers": [
           [
-            "vscode-cpptools"
+            "ipch"
           ]
         ],
         "sources": [
@@ -2303,7 +2736,7 @@
     {
       "id": "pip-cache",
       "name": "Python pip: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/pip/Cache",
       "processes": [
         "python.exe",
@@ -2339,7 +2772,7 @@
     {
       "id": "npm-cache",
       "name": "Node npm: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/npm-cache",
       "processes": [
         "node.exe"
@@ -2371,7 +2804,7 @@
     {
       "id": "npm-user-cache",
       "name": "Node npm: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "npm-cache",
       "processes": [
         "node.exe"
@@ -2404,7 +2837,7 @@
     {
       "id": "uv-cache",
       "name": "Python uv: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/uv/cache",
       "processes": [
         "uv.exe",
@@ -2434,7 +2867,7 @@
     {
       "id": "pnpm-store",
       "name": "pnpm: store",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/pnpm/store",
       "processes": [
         "node.exe"
@@ -2467,7 +2900,7 @@
     {
       "id": "bun-cache",
       "name": "Bun: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".bun/install/cache",
       "processes": [
         "bun.exe"
@@ -2495,9 +2928,136 @@
       }
     },
     {
+      "id": "npm-global-packages",
+      "name": "Node npm: packages",
+      "category": "toolchain",
+      "suffix": "AppData/Roaming/npm",
+      "processes": [
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "Node npm",
+        "purpose": "npm 全局安装的命令行工具及其 node_modules；PATH 指向原路径，经连接后不变。停止所有 node 进程后迁移。",
+        "kind": "toolchain",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/npm",
+        "markers": [
+          [
+            "node_modules",
+            "npm.cmd"
+          ],
+          [
+            "node_modules",
+            "npx.cmd"
+          ]
+        ],
+        "sources": [
+          "https://docs.npmjs.com/cli/v11/configuring-npm/folders",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "NPM_CONFIG_PREFIX"
+        ]
+      }
+    },
+    {
+      "id": "python-manager-root",
+      "name": "Python install manager: root",
+      "category": "toolchain",
+      "suffix": "AppData/Local/Python",
+      "processes": [
+        "python.exe",
+        "py.exe",
+        "pythonw.exe"
+      ],
+      "knowledge": {
+        "application": "Python install manager",
+        "purpose": "Python 安装管理器的解释器与缓存；注册表与 PATH 仍指向原路径。虚拟环境可能硬编码解释器路径，需人工确认。",
+        "kind": "toolchain",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Python",
+        "markers": [
+          [
+            "bin",
+            "_cache"
+          ]
+        ],
+        "sources": [
+          "https://docs.python.org/3/using/windows.html",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "playwright-browsers",
+      "name": "Playwright: browsers",
+      "category": "cache",
+      "suffix": "AppData/Local/ms-playwright",
+      "processes": [
+        "node.exe",
+        "chrome.exe",
+        "msedge.exe",
+        "firefox.exe"
+      ],
+      "knowledge": {
+        "application": "Playwright",
+        "purpose": "Playwright 下载的浏览器二进制，可重新下载。停止测试与浏览器进程后迁移。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/ms-playwright",
+        "markers": [
+          [
+            ".links"
+          ]
+        ],
+        "sources": [
+          "https://playwright.dev/docs/browsers#managing-browser-binaries"
+        ],
+        "relocation_env": [
+          "PLAYWRIGHT_BROWSERS_PATH"
+        ]
+      }
+    },
+    {
+      "id": "codex-desktop-root",
+      "name": "OpenAI Codex: root",
+      "category": "runtime",
+      "suffix": "AppData/Local/OpenAI/Codex",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "桌面端运行时与程序副本；升级与版本绑定尚未验证，需人工确认。",
+        "kind": "runtime",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/OpenAI/Codex",
+        "markers": [
+          [
+            "runtimes",
+            "bin"
+          ]
+        ],
+        "sources": [
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
       "id": "nuget-packages",
       "name": "NuGet: packages",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".nuget/packages",
       "processes": [
         "dotnet.exe",
@@ -2528,7 +3088,7 @@
     {
       "id": "gradle-caches",
       "name": "Gradle: caches",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".gradle/caches",
       "processes": [
         "java.exe",
@@ -2563,7 +3123,7 @@
     {
       "id": "gradle-wrapper-dists",
       "name": "Gradle: wrapper-dists",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": ".gradle/wrapper/dists",
       "processes": [
         "java.exe",
@@ -2814,7 +3374,7 @@
     {
       "id": "chrome-cache",
       "name": "Google Chrome: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Google/Chrome/User Data/*/Cache",
       "processes": [
         "chrome.exe"
@@ -2841,7 +3401,7 @@
     {
       "id": "chrome-code-cache",
       "name": "Google Chrome: code-cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Google/Chrome/User Data/*/Code Cache",
       "processes": [
         "chrome.exe"
@@ -2868,7 +3428,7 @@
     {
       "id": "chrome-gpucache",
       "name": "Google Chrome: gpucache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Google/Chrome/User Data/*/GPUCache",
       "processes": [
         "chrome.exe"
@@ -2895,7 +3455,7 @@
     {
       "id": "chrome-offline",
       "name": "Google Chrome: offline",
-      "category": "build_cache",
+      "category": "app_data",
       "suffix": "AppData/Local/Google/Chrome/User Data/*/Service Worker/CacheStorage",
       "processes": [
         "chrome.exe"
@@ -2922,7 +3482,7 @@
     {
       "id": "edge-cache",
       "name": "Microsoft Edge: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Microsoft/Edge/User Data/*/Cache",
       "processes": [
         "msedge.exe"
@@ -2949,7 +3509,7 @@
     {
       "id": "edge-code-cache",
       "name": "Microsoft Edge: code-cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Microsoft/Edge/User Data/*/Code Cache",
       "processes": [
         "msedge.exe"
@@ -2976,7 +3536,7 @@
     {
       "id": "edge-gpucache",
       "name": "Microsoft Edge: gpucache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Microsoft/Edge/User Data/*/GPUCache",
       "processes": [
         "msedge.exe"
@@ -3003,7 +3563,7 @@
     {
       "id": "edge-offline",
       "name": "Microsoft Edge: offline",
-      "category": "build_cache",
+      "category": "app_data",
       "suffix": "AppData/Local/Microsoft/Edge/User Data/*/Service Worker/CacheStorage",
       "processes": [
         "msedge.exe"
@@ -3030,7 +3590,7 @@
     {
       "id": "brave-cache",
       "name": "Brave: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*/Cache",
       "processes": [
         "brave.exe"
@@ -3057,7 +3617,7 @@
     {
       "id": "brave-code-cache",
       "name": "Brave: code-cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*/Code Cache",
       "processes": [
         "brave.exe"
@@ -3084,7 +3644,7 @@
     {
       "id": "brave-gpucache",
       "name": "Brave: gpucache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*/GPUCache",
       "processes": [
         "brave.exe"
@@ -3111,7 +3671,7 @@
     {
       "id": "brave-offline",
       "name": "Brave: offline",
-      "category": "build_cache",
+      "category": "app_data",
       "suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*/Service Worker/CacheStorage",
       "processes": [
         "brave.exe"
@@ -3138,7 +3698,7 @@
     {
       "id": "chromium-cache",
       "name": "Chromium: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Chromium/User Data/*/Cache",
       "processes": [
         "chrome.exe"
@@ -3165,7 +3725,7 @@
     {
       "id": "chromium-code-cache",
       "name": "Chromium: code-cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Chromium/User Data/*/Code Cache",
       "processes": [
         "chrome.exe"
@@ -3192,7 +3752,7 @@
     {
       "id": "chromium-gpucache",
       "name": "Chromium: gpucache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Chromium/User Data/*/GPUCache",
       "processes": [
         "chrome.exe"
@@ -3219,7 +3779,7 @@
     {
       "id": "chromium-offline",
       "name": "Chromium: offline",
-      "category": "build_cache",
+      "category": "app_data",
       "suffix": "AppData/Local/Chromium/User Data/*/Service Worker/CacheStorage",
       "processes": [
         "chrome.exe"
@@ -3246,7 +3806,7 @@
     {
       "id": "firefox-cache",
       "name": "Firefox: cache",
-      "category": "build_cache",
+      "category": "cache",
       "suffix": "AppData/Local/Mozilla/Firefox/Profiles/*/cache2",
       "processes": [
         "firefox.exe"
@@ -3273,7 +3833,7 @@
     {
       "id": "wxwork-data",
       "name": "WeCom: data",
-      "category": "build_cache",
+      "category": "app_data",
       "suffix": "AppData/Roaming/Tencent/WXWork",
       "processes": [
         "wxwork.exe",
@@ -3305,7 +3865,7 @@
     {
       "id": "wxwork-logs",
       "name": "WeCom: logs",
-      "category": "cache",
+      "category": "logs",
       "suffix": "AppData/Roaming/Tencent/WXWork/Log",
       "processes": [
         "wxwork.exe",
@@ -3327,6 +3887,93 @@
           [
             "Log",
             "WeChatOCR"
+          ]
+        ],
+        "sources": [
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "xwechat-data",
+      "name": "WeChat: data",
+      "category": "app_data",
+      "suffix": "AppData/Roaming/Tencent/xwechat",
+      "processes": [
+        "weixin.exe",
+        "wechat.exe",
+        "wechatappex.exe"
+      ],
+      "knowledge": {
+        "application": "WeChat",
+        "purpose": "账号、配置、数据库与附件混合；须完全退出客户端（含托盘）后整目录迁移，需人工确认。",
+        "kind": "mixed",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Tencent/xwechat",
+        "markers": [
+          [
+            "config",
+            "login"
+          ]
+        ],
+        "sources": [
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "wemeet-data",
+      "name": "Tencent Meeting: data",
+      "category": "app_data",
+      "suffix": "AppData/Roaming/Tencent/WeMeet",
+      "processes": [
+        "wemeetapp.exe"
+      ],
+      "knowledge": {
+        "application": "Tencent Meeting",
+        "purpose": "账号、配置、数据库与附件混合；须完全退出客户端（含托盘）后整目录迁移，需人工确认。",
+        "kind": "mixed",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Tencent/WeMeet",
+        "markers": [
+          [
+            "Global",
+            "config_info.ini"
+          ]
+        ],
+        "sources": [
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "wemail-data",
+      "name": "WeMail: data",
+      "category": "app_data",
+      "suffix": "AppData/Roaming/Tencent/WeMail",
+      "processes": [
+        "wemail.exe",
+        "wemailnode_x64.exe"
+      ],
+      "knowledge": {
+        "application": "WeMail",
+        "purpose": "账号、配置、数据库与附件混合；须完全退出客户端（含托盘）后整目录迁移，需人工确认。",
+        "kind": "mixed",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Tencent/WeMail",
+        "markers": [
+          [
+            "sqlite",
+            "config"
           ]
         ],
         "sources": [

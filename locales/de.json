@@ -323,5 +323,7 @@
   "system.path": "Befehlspfade müssen absolut sein und dürfen keine Prozentzeichen, Anführungszeichen oder Zeilenumbrüche enthalten.",
   "system.residue": "Im Quellordner verbleiben Daten oder neue Inhalte. Bereinigung gestoppt; Daten bleiben erhalten.",
   "system.changed": "Ordnerinhalt oder Identität geändert. Vorgang gestoppt; Daten bleiben erhalten.",
-  "system.policy": "Daten, Attribute und Dateizeiten bleiben erhalten. Berechtigungen werden vom Zielordner geerbt."
+  "system.policy": "Daten, Attribute und Dateizeiten bleiben erhalten. Berechtigungen werden vom Zielordner geerbt.",
+  "rule.review": "{0} (review first)",
+  "scan.skipped_links": "Not listed for restore: {0} Windows-managed links, {1} package-manager links under node_modules and {2} links whose target is on the same drive."
 }

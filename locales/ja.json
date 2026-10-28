@@ -323,5 +323,7 @@
   "system.path": "コマンドのパスは絶対パスとし、パーセント記号、引用符、改行は使用できません。",
   "system.residue": "元のフォルダーに残存または新規データがあります。削除を停止し、データを保持しました。",
   "system.changed": "フォルダーの内容または識別情報が変わりました。処理を停止し、データを保持しました。",
-  "system.policy": "データ、属性、ファイル時刻を保持します。権限は移行先から継承します。"
+  "system.policy": "データ、属性、ファイル時刻を保持します。権限は移行先から継承します。",
+  "rule.review": "{0} (review first)",
+  "scan.skipped_links": "Not listed for restore: {0} Windows-managed links, {1} package-manager links under node_modules and {2} links whose target is on the same drive."
 }

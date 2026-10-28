@@ -243,19 +243,23 @@ class NativeAcceptance(unittest.TestCase):
         self.assertEqual((target / "日本語-한국어.txt").read_bytes(), b"app update")
         self.assertEqual(history(state)[0]["phase"], "completed")
 
-    # P02: a handmade junction is found by scanning the whole volume (NTFS MFT path), not only a folder.
+    # P02: a handmade cross-drive junction is found by scanning the whole volume (NTFS MFT path);
+    # a same-drive junction frees nothing and is not listed.
     def test_p02_volume_restore_scan_finds_handmade_junction(self):
         holder = self.second_volume()
         (holder / "freeport-fixture.marker").write_bytes(b"FreePort test fixture\n")
-        target, link = holder / "real", holder / "link"
+        target, link, local = fixture("p02") / "real", holder / "link", holder / "local"
         populate(target)
+        populate(holder / "real")
         run("__junction-test", "--source", link, "--target", target)
+        run("__junction-test", "--source", local, "--target", holder / "real")
         drive = Path(args.second_volume).drive
         report = json.loads(run("scan", "--volumes", drive, "--mode", "restore",
                                 "--state", BASE / "p02-state").stdout)
         self.assertTrue(any("MFT" in b for b in report["backends"]), report["backends"])
         found = {os.path.normcase(r["candidate"]["source"]) for r in report["rows"]}
         self.assertIn(os.path.normcase(str(link)), found)
+        self.assertNotIn(os.path.normcase(str(local)), found)
 
     # P04: robocopy cannot read a locked file -> source untouched, no cleanup, recover rolls back.
     def test_p04_locked_file_keeps_source(self):

@@ -463,20 +463,48 @@ pub fn run_with_store(
         pack = crate::rules::builtin();
     }
     if mode == "restore" {
+        // Whole-volume scans list what can be moved back; links that stay on the same
+        // drive free nothing and are usually owned by an application (pnpm, shared skills).
+        let volumes: Vec<_> = roots.iter().filter(|r| r.parent().is_none()).collect();
+        let (mut managed, mut packages, mut local) = (0usize, 0usize, 0usize);
         for (path, a) in &paths {
-            if a & FILE_ATTRIBUTE_REPARSE_POINT != 0 {
-                if junction::exists(path).unwrap_or(false)
-                    || fs::symlink_metadata(path)
-                        .map(|m| m.file_type().is_symlink() && a & FILE_ATTRIBUTE_DIRECTORY != 0)
-                        .unwrap_or(false)
-                {
-                    candidates.push(catalog::custom(
-                        path,
-                        crate::i18n::t("msg.578847e2b1"),
-                        "link",
-                    ));
-                }
+            if a & FILE_ATTRIBUTE_REPARSE_POINT == 0
+                || a & FILE_ATTRIBUTE_DIRECTORY == 0
+                || container_layer(path)
+            {
+                continue;
             }
+            let target = if junction::exists(path).unwrap_or(false) {
+                junction::get_target(path).ok()
+            } else if fs::symlink_metadata(path).is_ok_and(|m| m.file_type().is_symlink()) {
+                fs::read_link(path).ok()
+            } else {
+                continue;
+            };
+            if a & FILE_ATTRIBUTE_SYSTEM != 0 || windows_managed(path) {
+                managed += 1;
+            } else if path
+                .components()
+                .any(|c| c.as_os_str().eq_ignore_ascii_case("node_modules"))
+            {
+                packages += 1;
+            } else if volumes.iter().any(|v| p::within(path, v))
+                && target.is_some_and(|t| same_drive(path, &t))
+            {
+                local += 1;
+            } else {
+                candidates.push(catalog::custom(
+                    path,
+                    crate::i18n::t("msg.578847e2b1"),
+                    "link",
+                ));
+            }
+        }
+        if managed + packages + local > 0 {
+            warnings.push(crate::i18n::format(
+                "scan.skipped_links",
+                &[managed.to_string(), packages.to_string(), local.to_string()],
+            ));
         }
     } else {
         for root in roots {
@@ -550,6 +578,49 @@ pub fn run_with_store(
         backends,
         scope_roots,
     })
+}
+/// Links Windows creates and owns: legacy profile aliases carry the system attribute;
+/// Store app moves, Defender platform versions and anything under \Windows do not.
+fn windows_managed(path: &Path) -> bool {
+    let parts: Vec<String> = path
+        .components()
+        .filter_map(|c| match c {
+            std::path::Component::Normal(n) => Some(n.to_string_lossy().to_lowercase()),
+            _ => None,
+        })
+        .collect();
+    parts.first().is_some_and(|c| c == "windows")
+        || parts.iter().any(|c| c == "windowsapps")
+        || parts.starts_with(&[
+            "programdata".into(),
+            "microsoft".into(),
+            "windows defender".into(),
+        ])
+}
+/// Windows Sandbox/container image layers hold ~100k non-link reparse directories;
+/// opening each one dominated whole-volume restore scans.
+fn container_layer(path: &Path) -> bool {
+    let parts: Vec<String> = path
+        .components()
+        .filter_map(|c| match c {
+            std::path::Component::Normal(n) => Some(n.to_string_lossy().to_lowercase()),
+            _ => None,
+        })
+        .take(4)
+        .collect();
+    parts == ["programdata", "microsoft", "windows", "containers"]
+}
+fn same_drive(link: &Path, target: &Path) -> bool {
+    let drive = |p: &Path| match p.components().next() {
+        Some(std::path::Component::Prefix(x)) => match x.kind() {
+            std::path::Prefix::Disk(d) | std::path::Prefix::VerbatimDisk(d) => {
+                Some(d.to_ascii_uppercase())
+            }
+            _ => None,
+        },
+        _ => None,
+    };
+    drive(link).is_some() && drive(link) == drive(target)
 }
 pub fn measure(rows: &mut [Row], progress: &dyn Fn(String)) {
     let _ = measure_with_control(rows, progress, &crate::engine::Control::default());
@@ -633,6 +704,37 @@ mod tests {
         }
     }
     #[test]
+    fn windows_owned_links_are_not_restore_candidates() {
+        for path in [
+            r"C:\Windows\ServiceProfiles\x\Application Data",
+            r"C:\Program Files\WindowsApps\Vendor.App_1.0_x64__id",
+            r"C:\ProgramData\Microsoft\Windows Defender\Platform\CurrentVersion",
+        ] {
+            assert!(windows_managed(Path::new(path)), "{path}");
+        }
+        for path in [
+            r"C:\Users\x\AppData\Roaming\Cursor",
+            r"D:\Windows-backup\data",
+            r"C:\Users\x\Windows\link",
+        ] {
+            assert!(!windows_managed(Path::new(path)), "{path}");
+        }
+        assert!(container_layer(Path::new(
+            r"C:\ProgramData\Microsoft\Windows\Containers\BaseImages\x\y"
+        )));
+        assert!(!container_layer(Path::new(
+            r"C:\ProgramData\Microsoft\Windows"
+        )));
+        assert!(same_drive(Path::new(r"C:\a"), Path::new(r"c:\b")));
+        assert!(same_drive(Path::new(r"C:\a"), Path::new(r"\\?\C:\b")));
+        assert!(!same_drive(Path::new(r"C:\a"), Path::new(r"D:\b")));
+        assert!(!same_drive(Path::new(r"C:\a"), Path::new(r"..\b")));
+        assert!(!same_drive(
+            Path::new(r"C:\a"),
+            Path::new(r"\\?\Volume{00000000-0000-0000-0000-000000000000}\b")
+        ));
+    }
+    #[test]
     fn rejects_malformed_records() {
         assert!(parse(&[0; 7]).is_err());
         let mut x = vec![0; 68];
@@ -663,9 +765,18 @@ mod tests {
             attrs: FILE_ATTRIBUTE_DIRECTORY,
         };
         let map: HashMap<u64, Name> = [
-            (0x10_0000_0000_1001, name(0x10_0000_0000_1001, root_ref, "Users")),
-            (0x20_0000_0000_2002, name(0x20_0000_0000_2002, 0x10_0000_0000_1001, "me")),
-            (0x30_0000_0000_3003, name(0x30_0000_0000_3003, 0x77_0000_0000_9999, "orphan")),
+            (
+                0x10_0000_0000_1001,
+                name(0x10_0000_0000_1001, root_ref, "Users"),
+            ),
+            (
+                0x20_0000_0000_2002,
+                name(0x20_0000_0000_2002, 0x10_0000_0000_1001, "me"),
+            ),
+            (
+                0x30_0000_0000_3003,
+                name(0x30_0000_0000_3003, 0x77_0000_0000_9999, "orphan"),
+            ),
         ]
         .into_iter()
         .collect();

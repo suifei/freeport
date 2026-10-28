@@ -323,5 +323,7 @@
   "system.path": "系統命令路徑必須為絕對路徑，不能包含百分號、引號或換行。",
   "system.residue": "來源目錄仍有殘留或新內容，已停止清理並保留現有資料。",
   "system.changed": "目錄內容或身分發生變化，已停止操作並保留現有資料。",
-  "system.policy": "系統複製保留資料、屬性及檔案時間；權限繼承目標目錄。"
+  "system.policy": "系統複製保留資料、屬性及檔案時間；權限繼承目標目錄。",
+  "rule.review": "{0} (review first)",
+  "scan.skipped_links": "Not listed for restore: {0} Windows-managed links, {1} package-manager links under node_modules and {2} links whose target is on the same drive."
 }
