@@ -202,6 +202,34 @@ fn parse(b: &[u8]) -> Result<(u64, Vec<Name>)> {
     }
     Ok((u64_at(b, 0), out))
 }
+/// NTFS always stores the volume root directory in MFT record 5. FSCTL_ENUM_USN_DATA never
+/// returns that record itself, so a parent reference to it has to be recognised directly.
+const ROOT_RECORD: u64 = 5;
+fn resolve(
+    id: u64,
+    map: &HashMap<u64, Name>,
+    cache: &mut HashMap<u64, PathBuf>,
+    root: &Path,
+    depth: usize,
+) -> Option<PathBuf> {
+    if depth > 256 {
+        return None;
+    }
+    if id & 0xFFFF_FFFF_FFFF == ROOT_RECORD {
+        return Some(root.to_path_buf());
+    }
+    if let Some(v) = cache.get(&id) {
+        return Some(v.clone());
+    }
+    let n = map.get(&id)?;
+    let path = if n.id == n.parent || n.name == vec![b'.' as u16] {
+        root.to_path_buf()
+    } else {
+        resolve(n.parent, map, cache, root, depth + 1)?.join(String::from_utf16(&n.name).ok()?)
+    };
+    cache.insert(id, path.clone());
+    Some(path)
+}
 fn mft(
     root: &Path,
     progress: &dyn Fn(String),
@@ -258,28 +286,6 @@ fn mft(
                 &[format!("{}", map.len())],
             ));
         }
-    }
-    fn resolve(
-        id: u64,
-        map: &HashMap<u64, Name>,
-        cache: &mut HashMap<u64, PathBuf>,
-        root: &Path,
-        depth: usize,
-    ) -> Option<PathBuf> {
-        if depth > 256 {
-            return None;
-        }
-        if let Some(v) = cache.get(&id) {
-            return Some(v.clone());
-        }
-        let n = map.get(&id)?;
-        let path = if n.id == n.parent || n.name == vec![b'.' as u16] {
-            root.to_path_buf()
-        } else {
-            resolve(n.parent, map, cache, root, depth + 1)?.join(String::from_utf16(&n.name).ok()?)
-        };
-        cache.insert(id, path.clone());
-        Some(path)
     }
     let mut cache = HashMap::new();
     let mut out = vec![];
@@ -644,6 +650,32 @@ mod tests {
         x[66..68].copy_from_slice(&60u16.to_le_bytes());
         x[68..70].copy_from_slice(&('a' as u16).to_le_bytes());
         assert_eq!(parse(&x).unwrap().1.len(), 1);
+    }
+    #[test]
+    fn paths_resolve_without_an_enumerated_root_record() {
+        // Real volumes: children of the root point at record 5 (with a sequence number in the
+        // high 16 bits), and the enumeration never contains record 5 itself.
+        let root_ref = (5u64 << 48) | ROOT_RECORD;
+        let name = |id, parent, s: &str| Name {
+            id,
+            parent,
+            name: s.encode_utf16().collect(),
+            attrs: FILE_ATTRIBUTE_DIRECTORY,
+        };
+        let map: HashMap<u64, Name> = [
+            (0x10_0000_0000_1001, name(0x10_0000_0000_1001, root_ref, "Users")),
+            (0x20_0000_0000_2002, name(0x20_0000_0000_2002, 0x10_0000_0000_1001, "me")),
+            (0x30_0000_0000_3003, name(0x30_0000_0000_3003, 0x77_0000_0000_9999, "orphan")),
+        ]
+        .into_iter()
+        .collect();
+        let root = Path::new(r"C:\");
+        let mut cache = HashMap::new();
+        assert_eq!(
+            resolve(0x20_0000_0000_2002, &map, &mut cache, root, 0).unwrap(),
+            Path::new(r"C:\Users\me")
+        );
+        assert!(resolve(0x30_0000_0000_3003, &map, &mut cache, root, 0).is_none());
     }
     #[test]
     fn twenty_thousand_malformed_buffers_do_not_panic() {
