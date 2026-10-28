@@ -17,16 +17,18 @@ jobs:
           toolchain: stable-x86_64-pc-windows-gnu
           targets: x86_64-pc-windows-gnu
           components: rustfmt
-      # The runner image ships an MSVCRT MinGW-w64; the build only needs its windres.
-      # MSYS2's UCRT64 would mix C runtimes with the msvcrt-based Rust gnu target.
-      - name: Use the runner's MSVCRT MinGW-w64
-        shell: powershell
-        run: |
-          $bin = 'C:\mingw64\bin'
-          if (-not (Test-Path -LiteralPath "$bin\windres.exe")) { throw "MinGW-w64 not found at $bin" }
-          $config = cmd /c "`"$bin\gcc.exe`" -v 2>&1" | Out-String
-          if ($config -match 'msvcrt=ucrt') { throw 'Runner MinGW-w64 targets UCRT; the build expects MSVCRT.' }
-          [IO.File]::AppendAllText($env:GITHUB_PATH, "$bin`n")
+      # The build needs an MSVCRT MinGW-w64 (MINGW64). UCRT64 and the runner's own
+      # C:\mingw64 link the UCRT, which the PE import audit rejects, so the MINGW64
+      # deprecation notice is acknowledged rather than followed.
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-binutils
+          path-type: inherit
+          suppress-deprecation-warnings: msystem-mingw64
+      - name: Add the MSVCRT MinGW toolchain
+        shell: msys2 {0}
+        run: cygpath -w /mingw64/bin >> "$GITHUB_PATH"
       - name: Unit and boundary tests (failures are never skipped)
         shell: powershell
         run: cargo +stable-x86_64-pc-windows-gnu test --locked --lib --target x86_64-pc-windows-gnu
