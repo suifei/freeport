@@ -73,7 +73,7 @@ with zipfile.ZipFile(archive) as check:
         raise SystemExit("Project source or reports are forbidden in the binary archive")
 digest = hashlib.sha256(archive.read_bytes()).hexdigest()
 checksum = DIST / (name + ".sha256")
-checksum.write_text(f"{digest}  {archive.name}\n", encoding="ascii")
+checksum.write_text(f"{digest}  {archive.name}\n", encoding="ascii", newline="\n")
 report = {"version": VERSION, "source_commit": git("rev-parse", "HEAD"), "binaries": binaries,
     "interface_tests": smoke, "pe_audit": pe,
     "archive": {"filename": archive.name, "bytes": archive.stat().st_size, "sha256": digest, "contains_project_source": False}}
