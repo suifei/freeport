@@ -228,6 +228,10 @@ pub fn run() -> Result<()> {
             };
             eprintln!("{}", crate::i18n::t("msg.5960ff2c33"));
             eprintln!("{}", crate::i18n::t("system.policy"));
+            let users = engine::in_use(&sources);
+            if !users.is_empty() {
+                eprint!("{}", crate::handles::advice(&users));
+            }
             confirm(yes)?;
             let result = elevation::execute(
                 &Job::Restore {
@@ -255,6 +259,12 @@ pub fn run() -> Result<()> {
                     serde_json::to_string_pretty(&engine::history(&store)?)?
                 );
             }
+            for dir in engine::leftover_dirs(&store)? {
+                eprintln!(
+                    "{}",
+                    crate::i18n::format("history.leftover", &[dir.display().to_string()])
+                );
+            }
         }
         "recover" => {
             let id = value("--transaction").ok_or(crate::i18n::t("msg.99e1d53c23"))?;
@@ -273,10 +283,13 @@ pub fn run() -> Result<()> {
                 )?)?
             );
         }
-        "handles" => println!(
-            "{}",
-            serde_json::to_string_pretty(&handles::discover(&[path("--path")?])?)?
-        ),
+        "handles" => {
+            let (rows, note) = handles::query(&[path("--path")?])?;
+            if !note.is_empty() {
+                eprintln!("{note}");
+            }
+            println!("{}", serde_json::to_string_pretty(&rows)?);
+        }
         "rules" => {
             if let Some(file) = value("--import") {
                 let p = rules::import(Path::new(&file), &store)?;

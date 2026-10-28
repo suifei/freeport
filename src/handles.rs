@@ -289,6 +289,10 @@ pub fn maybe_helper() -> bool {
     true
 }
 pub fn discover(roots: &[PathBuf]) -> Result<Vec<OpenHandle>> {
+    Ok(query(roots)?.0)
+}
+/// Open handles plus the helper's note on handles it could not resolve in time.
+pub fn query(roots: &[PathBuf]) -> Result<(Vec<OpenHandle>, String)> {
     let roots: Vec<_> = roots
         .iter()
         .map(|r| p::absolute(r))
@@ -343,14 +347,13 @@ pub fn discover(roots: &[PathBuf]) -> Result<Vec<OpenHandle>> {
                     errors.join().unwrap_or_default().trim()
                 ));
             }
-            let note = errors.join().unwrap_or_default();
-            if !note.trim().is_empty() {
-                eprintln!("{}", note.trim());
-            }
-            return Ok(rows
-                .into_iter()
-                .filter(|h| h.pid != std::process::id())
-                .collect());
+            let note = errors.join().unwrap_or_default().trim().to_string();
+            return Ok((
+                rows.into_iter()
+                    .filter(|h| h.pid != std::process::id())
+                    .collect(),
+                note,
+            ));
         }
         if start.elapsed() > Duration::from_secs(30) {
             let _ = child.kill();

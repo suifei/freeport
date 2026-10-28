@@ -682,6 +682,44 @@ pub fn history(store: &Path) -> Result<Vec<Record>> {
     out.sort_by(|a, b| b.id.cmp(&a.id));
     Ok(out)
 }
+/// `.freeport-<id>.stage/.hold` directories beside known sources and targets that no
+/// open transaction owns: interrupted runs from other state directories, or copies kept
+/// on purpose after a rollback. Listed for the user to inspect; never deleted here.
+pub fn leftover_dirs(store: &Path) -> Result<Vec<PathBuf>> {
+    let records = history(store)?;
+    let mut parents: Vec<PathBuf> = vec![];
+    for r in &records {
+        for p in [&r.stage, &r.hold] {
+            if let Some(parent) = p.parent() {
+                if !parents.iter().any(|x| p::same(x, parent)) {
+                    parents.push(parent.to_path_buf());
+                }
+            }
+        }
+    }
+    let mut found = vec![];
+    for parent in parents {
+        let Ok(entries) = fs::read_dir(&parent) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let Some(id) = name
+                .strip_prefix(".freeport-")
+                .and_then(|n| n.strip_suffix(".stage").or_else(|| n.strip_suffix(".hold")))
+            else {
+                continue;
+            };
+            let open = records.iter().any(|r| {
+                r.id == id && !["completed", "restored", "rolled_back"].contains(&r.phase.as_str())
+            });
+            if !open && entry.file_type().is_ok_and(|t| t.is_dir()) {
+                found.push(entry.path());
+            }
+        }
+    }
+    Ok(found)
+}
 fn pending(store: &Path) -> Result<()> {
     for r in history(store)? {
         if !["completed", "restored", "rolled_back"].contains(&r.phase.as_str()) {
@@ -843,6 +881,13 @@ fn link_target(source: &Path) -> Result<PathBuf> {
     }
     Ok(t)
 }
+/// Programs using the selected directories. A link's real directory is checked too,
+/// because handles opened through a link resolve to the real path.
+pub fn in_use(sources: &[PathBuf]) -> Vec<handles::User> {
+    let mut roots = sources.to_vec();
+    roots.extend(sources.iter().filter_map(|s| junction::get_target(s).ok()));
+    handles::users(&roots)
+}
 pub fn restore(
     source: &Path,
     store: &Path,
@@ -888,6 +933,14 @@ fn restore_tracked(
     on_prepared(&r)?;
     fault("prepared");
     let result = (|| -> Result<()> {
+        let users = in_use(std::slice::from_ref(&source));
+        if !users.is_empty() {
+            return fail(format!(
+                "{}{}",
+                handles::advice(&users),
+                crate::i18n::t("handles.users_stop")
+            ));
+        }
         let (bytes, _) = survey(&target, control, progress)?;
         if p::free_space(parent)? < bytes.saturating_add(64 * 1024 * 1024) {
             return fail(crate::i18n::t("msg.79e02a1c25"));
@@ -919,6 +972,10 @@ fn restore_tracked(
     })();
     if let Err(e) = result {
         r.error = Some(crate::i18n::describe_error(e.as_ref()));
+        // Nothing was copied or renamed yet; an open record would block later work.
+        if r.phase == "prepared" {
+            r.phase = "rolled_back".into();
+        }
         save(store, &r)?;
         return fail(crate::i18n::format(
             "msg.45d9c68408",

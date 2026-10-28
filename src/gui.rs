@@ -611,6 +611,11 @@ unsafe fn apply(ui: &mut Ui) {
                 for p in &sources {
                     preview.push_str(&format!("\n{}", p.display()));
                 }
+                let users = engine::in_use(&sources);
+                if !users.is_empty() {
+                    preview.push_str("\n");
+                    preview.push_str(&handles::advice(&users));
+                }
                 Job::Restore {
                     sources,
                     store,
@@ -674,7 +679,14 @@ unsafe fn recover(ui: &mut Ui) {
     let pending = engine::history(&store).and_then(|rs| {
         rs.into_iter()
             .find(|r| !["completed", "restored", "rolled_back"].contains(&r.phase.as_str()))
-            .ok_or_else(|| l::t("msg.940d6b1834").into())
+            .ok_or_else(|| {
+                let mut text = l::t("msg.940d6b1834").to_string();
+                for dir in engine::leftover_dirs(&store).unwrap_or_default() {
+                    text.push('\n');
+                    text.push_str(&l::format("history.leftover", &[dir.display().to_string()]));
+                }
+                text.into()
+            })
     });
     match pending {
         Err(e) => {

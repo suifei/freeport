@@ -331,5 +331,6 @@
   "handles.user": "  {0} ({1}, {2} processes)\n",
   "handles.user_inside": "  {0} ({1}, {2} processes, started from this directory)\n",
   "handles.users_stop": "Copying has not started; the original directory is unchanged.",
-  "system.residue_at": "robocopy left {0} in place (not copied, changed or new); stopped and kept the data."
+  "system.residue_at": "robocopy left {0} in place (not copied, changed or new); stopped and kept the data.",
+  "history.leftover": "Leftover directory not owned by an open transaction; delete it by hand once you have checked it: {0}"
 }

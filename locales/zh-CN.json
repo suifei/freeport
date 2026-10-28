@@ -331,5 +331,6 @@
   "handles.user": "  {0}（{1}，{2} 个进程）\n",
   "handles.user_inside": "  {0}（{1}，{2} 个进程，从该目录运行）\n",
   "handles.users_stop": "尚未开始复制，原目录未改动。",
-  "system.residue_at": "robocopy 未能移走 {0}（未复制、已变化或新增），已停止且保留数据。"
+  "system.residue_at": "robocopy 未能移走 {0}（未复制、已变化或新增），已停止且保留数据。",
+  "history.leftover": "未关联未完成事务的遗留目录，确认无用后可手动删除：{0}"
 }
