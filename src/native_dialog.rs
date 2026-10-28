@@ -2,10 +2,49 @@
 use freeport::{i18n as l, platform as p};
 use std::{fs, path::PathBuf, ptr};
 use windows_sys::Win32::{
-    Foundation::*, Graphics::Gdi::*, System::LibraryLoader::GetModuleHandleW,
-    UI::WindowsAndMessaging::*,
+    Foundation::*,
+    Graphics::Gdi::*,
+    System::LibraryLoader::GetModuleHandleW,
+    UI::{Input::KeyboardAndMouse::SetFocus, WindowsAndMessaging::*},
 };
 const DWLP_USER: i32 = (2 * std::mem::size_of::<isize>()) as i32;
+thread_local! { static FONT: std::cell::Cell<HFONT> = const { std::cell::Cell::new(ptr::null_mut()) }; }
+/// Segoe UI at the system DPI, matching the main window; created once per UI thread.
+unsafe fn font() -> HFONT {
+    FONT.with(|f| {
+        if f.get().is_null() {
+            let screen = GetDC(ptr::null_mut());
+            let dpi = GetDeviceCaps(screen, LOGPIXELSX as i32).max(96);
+            ReleaseDC(ptr::null_mut(), screen);
+            f.set(CreateFontW(
+                -13 * dpi / 96,
+                0,
+                0,
+                0,
+                400,
+                0,
+                0,
+                0,
+                DEFAULT_CHARSET as u32,
+                0,
+                0,
+                CLEARTYPE_QUALITY as u32,
+                0,
+                p::wide("Segoe UI").as_ptr(),
+            ));
+        }
+        f.get()
+    })
+}
+/// Dialogs and their read-only text paint on the window background, like the main window.
+unsafe fn background(m: u32, w: usize) -> Option<isize> {
+    if m == WM_CTLCOLORDLG || m == WM_CTLCOLORSTATIC {
+        SetBkColor(w as HDC, GetSysColor(COLOR_WINDOW));
+        SetTextColor(w as HDC, GetSysColor(COLOR_WINDOWTEXT));
+        return Some(GetSysColorBrush(COLOR_WINDOW) as isize);
+    }
+    None
+}
 fn template(width: i16, height: i16) -> Vec<u32> {
     let style = WS_POPUP | WS_CAPTION | WS_SYSMENU | DS_MODALFRAME as u32 | DS_CENTER as u32;
     let mut words = vec![
@@ -59,7 +98,7 @@ unsafe fn control(
         GetModuleHandleW(ptr::null()),
         ptr::null(),
     );
-    SendMessageW(c, WM_SETFONT, GetStockObject(DEFAULT_GUI_FONT) as usize, 1);
+    SendMessageW(c, WM_SETFONT, font() as usize, 1);
     c
 }
 unsafe fn set(h: HWND, s: &str) {
@@ -89,11 +128,13 @@ unsafe extern "system" fn message_proc(hwnd: HWND, m: u32, w: usize, param: isiz
         set(hwnd, &format!("FreePort — {title}"));
         let mut r: RECT = std::mem::zeroed();
         GetClientRect(hwnd, &mut r);
+        // A multi-line EDIT only breaks lines at CRLF.
+        let text = d.text.replace("\r\n", "\n").replace('\n', "\r\n");
         control(
             hwnd,
             10,
             "EDIT",
-            &d.text,
+            &text,
             WS_TABSTOP
                 | WS_VSCROLL
                 | ES_MULTILINE as u32
@@ -133,7 +174,12 @@ unsafe extern "system" fn message_proc(hwnd: HWND, m: u32, w: usize, param: isiz
                 30,
             );
         }
-        return 1;
+        // Focus the default button so the text is not shown fully selected.
+        SetFocus(GetDlgItem(hwnd, choices[0].0));
+        return 0;
+    }
+    if let Some(brush) = background(m, w) {
+        return brush;
     }
     if m == WM_COMMAND {
         let id = w & 0xffff;
@@ -348,6 +394,9 @@ unsafe extern "system" fn picker_proc(hwnd: HWND, m: u32, w: usize, param: isize
         }
         fill(hwnd, d, base);
         return 1;
+    }
+    if let Some(brush) = background(m, w) {
+        return brush;
     }
     if m != WM_COMMAND && m != WM_CLOSE {
         return 0;

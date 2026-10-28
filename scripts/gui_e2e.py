@@ -40,13 +40,13 @@ ENUM = ctypes.WINFUNCTYPE(w.BOOL, w.HWND, w.LPARAM)
 user32.EnumWindows.argtypes = [ENUM, w.LPARAM]
 
 WM_SETTEXT, WM_GETTEXT, WM_GETTEXTLENGTH, WM_COMMAND, WM_CLOSE = 0x0C, 0x0D, 0x0E, 0x111, 0x10
-WM_KEYDOWN, VK_SPACE = 0x100, 0x20
+WM_KEYDOWN, VK_SPACE, VK_HOME = 0x100, 0x20, 0x24
 CB_SETCURSEL, CBN_SELCHANGE = 0x14E, 1
 BM_GETCHECK = 0xF0
-TVM_GETCOUNT, TVM_GETNEXTITEM, TVM_SELECTITEM, TVGN_ROOT, TVGN_CARET = 0x1105, 0x110A, 0x110B, 0, 9
+LVM_GETITEMCOUNT, LVM_GETITEMSTATE, LVIS_STATEIMAGEMASK = 0x1004, 0x102C, 0xF000
 IDOK, IDCANCEL, IDYES, IDNO = 1, 2, 6, 7
 # Control IDs from src/gui.rs.
-TREE, TARGET, STATUS, LOG = 3, 5, 6, 7
+LIST, TARGET, STATUS, LOG = 3, 5, 6, 7
 SCAN, ADD, APPLY, ALL, NONE, MODE, BROWSE, REQUEST, FORCE, RECOVER, ELEVATE = (
     101, 102, 103, 105, 106, 107, 108, 109, 110, 112, 114)
 
@@ -172,9 +172,9 @@ class Gui:
         user32.PostMessageW(self.main, WM_COMMAND, MODE | (CBN_SELCHANGE << 16), combo)
         self.click(ADD)
         self.pick(path)
-        # The scan runs on a worker thread; wait for it to finish and populate the tree.
+        # The scan runs on a worker thread; wait for it to finish and populate the list.
         self.wait(lambda: user32.IsWindowEnabled(self.item(SCAN))
-                  and user32.SendMessageW(self.item(TREE), TVM_GETCOUNT, 0, 0) > 0, "scan results")
+                  and user32.SendMessageW(self.item(LIST), LVM_GETITEMCOUNT, 0, 0) > 0, "scan results")
 
     def apply(self):
         self.click(APPLY)
@@ -264,13 +264,13 @@ class GuiFlow(unittest.TestCase):
         verify(target_a)
         verify(a)
 
-        # Keyboard toggle on the tree selects the candidate root; migrate appB.
+        # Keyboard toggle on the list checks the candidate row; migrate appB.
         gui.scan(b)
-        tree = gui.item(TREE)
-        top = user32.SendMessageW(tree, TVM_GETNEXTITEM, TVGN_ROOT, 0)
-        user32.SendMessageW(tree, TVM_SELECTITEM, TVGN_CARET, top)
-        user32.PostMessageW(tree, WM_KEYDOWN, VK_SPACE, 0)
-        time.sleep(0.5)
+        listing = gui.item(LIST)
+        user32.PostMessageW(listing, WM_KEYDOWN, VK_HOME, 0)
+        user32.PostMessageW(listing, WM_KEYDOWN, VK_SPACE, 0)
+        gui.wait(lambda: user32.SendMessageW(listing, LVM_GETITEMSTATE, 0, LVIS_STATEIMAGEMASK) >> 12 == 2,
+                 "keyboard check")
         set_text(gui.item(TARGET), str(dest_b))
         kind, h, preview = gui.apply()
         target_b = planned(preview, b)

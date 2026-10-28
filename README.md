@@ -1,147 +1,123 @@
-# FreePort — Set your C: drive free
+<div align="center">
 
-**Move your data. Keep your workflow.**
+<img src="resources/freeport.png" width="112" alt="FreePort icon">
+
+# FreePort
+
+**Set your C: drive free.**<br>
+Move your data. Keep your workflow.
+
+[![Release](https://img.shields.io/github/v/release/suifei/freeport?label=download&color=2563eb)](https://github.com/suifei/freeport/releases/latest)
+[![CI](https://github.com/suifei/freeport/actions/workflows/ci.yml/badge.svg)](https://github.com/suifei/freeport/actions/workflows/ci.yml)
+![Windows 10/11 x64](https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-0d9488)
+[![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-64748b)](#license)
 
 **English** · [简体中文](README.zh-CN.md)
 
-A Windows tool for moving space-hungry folders to another drive while keeping their original paths. Choose what to move, choose its new home, then start the move. Want it back? Restore it to the original location.
+</div>
 
-> **Status: development preview.** The current goal is production-ready core migration and restoration. There is no stable release for real data yet; the acceptance criteria are in section 8 of the [requirements](docs/requirements.md) (Chinese), and current progress is in the [implementation status](docs/implementation-status.md) (Chinese).
+FreePort moves the space-hungry folders under `AppData` and your home directory to another drive, then leaves a directory junction at the original path. Your apps keep using the path they know while the data lives where you chose. Want it back? Restore it.
+
+<p align="center"><img src="docs/images/screenshot.en.png" width="860" alt="FreePort main window: candidate folders with size, application and status"></p>
+
+## Download and use
+
+Get `FreePort-v1.0.0-windows-x64.zip` from [Releases](https://github.com/suifei/freeport/releases/latest), unzip, and run. No installer and no runtime to install.
+
+| File | Purpose |
+| --- | --- |
+| `freeport.exe` | Graphical interface |
+| `fp.exe` | Command line, sharing the same core and checks |
+
+**In the GUI:**
+
+1. **Scan.** Tick drives and choose *Scan selected drives*, or *Scan a folder…*. Scanning is read-only.
+2. **Select.** Each row is a recognized folder with its size, application and status. Nothing starts checked; grayed rows cannot be moved right now. Select a row to see its notes in the log.
+3. **Choose a destination.** Enter a destination root such as `D:\Dev`, choose *Review and run*, and check each `source → destination` and the programs currently using those folders.
+4. **Restore when needed.** Switch the mode to restoring links, scan the drive holding the junctions, check them, and restore.
+
+**From the command line:**
+
+```powershell
+fp scan --volumes C: --mode migrate --measure --out scan.json
+fp plan --scan scan.json --select <id> --destination D:\Dev --out plan.json
+fp apply --plan plan.json
+fp restore --source C:\Users\You\.cache\huggingface
+fp history
+```
+
+`fp --help` lists every command; `--state PATH` keeps transaction records in a folder you choose (portable use).
 
 ## “I installed my apps on D:. Why is C: full again?”
 
-You picked D: in the installer. You keep your projects on another drive. You even emptied the Recycle Bin.
+You picked D: in the installer, keep projects elsewhere, and emptied the Recycle Bin. C: is still red.
 
-C: is still red.
+An AI tool downloaded another model. Your editor added extensions. A compiler built its cache, and a package manager kept its own copy of everything, all under `AppData` or hidden folders in your home directory. Then an update fails, a build stops, or a download runs out of room halfway.
 
-An AI tool downloaded another model. Your editor added extensions and update files. A compiler built its cache. A package manager kept its own copy of everything. Somewhere under `AppData` or a hidden folder in your home directory, a few more gigabytes quietly became a lot more gigabytes.
+**Your computer has room. Your tools just keep choosing the same place.** If you're new to this, unfamiliar folders are scary to touch. If you're experienced, you can write `mklink`, but you still have to find folders, check what's using them, move data and remember what went where, every time. FreePort puts discovery, review, migration and restoration in one flow.
 
-Then an update fails. A build stops. A model download runs out of room halfway through. You have work to do, and now you're searching for something you can safely delete.
+## How it works
 
-Meanwhile, another drive has plenty of space.
-
-**Your computer has room. Your tools just keep choosing the same place.**
-
-This is why I'm building FreePort.
-
-## You shouldn't need a tutorial for every folder
-
-It makes sense to let an installer use its defaults. It also makes sense to hesitate before touching a folder you don't recognize.
-
-If you're new to this, `AppData`, hidden directories, and environment variables can make a simple storage problem feel like a system repair job. You want your space back without breaking the apps you depend on.
-
-If you've been doing this for years, you may already know how to change cache locations or create directory junctions. You still have to find the folders, check what's using them, move the data, verify it, and remember what went where. Then repeat for the next tool.
-
-**The hesitation is the same: “Will this still work after I move it?”**
-
-FreePort brings discovery, preview, migration, and restoration into one guided workflow, so you can see what will happen before you commit.
-
-## Give the data a new home. Keep the old address.
-
-FreePort's approach is straightforward: move a selected folder to a location you choose, then leave a directory junction at its original path. A junction lets software reach the new location through the path it already uses.
-
-For example:
-
-| | Original path | Where the data lives |
+| | Path your apps use | Where the data lives |
 | --- | --- | --- |
 | Before | `C:\Users\You\.cache\huggingface` | On C: |
-| After | The same path, now a junction | `D:\Dev\huggingface` |
+| After | Same path, now a junction | `D:\Dev\huggingface` |
 
-You choose the destination. Your tools keep their familiar address. FreePort's migration workflow preserves the original path without rewriting each app's configuration or environment variables.
+It relies on the tools Windows already ships:
 
-C: is the everyday pain point, but the design supports selecting other local NTFS drives too. Moving between two folders on the same drive will not free space on that drive.
+1. **Check.** Programs using the folder are listed by product name so you can close them. FreePort never ends processes.
+2. **Copy.** The system `robocopy` copies, multi-threaded, into a staging folder next to the destination; its exit code decides success.
+3. **Switch.** The staged copy takes its place and `robocopy /MOVE` retires the source. If any file is left behind, FreePort stops and keeps the data.
+4. **Link.** The system `mklink /J` creates the junction at the original path.
 
-## Choose once. Start the move. Bring it back when you need to.
-
-The intended GUI workflow is:
-
-1. **Scan your chosen drives.** See candidate folders, their locations, sizes as they become available, and any reasons they cannot be moved.
-2. **Select what you want to move.** Candidates start unchecked. Choose a destination and review each source → destination mapping.
-3. **Start migration.** FreePort copies and verifies the data before switching the original path to a junction, and reports each folder's result.
-4. **Restore when needed.** Scan the drive containing the junction, select it, review the space required, and restore a real directory at that location.
-
-**One click to start the move after you've reviewed your choices. One click to start restoration after its checks.** Large folders still take time to copy and verify; the goal is to save you the manual work.
-
-The GUI is for people who want to see and choose. The CLI `fp` uses the same core and the same checks.
-
-## Interface language
-
-The current iteration focuses on core migration and restoration, with Simplified Chinese as the maintained interface language. Existing English, Traditional Chinese, Japanese, Korean, and German resources remain but are not maintained for now; missing strings fall back to English.
+Every step is journaled. After a power loss or interruption, *Recover interrupted work* continues or rolls back from the journal and the actual disk state; each folder's result and the batch result are recorded separately.
 
 ## Built around the folders that keep growing
 
-The discovery rules are being designed around real sources of disk pressure:
+A built-in application knowledge pack (124 rules) recognizes folders by location and application markers, not by name alone:
 
-| What keeps growing | Examples in the planned coverage |
+| What keeps growing | Examples |
 | --- | --- |
-| AI tools and local models | Cursor, Claude Code, Kimi Code, Hugging Face, Ollama, Torch, ModelScope |
-| Compiler and build data | Go caches, Cargo caches, vcpkg downloads and build trees, C++ build caches |
-| Package caches | npm, pip, uv, pnpm, NuGet, Gradle |
-| Editor extensions | VS Code, Cursor, Obsidian plugins |
-| Application data | WeCom data, files, and caches, handled separately from unrelated folders |
+| AI tools and local models | Claude Code, Codex, Kimi Code, Cursor, Hugging Face, Ollama, Torch, ModelScope |
+| Compiler and build data | Rust toolchains / Cargo, Go, vcpkg, C++ IntelliSense |
+| Package caches | npm, pip, uv, pnpm, NuGet, Gradle, Playwright |
+| Editors and app data | VS Code, Cursor, Obsidian, WeCom and more |
 
-These are discovery targets, not a claim that every version or folder is safe to move. A familiar name is only a clue: each selected directory still needs its actual path, contents, links, permissions, and usage checked. Protected system locations and unsupported objects must be blocked with an explanation.
+See the [directory list](docs/application-storage-list.md) (Chinese). Folders marked for review are listed, but you should read their notes first.
 
-## “What if I want to undo it?”
+## Safety
 
-Restoration is part of the design from the start.
+- **Scanning is read-only.** It never starts a migration, restoration, deletion or repair.
+- **You decide.** Candidates and every optional switch start off; existing destination content is never silently merged or overwritten.
+- **Uncertainty stops the operation.** Failed copies, folders still in use, identity changes or unknown link types keep the data in place and explain why.
+- **No deleting through links.** Cleanup is `robocopy /MOVE` plus empty-directory removal; never an unverified recursive delete.
+- **Restore brings back current files**, including changes made since migration. Junctions you created by hand are found and restorable too.
+- **Everything stays local.** No telemetry, no network access, no uploads.
 
-Say your model cache lives on D:, reached through a junction on C:. Later, you want the files back on C:. FreePort scans C: for the junction, shows where it points and how much space restoration needs, then lets you confirm the move back.
+## FAQ
 
-**It brings back the current files**, including changes made since migration. This is a location change, not a backup or a return to an earlier version of your data.
+**Do I need administrator rights?**
+Whole-drive fast scanning (NTFS MFT) does; FreePort asks via UAC when needed and falls back to a normal scan if you decline. Migrating user folders usually doesn't.
 
-Discovery also covers supported directory links you created by hand, even without a FreePort history entry. For externally created links, or targets that may be used by other links, restoration keeps the target's contents so other users of that location are not disrupted.
+**Will every app work after migration?**
+Keeping the original path is the method, not a universal compatibility guarantee. Updaters, permissions and folder contents all matter; known restrictions are shown in the list and log.
 
-## Trust has to be earned with your data
+**Which drives are supported?**
+Local NTFS volumes. Network paths and other filesystems are out of scope. The destination needs enough space and must stay available while apps use the data.
 
-Some folders hold downloads you can replace. Others hold settings, conversations, and work you can't afford to lose. It makes sense to want more than a reassuring button before moving them.
+**How fast is it?**
+Scanning reads NTFS MFT/USN directly; copying uses `robocopy /MT:8`. Real time depends on data size and disk speed.
 
-FreePort's safety requirements put review and verification before cleanup, preserve data when something cannot be confirmed, and keep a record of interrupted work.
+## Interface language
 
-<details>
-<summary>Safety requirements and optional handling of occupied folders</summary>
+Simplified Chinese is the maintained interface language. English, Traditional Chinese, Japanese, Korean and German remain available but are not updated for new text; missing strings fall back to English.
 
-These requirements define the checks the product must pass:
+## Development
 
-- **Scanning is read-only.** It never starts a migration, restoration, deletion, or repair.
-- **You review the plan.** Nothing starts preselected, and existing destination content is never silently merged or overwritten.
-- **Verification comes before cleanup.** Copying, content verification, and required metadata checks precede removal of original data.
-- **Uncertainty stops the operation.** Changing files, identity mismatches, unsupported links, or failed verification require preserving data and reporting the problem.
-- **Interrupted work stays accountable.** Recovery uses transaction records and the actual disk state to determine whether work can continue or roll back. Every folder has its own result; partial completion stays partial completion.
+See the [requirements](docs/requirements.md), [technical design](docs/technical-design.md), [system command contract](docs/system-command-backend.md), [build and validation](docs/development.md) and [implementation status](docs/implementation-status.md) (Chinese). Written in Rust; the CLI and the native Win32 GUI share one core. Repository conventions are in [AGENTS.md](AGENTS.md).
 
-Cross-drive work takes multiple steps. These requirements must pass the [production acceptance tests](docs/requirements.md#8-投产验收) before use with real user data. They are acceptance criteria, not a promise that every failure can be instantly undone.
-
-### When another app is using the folder
-
-The first release only detects and lists the occupying apps and reasons; close them yourself and retry. FreePort does not end processes or close other apps' file handles. "Request app exit" and "force-close external handles" are planned for a later release together with elevation, off by default and requiring explicit authorization.
-
-</details>
-
-## A few practical questions
-
-**Will every app work after migration?**  
-Compatibility depends on the app, its updater, permissions, and directory contents. FreePort must show known restrictions and block unsupported cases. Keeping the original path is the approach, not a universal compatibility guarantee.
-
-**Do I need administrator access?**  
-Fast MFT scanning needs administrator rights; FreePort requests UAC when needed and falls back to a normal scan if declined. Migrating user folders usually needs no elevation; missing permissions stop the operation before any data changes.
-
-**How fast is it?**  
-The scanner is being designed directly around Windows NTFS MFT/USN interfaces, without a third-party search client or service. That accelerates discovery. Copying and full verification still depend on data size and drive speed.
-
-**What stays on my machine?**  
-Scanning and file operations are local. The design has no telemetry, cloud service, or uploading of file contents.
-
-**What storage is in scope?**  
-The first release targets supported directories on local NTFS volumes. Network paths and unsupported filesystems are outside its migration scope. A destination drive needs sufficient space and must remain available while apps use the relocated data.
-
-## Follow the project
-
-If this sounds like your machine, a **Star** helps the next person with a full C: drive find FreePort. Tell us which folder keeps filling yours, and which app you need to keep working afterward.
-
-For engineering details, see the [requirements](docs/requirements.md), [technical design](docs/technical-design.md), the [robocopy / `mklink /J` command contract](docs/system-command-backend.md), the [storage research](docs/application-storage-research.md) and [directory list](docs/application-storage-list.md), and the [repository conventions](AGENTS.md). Windows CLI and native GUI development target Rust and share one core.
-
-**You bought that extra storage to use it. Your tools should be able to use it too.**
+If FreePort helps, a **Star** helps the next person with a full C: drive find it.
 
 ## License
 
-Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
+Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option. Dependency notices ship with the release archive (`third-party-notices/`).

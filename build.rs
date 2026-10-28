@@ -40,18 +40,21 @@ fn main() {
         .unwrap();
     }
     println!("cargo:rerun-if-changed=resources/freeport.manifest");
+    println!("cargo:rerun-if-changed=resources/freeport.ico");
     if env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
     let manifest = env::current_dir()
         .unwrap()
         .join("resources/freeport.manifest");
+    let icon = env::current_dir().unwrap().join("resources/freeport.ico");
     let rc = out.join("freeport.rc");
     fs::write(
         &rc,
         format!(
-            "1 24 \"{}\"\n",
-            manifest.to_string_lossy().replace('\\', "/")
+            "1 24 \"{}\"\n1 ICON \"{}\"\n",
+            manifest.to_string_lossy().replace('\\', "/"),
+            icon.to_string_lossy().replace('\\', "/")
         ),
     )
     .unwrap();

@@ -198,17 +198,17 @@ def main():
     output = ROOT / "rules/freeport-rules.json"
     output.write_text(json.dumps(dict(schema_version=2, revision=2026102801, rules=RULES), ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
     terms = {
-        "en": ["Folder", "Total size ↓", "Application", "Status / link target", "Sum of discovered candidates", "Name-only legacy rules are disabled. Import a version 2 application knowledge pack."],
-        "zh-CN": ["目录", "递归总大小 ↓", "所属应用", "状态 / 链接目标", "仅汇总已识别候选目录", "已禁用仅按名称匹配的旧规则。请导入第 2 版应用知识库。"],
-        "zh-TW": ["目錄", "遞迴總大小 ↓", "所屬應用", "狀態 / 連結目標", "僅加總已識別候選目錄", "已停用僅依名稱比對的舊規則。請匯入第 2 版應用知識庫。"],
-        "ja": ["フォルダー", "合計サイズ ↓", "アプリ", "状態 / リンク先", "検出候補のみの合計", "名前のみで一致する旧ルールは無効です。バージョン 2 のアプリ知識パックをインポートしてください。"],
-        "ko": ["폴더", "전체 크기 ↓", "앱", "상태 / 링크 대상", "검색된 후보 폴더만 합산", "이름만 비교하는 이전 규칙은 비활성화되었습니다. 버전 2 앱 지식 팩을 가져오세요."],
-        "de": ["Ordner", "Gesamtgröße ↓", "Anwendung", "Status / Linkziel", "Summe der erkannten Kandidaten", "Alte Regeln ohne Anwendungsnachweis sind deaktiviert. Importieren Sie ein Anwendungspaket der Version 2."],
+        "en": ["Folder", "Total size", "Application", "Status / link target", "Name-only legacy rules are disabled. Import a version 2 application knowledge pack."],
+        "zh-CN": ["目录", "递归总大小", "所属应用", "状态 / 链接目标", "已禁用仅按名称匹配的旧规则。请导入第 2 版应用知识库。"],
+        "zh-TW": ["目錄", "遞迴總大小", "所屬應用", "狀態 / 連結目標", "已停用僅依名稱比對的舊規則。請匯入第 2 版應用知識庫。"],
+        "ja": ["フォルダー", "合計サイズ", "アプリ", "状態 / リンク先", "名前のみで一致する旧ルールは無効です。バージョン 2 のアプリ知識パックをインポートしてください。"],
+        "ko": ["폴더", "전체 크기", "앱", "상태 / 링크 대상", "이름만 비교하는 이전 규칙은 비활성화되었습니다. 버전 2 앱 지식 팩을 가져오세요."],
+        "de": ["Ordner", "Gesamtgröße", "Anwendung", "Status / Linkziel", "Alte Regeln ohne Anwendungsnachweis sind deaktiviert. Importieren Sie ein Anwendungspaket der Version 2."],
     }
     for tag, values in terms.items():
         path = ROOT / f"locales/{tag}.json"
         data = json.loads(path.read_text(encoding="utf-8"))
-        data.update(zip(["column.folder", "column.total", "column.application", "column.status", "column.candidate_total", "rules.legacy"], values))
+        data.update(zip(["column.folder", "column.total", "column.application", "column.status", "rules.legacy"], values))
         scope = {
             "en": ["Migration scans user folders, including AppData. Other paths can be added manually.", "No user profile was found on {0}. Add a specific folder if needed."],
             "zh-CN": ["迁移扫描用户目录（含 AppData）；其他位置可手动添加。", "{0} 未发现用户目录；需要时可手动添加具体路径。"],
