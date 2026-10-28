@@ -182,6 +182,8 @@ fn copy_args(mode: CopyMode, modified_files: bool) -> Vec<&'static str> {
         "/NJS",
         "/NP",
         "/UNICODE",
+        // Measured on 54k small files: 28 s single-threaded, 7.6 s at 8, slower at 32.
+        "/MT:8",
     ];
     match mode {
         CopyMode::Prepare => {}
@@ -266,6 +268,7 @@ mod tests {
         assert!(!finish.contains(&"/IM"));
         assert!(copy_args(CopyMode::FinishMove, true).contains(&"/IM"));
         for args in [prepare, finish, copy_args(CopyMode::FillMissing, true)] {
+            assert!(args.contains(&"/MT:8"));
             for forbidden in ["/COPYALL", "/SEC", "/MIR", "/PURGE", "/B", "/ZB"] {
                 assert!(!args.contains(&forbidden));
             }

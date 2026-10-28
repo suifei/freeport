@@ -21,7 +21,7 @@ FreePort / fp 共用一个后端。文件搬运使用 Windows 自带的 `robocop
 2. 调用系统工具：
 
    ```bat
-   robocopy "S" "T.stage" /E /COPY:DAT /R:0 /W:0 /XJ /SL /NFL /NDL /NJH /NJS /NP /UNICODE
+   robocopy "S" "T.stage" /E /COPY:DAT /R:0 /W:0 /XJ /SL /NFL /NDL /NJH /NJS /NP /UNICODE /MT:8
    ```
 
 3. 以 robocopy 返回码判断复制成功；刷盘。不另做文件比对。
@@ -29,7 +29,7 @@ FreePort / fp 共用一个后端。文件搬运使用 Windows 自带的 `robocop
 5. 重新核对两侧内容和身份，保持源/目标文件的稳定读取句柄，再调用：
 
    ```bat
-   robocopy "S.hold" "T" /E /COPY:DAT /R:0 /W:0 /XJ /SL /NFL /NDL /NJH /NJS /NP /UNICODE /MOVE /IS /NOCOPY /XL /XC /XN /XO
+   robocopy "S.hold" "T" /E /COPY:DAT /R:0 /W:0 /XJ /SL /NFL /NDL /NJH /NJS /NP /UNICODE /MT:8 /MOVE /IS /NOCOPY /XL /XC /XN /XO
    ```
 
 6. 复查目标完整，源只能剩原有空目录（`/MOVE` 通常已自行移除），依深度移除剩余空目录。源有文件、未知目录、重解析点或身份变化时停止。
@@ -45,6 +45,7 @@ FreePort / fp 共用一个后端。文件搬运使用 Windows 自带的 `robocop
 | `/XJ /SL` | 不跟随 Junction 或 symlink 进入别处；这只是防线；内部 Junction 在复制前的目录遍历中已被拒绝 |
 | `/NFL /NDL /NJH /NJS /NP` | 减少文件、目录、表头、摘要和百分比日志；错误仍保留，FreePort 显示阶段进度 |
 | `/UNICODE` | 请求 Unicode 输出；兼容部分版本仍输出 OEM 错误行的情况，按实际编码解码，避免报错乱码 |
+| `/MT:8` | 8 线程复制与收尾。本机 54,386 个小文件（1.3 GB）实测：单线程 28 秒，8 线程 7.6 秒，16 线程 7.8 秒，32 线程 11.7 秒。返回码语义不变 |
 | `/MOVE` | 搬运并移除源侧已处理名称，包括目录；不能换成仅文件的 `/MOV` |
 | `/IS /NOCOPY` | 在已验证副本存在后处理相同文件；`/IS` 防止相同文件被跳过，`/NOCOPY` 禁止收尾覆盖已验证目标，也避免再复制一次数据 |
 | `/IM`（支持时追加） | 某些新版 robocopy 将只读属性切换后的副本识别为 change-time 不同的 modified 文件，`/IS` 不包含它；仅在本机 `robocopy /?` 明确支持时追加，旧版不传 |
