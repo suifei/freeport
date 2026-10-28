@@ -13,7 +13,7 @@ Migration discovery focuses on user folders, including AppData, using applicatio
 
 A Windows tool for moving space-hungry folders to another drive while keeping their original paths. Choose what to move, choose its new home, then start the move. Want it back? Restore it to the original location.
 
-> **Design review and validation.** This README describes the intended experience and safety requirements. There is no stable release for use with real data yet. Acceptance criteria are documented in the [requirements](docs/requirements.md) and [technical design](docs/technical-design.md), currently in Chinese.
+> **Current goal: production-ready core migration and restoration.** There is no stable release for real data yet; production acceptance criteria are in section 8 of the [requirements](docs/requirements.md) (Chinese).
 
 ## “I installed my apps on D:. Why is C: full again?”
 
@@ -69,13 +69,11 @@ The intended GUI workflow is:
 
 **One click to start the move after you've reviewed your choices. One click to start restoration after its checks.** Large folders still take time to copy and verify; the goal is to save you the manual work.
 
-The GUI is for people who want to see and choose. A CLI is also planned around the same core and the same checks; its command contract is still being finalized.
+The GUI is for people who want to see and choose. The CLI `fp` uses the same core and the same checks.
 
-## Your language, from the first launch
+## Interface language
 
-The first release is planned to support **English, 简体中文, 繁體中文, 日本語, 한국어, and Deutsch** in both the GUI and CLI, including help, progress, errors, confirmations, and risk warnings.
-
-Automatic selection follows the country or region configured in Windows. If that setting cannot be read or has no matching language, FreePort defaults to **English**. You can also choose a language manually. Language resources will be included for offline use; automatic selection needs no location service or internet connection. See the [language requirements](docs/requirements.md#61-首批多语言与自动适配) for the mapping and override rules. The README itself is currently available in English and Simplified Chinese.
+The current iteration focuses on core migration and restoration, with Simplified Chinese as the maintained interface language. Existing English, Traditional Chinese, Japanese, Korean, and German resources remain but are not maintained for now; missing strings fall back to English.
 
 ## Built around the folders that keep growing
 
@@ -118,18 +116,11 @@ These requirements define the checks the product must pass:
 - **Uncertainty stops the operation.** Changing files, identity mismatches, unsupported links, or failed verification require preserving data and reporting the problem.
 - **Interrupted work stays accountable.** Recovery uses transaction records and the actual disk state to determine whether work can continue or roll back. Every folder has its own result; partial completion stays partial completion.
 
-Cross-drive work takes multiple steps. These requirements must pass fault-injection, power-loss recovery, and filesystem edge-case tests before use with real user data. They are acceptance criteria, not a promise that every failure can be instantly undone.
+Cross-drive work takes multiple steps. These requirements must pass the [production acceptance tests](docs/requirements.md#8-投产验收) before use with real user data. They are acceptance criteria, not a promise that every failure can be instantly undone.
 
 ### When another app is using the folder
 
-The design includes two independent controls, both **off by default**, as are all optional actions:
-
-| Control | What enabling it authorizes |
-| --- | --- |
-| Request the occupying app to exit normally | Ask the identified app to close normally |
-| Force-close external file/directory handles | Close verified handles belonging to the folders selected for this operation, using FreePort's own implementation |
-
-Force-closing requires an explicit risk warning and authorization. **It can crash other applications, lose unsaved work, or corrupt files. A migration transaction cannot undo those effects.** Authorization applies only to the current selection. FreePort must never enable it automatically or escalate to killing processes. All migration checks still apply afterward; continued writes or an unstable state must stop the operation.
+The first release only detects and lists the occupying apps and reasons; close them yourself and retry. FreePort does not end processes or close other apps' file handles. "Request app exit" and "force-close external handles" are planned for a later release together with elevation, off by default and requiring explicit authorization.
 
 </details>
 
@@ -139,7 +130,7 @@ Force-closing requires an explicit risk warning and authorization. **It can cras
 Compatibility depends on the app, its updater, permissions, and directory contents. FreePort must show known restrictions and block unsupported cases. Keeping the original path is the approach, not a universal compatibility guarantee.
 
 **Do I need administrator access?**  
-Some NTFS scanning, protected locations, and handle operations require elevation. Required permissions must be made clear before the relevant action.
+Fast MFT scanning needs administrator rights; FreePort requests UAC when needed and falls back to a normal scan if declined. Migrating user folders usually needs no elevation; missing permissions stop the operation before any data changes.
 
 **How fast is it?**  
 The scanner is being designed directly around Windows NTFS MFT/USN interfaces, without a third-party search client or service. That accelerates discovery. Copying and full verification still depend on data size and drive speed.

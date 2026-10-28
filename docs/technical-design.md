@@ -1,5 +1,7 @@
 # FreePort 技术方案
 
+**2026-10-28 范围收敛（以本条为准）：** 按[需求 1.0](requirements.md)，当前迭代只做核心迁移/恢复并投产可用。强制关闭外部句柄与请求程序正常退出（6.3.1、6.3.2、`handles` 模块）推迟到下一目标，首版只检测并展示占用；多语言（2.1）冻结不维护，新增文案只需简体中文；提权沿用已实现的按需 UAC，不再扩展；第 9 节旧门槛由需求第 8 节投产验收 P01–P10 取代。下文相关内容保留为下一目标的设计参考。
+
 2026-10-24 搬运后端修订：[系统命令执行顺序与参数](system-command-backend.md) 覆盖旧的原生复制、ACL/owner 强制保留和先连接后清理协议。实际由系统 robocopy / mklink 完成核心能力；FreePort 提供预检、校验、日志及恢复。
 
 2026-10-24 最新修订：[应用存储调研与知识库](application-storage-research.md) 规定用户目录/AppData 的自动扫描范围、schema v2 应用证据门槛、原生 TreeList、每层数值总量降序及链接明细。按盘迁移扫描先定位用户配置目录，Win32 回退仅遍历这些目录；MFT 索引在候选处理前过滤范围。手动路径和按盘恢复保留。该修订覆盖下文旧的名称目录表和范围说明。
@@ -19,7 +21,7 @@
 | --- | --- | --- |
 | 开发语言 | Rust，Windows x64 优先 | 核心复用，使用 Win32 API 精确控制文件对象与重解析点 |
 | CLI 与 GUI | 两个入口，共用一个核心库；GUI 采用原生 Win32 控件 | 无 WebView / Node 运行时，界面范围仅两个操作向导 |
-| 多语言 | CLI / GUI 共用地区解析和离线消息资源；首批 `zh-CN`、`en`、`zh-TW`、`ja`、`ko`、`de` | 默认按 Windows 国家/地区映射，读取失败或未覆盖时英文；允许手动覆盖，机器协议不翻译 |
+| 多语言（冻结） | 已有 CLI / GUI 共用地区解析和六语离线资源，暂不维护 | 新增文案只需简体中文，缺词条回退英文；机器协议不翻译 |
 | 快速发现主路径 | 自研 Rust NTFS 扫描器，调用 Windows MFT / USN 接口 | 自己完成枚举、路径重建、快照与规则匹配；不依赖第三方搜索软件 |
 | NTFS 枚举方式 | `FSCTL_ENUM_USN_DATA` 获取 MFT 名称线索，结合 USN 处理扫描期间变化 | 优先使用 Windows 支持的接口，不先解析原始磁盘 `$MFT` 字节布局 |
 | 最后降级 | 受限 Win32 目录枚举 | 标明速度与覆盖限制；不把普通递归包装成“秒级全盘扫描” |
@@ -29,7 +31,7 @@
 | 删除原则 | 仅清理本事务拥有且再次验证的对象 | 不对源目录或连接运行未经核验的递归删除 |
 | 批处理 | 每目录独立提交，整批逐项记账 | 限制故障范围；明确不伪称多目录全局原子提交 |
 | 高级特殊文件 | 能完整保留则支持；否则预检阻塞 | 安全降级为“不执行”，不能降级为“丢掉某项属性继续复制” |
-| 释放占用 | 正常退出与强关句柄两个独立开关，均默认关闭 | 自研强关外部文件/目录句柄是首版必做；启用时警告，不依赖第三方解锁器 |
+| 释放占用 | 首版只检测并展示占用，由用户关闭程序 | 正常退出与强关句柄推迟到下一目标，与提权配合；届时独立开关、默认关闭、启用时警告，不依赖第三方解锁器 |
 
 Windows 官方文档支持通过 `FSCTL_ENUM_USN_DATA` 枚举 MFT 记录线索；这与直接读取、解析磁盘上的原始 `$MFT` 是两条路线。第一版选择前者。[微软接口说明](https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ni-winioctl-fsctl_enum_usn_data)
 
@@ -67,9 +69,9 @@ flowchart TD
 
 依赖以 Win32 绑定、序列化和内容散列为主。第一版不引入数据库服务、Web 框架、Electron 或插件系统。依赖版本在实现时固定到锁文件，不依赖浮动的 `latest`。
 
-### 2.1 共享语言选择与资源
+### 2.1 共享语言选择与资源（已冻结）
 
-语言范围、地区映射与选择优先级以[需求 6.1](requirements.md#61-首批多语言与自动适配)为准。本节是实现方案，尚未增加产品模块或翻译资源。
+本节描述已实现的六语机制，当前冻结不维护，不作为发布门槛。
 
 **地区检测。** 最低系统目标为 Windows 7。较新系统动态解析 `GetUserDefaultGeoName`；该入口不存在时，使用 Windows 7 可用的 `GetUserGeoID(GEOCLASS_NATION)` 与 `GetGeoInfoW(GEO_ISO2)` 读取同一用户的国家/地区设置。已存在的新 API 调用失败、旧接口失败、空值、未覆盖或数字地区代码均回退英文，不读取界面语言、IP 或时区来猜测。只按需求表的国家/地区代码映射。参考：[GetUserGeoID](https://learn.microsoft.com/en-us/windows/win32/api/winnls/nf-winnls-getusergeoid)、[GetGeoInfoW](https://learn.microsoft.com/en-us/windows/win32/api/winnls/nf-winnls-getgeoinfow)。
 
@@ -223,7 +225,7 @@ UTF-16 名称必须无损保存，显示时可以转换，执行时不能用有�
 
 进程名检查只是交互提示。共享模式、文件身份核验、变更检测及安全清理才是保护数据的必要机制；不能靠“没有查到进程”证明目录静止。
 
-#### 6.3.1 两个默认关闭的占用处理开关
+#### 6.3.1 两个默认关闭的占用处理开关（下一目标）
 
 “请求占用程序正常退出”和“强制关闭外部文件/目录句柄”都是 GUI 独立开关，全部默认关闭，候选项也不默认勾选。新任务不自动恢复上次启用状态。两个都开启时先正常退出再强关；只开启强关也必须可用，不能要求先启用正常退出。
 
@@ -257,7 +259,7 @@ UTF-16 名称必须无损保存，显示时可以转换，执行时不能用有�
 
 接口依据：[RmRegisterResources](https://learn.microsoft.com/en-us/windows/win32/api/restartmanager/nf-restartmanager-rmregisterresources)、[RmGetList](https://learn.microsoft.com/en-us/windows/win32/api/restartmanager/nf-restartmanager-rmgetlist)、[RmShutdown](https://learn.microsoft.com/en-us/windows/win32/api/restartmanager/nf-restartmanager-rmshutdown)、[RmAddFilter](https://learn.microsoft.com/en-us/windows/win32/api/restartmanager/nf-restartmanager-rmaddfilter)。
 
-#### 6.3.2 自研强关外部文件/目录句柄
+#### 6.3.2 自研强关外部文件/目录句柄（下一目标）
 
 此模块实际实现外部句柄关闭，不只是占用查询或引导用户使用其他软件。使用用户态 Windows 原生接口；不注入目标进程、不修改其代码、不通过驱动绕过受保护进程。
 
