@@ -31,7 +31,7 @@ for leaf, purpose, kind in [
     ("paste-cache", "历史粘贴内容；删除可能影响历史提示词，迁移时完整保留。", "history"),
     ("cache", "版本说明等可重新获取的应用缓存。", "cache"),
     ("plugins", "已安装插件、市场副本和插件状态；检测嵌套链接后按无链接分支处理。", "extensions"),
-    ("debug", "诊断日志；本机 latest 是绝对文件符号链接，整目录需链接处理能力，不能忽略。", "logs"),
+    ("debug", "诊断日志；其中 latest 可能是指向日志文件的绝对符号链接，整目录迁移须连同处理该链接，不能忽略。", "logs"),
 ]:
     claude(leaf, leaf, purpose, kind)
 claude("skills", "skills", "共享技能经常指向 .agents/skills；保留连接，不整体搬运。", "extensions", "review")
@@ -44,24 +44,24 @@ for leaf, purpose, kind in [
     ("attachments", "会话附件，可能仍被历史引用。", "history"),
     ("generated_images", "已生成图片，属于用户产物。", "history"),
     ("cache", "应用缓存，具体子项随版本变化；退出应用后处理。", "cache"),
-    ("plugins/cache", "插件下载/版本目录；本机 chrome/latest 是版本目录连接，允许选择其他无链接分支。", "extensions"),
+    ("plugins/cache", "插件下载/版本目录；其中 chrome/latest 可能是指向版本目录的连接，可改选不含链接的其他分支。", "extensions"),
 ]:
     codex(leaf.replace("/", "-"), leaf, purpose, kind, level="local")
 codex("sandbox", ".sandbox", "沙箱状态和权限关系，不作为缓存自动迁移。", "runtime", "exclude", "local")
 codex("sandbox-bin", ".sandbox-bin", "沙箱执行文件，可能关联主机权限和版本绑定，需专门验证。", "runtime", "review", "local")
 codex("root", "", "整个 Codex 用户目录；含沙箱状态与权限关系（.sandbox 排除自动迁移），整目录迁移前需人工确认。", "app", "review", "local")
 runtime = application("codex-runtime", "Codex managed runtime", ".cache/codex-runtimes", [["codex-primary-runtime"]], [LOCAL], ["codex.exe", "chatgpt.exe"], confidence="local")
-runtime("root", "", "本机包含 primary-runtime 和安装暂存，约 1.75 GiB；升级/版本绑定尚需验证，暂不自动迁移。", "runtime", "review")
+runtime("root", "", "Codex 托管运行时（primary-runtime）与安装暂存；升级与版本绑定尚未验证，需人工确认。", "runtime", "review")
 
 kimi = application("kimi", "Kimi Code", ".kimi-code", [["config.toml", "sessions"]],
                    ["https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html", LOCAL], ["kimi.exe", "kimi code.exe"], ["KIMI_CODE_HOME"])
 for leaf, purpose, kind, level in [
     ("sessions", "会话正文、任务、计划与会话日志；完整保留，先退出所有 CLI/桌面后台。", "history", "documented"),
     ("logs", "诊断日志。", "logs", "documented"),
-    ("cache", "本机存在的缓存；格式由应用版本决定。", "cache", "local"),
-    ("files", "本机附件文件，可能被历史引用。", "history", "local"),
-    ("file-history", "本机文件恢复快照；不是可丢弃缓存。", "history", "local"),
-    ("search-index", "本机搜索索引；应退出索引写入进程后处理。", "cache", "local"),
+    ("cache", "应用缓存；格式随应用版本变化。", "cache", "local"),
+    ("files", "附件文件，可能仍被历史引用。", "history", "local"),
+    ("file-history", "文件恢复快照；不是可丢弃缓存。", "history", "local"),
+    ("search-index", "搜索索引；先退出写入索引的进程。", "cache", "local"),
 ]:
     kimi(leaf, leaf, purpose, kind, level=level)
 kimi("server", "server", "桌面服务运行时，需验证升级器及后台服务停机行为。", "runtime", "review", "local")
@@ -69,16 +69,16 @@ kimi("root", "", "整个 Kimi Code 用户目录（含服务运行时与凭据）
 
 dsh = application("dsh", "DeepSeek Harness", ".dsh", [["profiles", "sessions"], [".credentials.yaml", "sessions"]],
                   ["https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md", LOCAL], ["dsh.exe", "dsh-desktop.exe", "node.exe"], ["DSH_HOME"], confidence="local")
-for leaf, purpose, kind in [("sessions", "CLI 与桌面共享的会话历史。", "history"), ("attachments", "会话附件。", "history"), ("cache", "本机应用缓存。", "cache")]:
+for leaf, purpose, kind in [("sessions", "CLI 与桌面共享的会话历史。", "history"), ("attachments", "会话附件。", "history"), ("cache", "应用缓存。", "cache")]:
     dsh(leaf, leaf, purpose, kind)
 for leaf in ["dsh-runtimes", "storages", "profiles"]:
-    dsh(leaf, leaf, "本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。", "mixed", "review")
+    dsh(leaf, leaf, "运行时、插件存储与数据库的关系随版本变化，需人工确认后迁移。", "mixed", "review")
 dsh("root", "", "整个 DeepSeek Harness 用户目录（含运行时与存储）；先退出 CLI 与桌面，需人工确认。", "app", "review")
 
 grok = application("grok", "Grok CLI", ".grok", [["config.toml", "sessions"], ["auth.json", "sessions"]],
                    ["https://docs.x.ai/build/settings", "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md", LOCAL],
                    ["grok.exe"], ["GROK_HOME"])
-for leaf, purpose, kind in [("sessions", "会话正文和恢复元数据，属于用户历史。", "history"), ("logs", "本机诊断日志。", "logs"), ("downloads", "本机下载暂存，先确认升级器未运行。", "cache"), ("marketplace-cache", "本机插件市场缓存。", "extensions")]:
+for leaf, purpose, kind in [("sessions", "会话正文和恢复元数据，属于用户历史。", "history"), ("logs", "诊断日志。", "logs"), ("downloads", "下载暂存；先确认升级器未运行。", "cache"), ("marketplace-cache", "插件市场缓存。", "extensions")]:
     grok(leaf, leaf, purpose, kind, level="documented" if leaf == "sessions" else "local")
 grok("runtime", "bin", "实际 CLI 程序及升级入口，不能当缓存。", "runtime", "review", "local")
 grok("root", "", "整个 Grok CLI 用户目录（含程序与升级入口）；先退出全部会话，需人工确认。", "app", "review", "local")
@@ -91,7 +91,7 @@ for prefix, name, folder, exe in [("vscode", "VS Code", "Code", "code.exe"), ("c
     sources = ["https://code.visualstudio.com/docs/configure/command-line", LOCAL] if vscode_like else ["https://obsidian.md/help/data-storage", LOCAL]
     markers = [["Local State", "Preferences", "User/settings.json"], ["Local State", "Preferences", "User/globalStorage"]] if vscode_like else [["Local State", "Preferences", "obsidian.json"]]
     app = application(prefix, name, f"AppData/Roaming/{folder}", markers, sources, [exe], confidence="local")
-    app("root", "", "整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。", "app")
+    app("root", "", "整个应用数据目录（设置、扩展状态、会话、缓存）；整目录迁移，完全退出应用及后台后进行。", "app")
     leaves = ["Cache", "Code Cache", "GPUCache", "CachedData", "CachedExtensionVSIXs", "logs"] if vscode_like else ["Cache", "Code Cache", "GPUCache", "logs"]
     for leaf in leaves:
         app(leaf.lower().replace(" ", "-"), leaf, "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。", "logs" if leaf == "logs" else "cache")
@@ -119,7 +119,7 @@ for leaf in ["downloads", "tmp"]:
 rust_project = application("rust-project", "Cargo project", "", [["Cargo.toml"]], ["https://doc.rust-lang.org/cargo/reference/environment-variables.html"], ["cargo.exe", "rustc.exe"], ["CARGO_TARGET_DIR"], "project")
 rust_project("target", "target", "项目构建产物，须同时存在 Cargo.toml；自定义 target-dir 另行解析。")
 go = application("go", "Go build", "AppData/Local/go-build", [["README"], ["trim.txt"]], ["https://go.dev/cmd/go/#hdr-Build_and_test_caching"], ["go.exe", "gopls.exe"], ["GOCACHE"])
-go("build", "", "Go 编译和测试缓存；以 go env GOCACHE 的本机配置为优先线索。")
+go("build", "", "Go 编译和测试缓存；设置了 GOCACHE 时以 go env GOCACHE 为准。")
 gomod = application("go-mod", "Go modules", "go/pkg", [["mod/cache/download"]], ["https://go.dev/ref/mod#module-cache"], ["go.exe", "gopls.exe"], ["GOMODCACHE", "GOPATH"])
 gomod("cache", "mod", "模块缓存含只读源码、下载及校验元数据；不是整个 GOPATH。")
 vcpkg = application("vcpkg", "vcpkg", "AppData/Local/vcpkg", [["archives"]], ["https://learn.microsoft.com/en-us/vcpkg/users/binarycaching"], ["vcpkg.exe", "cl.exe", "msbuild.exe"], ["VCPKG_DEFAULT_BINARY_CACHE"])
@@ -135,7 +135,7 @@ pip("cache", "", "HTTP 响应与已构建 wheel 缓存；不是 Python 安装或
 npm = application("npm", "Node npm", "AppData/Local/npm-cache", [["_cacache"], ["_npx"]], ["https://docs.npmjs.com/cli/v11/commands/npm-cache"], ["node.exe"], ["NPM_CONFIG_CACHE"])
 npm("cache", "", "内容寻址下载缓存及 npx 暂存；不包含全局安装程序。")
 npm_old = application("npm-user", "Node npm", "npm-cache", [["_cacache"], ["_npx"]], ["https://docs.npmjs.com/cli/v11/commands/npm-cache", LOCAL], ["node.exe"], ["NPM_CONFIG_CACHE"])
-npm_old("cache", "", "本机历史配置遗留的用户根缓存；用缓存结构识别。")
+npm_old("cache", "", "旧版 npm 配置遗留在用户目录下的缓存；按缓存结构识别。")
 uv = application("uv", "Python uv", "AppData/Local/uv/cache", [["CACHEDIR.TAG"]], ["https://docs.astral.sh/uv/concepts/cache/"], ["uv.exe", "python.exe"], ["UV_CACHE_DIR"])
 uv("cache", "", "Windows 默认使用硬链接；可能和环境共享数据。跨盘拆开共享关系不一定释放原盘空间，先专门复核。", "cache", "review")
 pnpm = application("pnpm", "pnpm", "AppData/Local/pnpm/store", [["v3"], ["v10"], ["v11"]], ["https://pnpm.io/settings#storedir"], ["node.exe"])
@@ -167,7 +167,7 @@ ollama = application("ollama", "Ollama", ".ollama", [["models/blobs", "models/ma
 ollama("models", "models", "共享权重 blobs 和 manifests 必须整体保留；停止模型服务和下载后迁移。", "models")
 for prefix, name, owner in [("hy3d", "Hunyuan3D", ".cache/hy3dgen"), ("rembg", "rembg", ".u2net")]:
     app = application(prefix, name, owner, [["checkpoints"]] if prefix == "hy3d" else [["u2net.onnx"]], [LOCAL], ["python.exe"], confidence="local")
-    app("models", "", "本机模型目录；需确认对应工具和模型文件格式后启用，禁止仅按通用文件夹名匹配。", "models", "review")
+    app("models", "", "模型目录；需确认对应工具和模型文件格式，不能仅凭文件夹名判断。", "models", "review")
 
 for prefix, name, owner, exe in [
     ("chrome", "Google Chrome", "AppData/Local/Google/Chrome/User Data/*", "chrome.exe"),
@@ -181,9 +181,9 @@ for prefix, name, owner, exe in [
 firefox = application("firefox", "Firefox", "AppData/Local/Mozilla/Firefox/Profiles/*", [["cache2/entries"]], ["https://firefox-source-docs.mozilla.org/netwerk/cache2/doc.html"], ["firefox.exe"])
 firefox("cache", "cache2", "磁盘网络缓存；保留 Roaming 下书签、密码与配置数据库。")
 wxwork = application("wxwork", "WeCom", "AppData/Roaming/Tencent/WXWork", [["Data"], ["config"]], ["https://work.weixin.qq.com/", LOCAL], ["wxwork.exe", "wxworkweb.exe"], confidence="unverified")
-wxwork("data", "", "聊天、附件、账号与数据库混合。不同版本位置不同，须以本机客户端显示的数据路径核实，暂不自动纳入。", "mixed", "review")
+wxwork("data", "", "聊天、附件、账号与数据库混合。不同版本位置不同，须以客户端设置中显示的数据路径核实，暂不自动纳入。", "mixed", "review")
 wxwork_log = application("wxwork", "WeCom", "AppData/Roaming/Tencent/WXWork", [["Log", "wwmapp"], ["Log", "WeChatOCR"]], [LOCAL], ["wxwork.exe", "wxworkweb.exe"], confidence="local")
-wxwork_log("logs", "Log", "本机独立日志目录；退出企业微信全部后台后预检，保留其他组件和账号数据。", "logs")
+wxwork_log("logs", "Log", "独立日志目录；退出企业微信全部后台后预检，保留其他组件和账号数据。", "logs")
 for prefix, name, folder, markers, exes in [
     ("xwechat", "WeChat", "xwechat", [["config", "login"]], ["weixin.exe", "wechat.exe", "wechatappex.exe"]),
     ("wemeet", "Tencent Meeting", "WeMeet", [["Global", "config_info.ini"]], ["wemeetapp.exe"]),
@@ -195,8 +195,17 @@ for prefix, name, folder, markers, exes in [
 def main():
     ids = [r["id"] for r in RULES]
     assert len(ids) == len(set(ids))
+    # purpose is Simplified Chinese; the other interface languages come from purposes-i18n.json.
+    translations = json.loads((ROOT / "rules/purposes-i18n.json").read_text(encoding="utf-8"))
+    used = {r["knowledge"]["purpose"] for r in RULES}
+    missing, stale = used - translations.keys(), translations.keys() - used
+    assert not missing and not stale, f"purposes-i18n.json: missing {sorted(missing)}, stale {sorted(stale)}"
+    for r in RULES:
+        text = translations[r["knowledge"]["purpose"]]
+        assert sorted(text) == ["de", "en", "ja", "ko", "zh-TW"], r["id"]
+        r["knowledge"]["purposes"] = dict(sorted(text.items()))
     output = ROOT / "rules/savemycdrive-rules.json"
-    output.write_text(json.dumps(dict(schema_version=2, revision=2026102801, rules=RULES), ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+    output.write_text(json.dumps(dict(schema_version=2, revision=2026102901, rules=RULES), ensure_ascii=False, indent=2)+"\n", encoding="utf-8", newline="\n")
     terms = {
         "en": ["Folder", "Total size", "Application", "Status / link target", "Name-only legacy rules are disabled. Import a version 2 application knowledge pack."],
         "zh-CN": ["目录", "递归总大小", "所属应用", "状态 / 链接目标", "已禁用仅按名称匹配的旧规则。请导入第 2 版应用知识库。"],
@@ -218,7 +227,7 @@ def main():
             "de": ["Die Suche zur Migration umfasst Benutzerordner einschließlich AppData. Weitere Pfade können manuell hinzugefügt werden.", "Auf {0} wurde kein Benutzerprofil gefunden. Fügen Sie bei Bedarf einen Ordner hinzu."],
         }
         data.update(zip(["scan.scope", "scan.no_profiles"], scope[tag]))
-        path.write_text(json.dumps(data, ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
+        path.write_text(json.dumps(data, ensure_ascii=False, indent=2)+"\n", encoding="utf-8", newline="\n")
     lines = ["# 应用目录知识库逐项清单", "", "调研日期：2026-10-24，2026-10-28 补充整目录规则。由 `scripts/build-knowledge.py` 与运行时 JSON 同源生成；本机调查结论和适用限制见 [调研报告](application-storage-research.md)。", "", "`candidate` 表示有证据可进入迁移预检，仍须经过权限、链接、句柄、空间和事务检查；没有默认勾选。`review` 会列出但标注“需确认”，同样不勾选，用户须先核对说明；`exclude` 排除自动发现。`app` 类型表示整个应用目录，对应原批处理的整目录迁移；与其下叶目录同时勾选时只迁移外层目录。用户历史、模型和扩展均须保留，不能按可丢弃缓存处理。", "", "`home` 路径相对于真实用户目录；`project` 路径相对于经标志文件确认的项目/应用根。`*` 只匹配单层目录。markers 外层是“或”，每组内部是“且”；仅检查存在和路径，绝不读取配置、令牌或会话正文。", "", "环境变量列为官方/本机的重定位线索，本版不会运行应用或执行规则内命令，也尚未自动解析各应用配置文件/环境变量以重定位根。", ""]
     for app_name in dict.fromkeys(r["knowledge"]["application"] for r in RULES):
         entries = [r for r in RULES if r["knowledge"]["application"] == app_name]
@@ -228,7 +237,7 @@ def main():
             k = r["knowledge"]
             lines.append(f"| `{r['suffix']}` | {k['purpose']} | {k['kind']} | {k['confidence']} | {k['migration']} |")
         lines.extend(["", "重定位线索：" + ("、".join(f"`{x}`" for x in k["relocation_env"]) or "应用配置或启动参数；未做通用推断") + "。", "", "资料：" + "；".join("本机元数据观察（非厂商承诺）" if s == LOCAL else f"[官方资料]({s})" for s in k["sources"]) + "。", ""])
-    (ROOT / "docs/application-storage-list.md").write_text("\n".join(lines), encoding="utf-8")
+    (ROOT / "docs/application-storage-list.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
     print(f"{len(RULES)} rules, {len(set(r['knowledge']['application'] for r in RULES))} application/storage families, {output.stat().st_size} bytes")
 
 

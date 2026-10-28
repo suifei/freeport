@@ -19,7 +19,7 @@
 | `.claude/paste-cache` | 历史粘贴内容；删除可能影响历史提示词，迁移时完整保留。 | history | documented | candidate |
 | `.claude/cache` | 版本说明等可重新获取的应用缓存。 | cache | documented | candidate |
 | `.claude/plugins` | 已安装插件、市场副本和插件状态；检测嵌套链接后按无链接分支处理。 | extensions | documented | candidate |
-| `.claude/debug` | 诊断日志；本机 latest 是绝对文件符号链接，整目录需链接处理能力，不能忽略。 | logs | documented | candidate |
+| `.claude/debug` | 诊断日志；其中 latest 可能是指向日志文件的绝对符号链接，整目录迁移须连同处理该链接，不能忽略。 | logs | documented | candidate |
 | `.claude/skills` | 共享技能经常指向 .agents/skills；保留连接，不整体搬运。 | extensions | documented | review |
 
 重定位线索：`CLAUDE_CONFIG_DIR`。
@@ -37,7 +37,7 @@
 | `.codex/attachments` | 会话附件，可能仍被历史引用。 | history | local | candidate |
 | `.codex/generated_images` | 已生成图片，属于用户产物。 | history | local | candidate |
 | `.codex/cache` | 应用缓存，具体子项随版本变化；退出应用后处理。 | cache | local | candidate |
-| `.codex/plugins/cache` | 插件下载/版本目录；本机 chrome/latest 是版本目录连接，允许选择其他无链接分支。 | extensions | local | candidate |
+| `.codex/plugins/cache` | 插件下载/版本目录；其中 chrome/latest 可能是指向版本目录的连接，可改选不含链接的其他分支。 | extensions | local | candidate |
 | `.codex/.sandbox` | 沙箱状态和权限关系，不作为缓存自动迁移。 | runtime | local | exclude |
 | `.codex/.sandbox-bin` | 沙箱执行文件，可能关联主机权限和版本绑定，需专门验证。 | runtime | local | review |
 | `.codex` | 整个 Codex 用户目录；含沙箱状态与权限关系（.sandbox 排除自动迁移），整目录迁移前需人工确认。 | app | local | review |
@@ -53,7 +53,7 @@
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
-| `.cache/codex-runtimes` | 本机包含 primary-runtime 和安装暂存，约 1.75 GiB；升级/版本绑定尚需验证，暂不自动迁移。 | runtime | local | review |
+| `.cache/codex-runtimes` | Codex 托管运行时（primary-runtime）与安装暂存；升级与版本绑定尚未验证，需人工确认。 | runtime | local | review |
 
 重定位线索：应用配置或启动参数；未做通用推断。
 
@@ -67,10 +67,10 @@
 | --- | --- | --- | --- | --- |
 | `.kimi-code/sessions` | 会话正文、任务、计划与会话日志；完整保留，先退出所有 CLI/桌面后台。 | history | documented | candidate |
 | `.kimi-code/logs` | 诊断日志。 | logs | documented | candidate |
-| `.kimi-code/cache` | 本机存在的缓存；格式由应用版本决定。 | cache | local | candidate |
-| `.kimi-code/files` | 本机附件文件，可能被历史引用。 | history | local | candidate |
-| `.kimi-code/file-history` | 本机文件恢复快照；不是可丢弃缓存。 | history | local | candidate |
-| `.kimi-code/search-index` | 本机搜索索引；应退出索引写入进程后处理。 | cache | local | candidate |
+| `.kimi-code/cache` | 应用缓存；格式随应用版本变化。 | cache | local | candidate |
+| `.kimi-code/files` | 附件文件，可能仍被历史引用。 | history | local | candidate |
+| `.kimi-code/file-history` | 文件恢复快照；不是可丢弃缓存。 | history | local | candidate |
+| `.kimi-code/search-index` | 搜索索引；先退出写入索引的进程。 | cache | local | candidate |
 | `.kimi-code/server` | 桌面服务运行时，需验证升级器及后台服务停机行为。 | runtime | local | review |
 | `.kimi-code` | 整个 Kimi Code 用户目录（含服务运行时与凭据）；先退出 CLI、桌面及后台服务，需人工确认。 | app | local | review |
 
@@ -86,10 +86,10 @@
 | --- | --- | --- | --- | --- |
 | `.dsh/sessions` | CLI 与桌面共享的会话历史。 | history | local | candidate |
 | `.dsh/attachments` | 会话附件。 | history | local | candidate |
-| `.dsh/cache` | 本机应用缓存。 | cache | local | candidate |
-| `.dsh/dsh-runtimes` | 本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。 | mixed | local | review |
-| `.dsh/storages` | 本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。 | mixed | local | review |
-| `.dsh/profiles` | 本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。 | mixed | local | review |
+| `.dsh/cache` | 应用缓存。 | cache | local | candidate |
+| `.dsh/dsh-runtimes` | 运行时、插件存储与数据库的关系随版本变化，需人工确认后迁移。 | mixed | local | review |
+| `.dsh/storages` | 运行时、插件存储与数据库的关系随版本变化，需人工确认后迁移。 | mixed | local | review |
+| `.dsh/profiles` | 运行时、插件存储与数据库的关系随版本变化，需人工确认后迁移。 | mixed | local | review |
 | `.dsh` | 整个 DeepSeek Harness 用户目录（含运行时与存储）；先退出 CLI 与桌面，需人工确认。 | app | local | review |
 
 重定位线索：`DSH_HOME`。
@@ -103,9 +103,9 @@
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
 | `.grok/sessions` | 会话正文和恢复元数据，属于用户历史。 | history | documented | candidate |
-| `.grok/logs` | 本机诊断日志。 | logs | local | candidate |
-| `.grok/downloads` | 本机下载暂存，先确认升级器未运行。 | cache | local | candidate |
-| `.grok/marketplace-cache` | 本机插件市场缓存。 | extensions | local | candidate |
+| `.grok/logs` | 诊断日志。 | logs | local | candidate |
+| `.grok/downloads` | 下载暂存；先确认升级器未运行。 | cache | local | candidate |
+| `.grok/marketplace-cache` | 插件市场缓存。 | extensions | local | candidate |
 | `.grok/bin` | 实际 CLI 程序及升级入口，不能当缓存。 | runtime | local | review |
 | `.grok` | 整个 Grok CLI 用户目录（含程序与升级入口）；先退出全部会话，需人工确认。 | app | local | review |
 
@@ -131,7 +131,7 @@
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
-| `AppData/Roaming/Code` | 整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。 | app | local | candidate |
+| `AppData/Roaming/Code` | 整个应用数据目录（设置、扩展状态、会话、缓存）；整目录迁移，完全退出应用及后台后进行。 | app | local | candidate |
 | `AppData/Roaming/Code/Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Code/Code Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Code/GPUCache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
@@ -152,7 +152,7 @@
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
-| `AppData/Roaming/Cursor` | 整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。 | app | local | candidate |
+| `AppData/Roaming/Cursor` | 整个应用数据目录（设置、扩展状态、会话、缓存）；整目录迁移，完全退出应用及后台后进行。 | app | local | candidate |
 | `AppData/Roaming/Cursor/Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Cursor/Code Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/Cursor/GPUCache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
@@ -173,7 +173,7 @@
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
-| `AppData/Roaming/obsidian` | 整个应用数据目录（设置、扩展状态、会话、缓存）；对应原批处理的整目录迁移。完全退出应用及后台后迁移。 | app | local | candidate |
+| `AppData/Roaming/obsidian` | 整个应用数据目录（设置、扩展状态、会话、缓存）；整目录迁移，完全退出应用及后台后进行。 | app | local | candidate |
 | `AppData/Roaming/obsidian/Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/obsidian/Code Cache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
 | `AppData/Roaming/obsidian/GPUCache` | 应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。 | cache | local | candidate |
@@ -255,7 +255,7 @@
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
-| `AppData/Local/go-build` | Go 编译和测试缓存；以 go env GOCACHE 的本机配置为优先线索。 | cache | documented | candidate |
+| `AppData/Local/go-build` | Go 编译和测试缓存；设置了 GOCACHE 时以 go env GOCACHE 为准。 | cache | documented | candidate |
 
 重定位线索：`GOCACHE`。
 
@@ -330,7 +330,7 @@
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
 | `AppData/Local/npm-cache` | 内容寻址下载缓存及 npx 暂存；不包含全局安装程序。 | cache | documented | candidate |
-| `npm-cache` | 本机历史配置遗留的用户根缓存；用缓存结构识别。 | cache | documented | candidate |
+| `npm-cache` | 旧版 npm 配置遗留在用户目录下的缓存；按缓存结构识别。 | cache | documented | candidate |
 | `AppData/Roaming/npm` | npm 全局安装的命令行工具及其 node_modules；PATH 指向原路径，经连接后不变。停止所有 node 进程后迁移。 | toolchain | documented | candidate |
 
 重定位线索：`NPM_CONFIG_PREFIX`。
@@ -477,7 +477,7 @@
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
-| `.cache/hy3dgen` | 本机模型目录；需确认对应工具和模型文件格式后启用，禁止仅按通用文件夹名匹配。 | models | local | review |
+| `.cache/hy3dgen` | 模型目录；需确认对应工具和模型文件格式，不能仅凭文件夹名判断。 | models | local | review |
 
 重定位线索：应用配置或启动参数；未做通用推断。
 
@@ -489,7 +489,7 @@
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
-| `.u2net` | 本机模型目录；需确认对应工具和模型文件格式后启用，禁止仅按通用文件夹名匹配。 | models | local | review |
+| `.u2net` | 模型目录；需确认对应工具和模型文件格式，不能仅凭文件夹名判断。 | models | local | review |
 
 重定位线索：应用配置或启动参数；未做通用推断。
 
@@ -573,8 +573,8 @@
 
 | 目标（相对路径） | 内容与迁移边界 | 类型 | 证据等级 | 决策 |
 | --- | --- | --- | --- | --- |
-| `AppData/Roaming/Tencent/WXWork` | 聊天、附件、账号与数据库混合。不同版本位置不同，须以本机客户端显示的数据路径核实，暂不自动纳入。 | mixed | unverified | review |
-| `AppData/Roaming/Tencent/WXWork/Log` | 本机独立日志目录；退出企业微信全部后台后预检，保留其他组件和账号数据。 | logs | local | candidate |
+| `AppData/Roaming/Tencent/WXWork` | 聊天、附件、账号与数据库混合。不同版本位置不同，须以客户端设置中显示的数据路径核实，暂不自动纳入。 | mixed | unverified | review |
+| `AppData/Roaming/Tencent/WXWork/Log` | 独立日志目录；退出企业微信全部后台后预检，保留其他组件和账号数据。 | logs | local | candidate |
 
 重定位线索：应用配置或启动参数；未做通用推断。
 

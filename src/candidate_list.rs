@@ -358,7 +358,7 @@ impl List {
         };
         let mut details = vec![r.candidate.source.display().to_string()];
         if let Some(k) = &r.candidate.knowledge {
-            details.push(k.purpose.clone());
+            details.push(k.purpose_text().to_string());
         }
         details.push(self.cells[row.unwrap()].2.clone());
         for link in &r.stats.link_details {

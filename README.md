@@ -13,7 +13,7 @@ Move your data. Keep your workflow.<br>
 ![Windows 10/11 x64](https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-0d9488)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-64748b)](#license)
 
-**English** · [简体中文](README.zh-CN.md)
+**English** · [简体中文](README.zh-CN.md) · [繁體中文](README.zh-TW.md) · [日本語](README.ja.md) · [한국어](README.ko.md) · [Deutsch](README.de.md)
 
 </div>
 

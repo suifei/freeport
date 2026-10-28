@@ -1,0 +1,534 @@
+{
+  "会话记录、项目记忆及工具输出；属于用户历史，完整保留，退出所有会话后迁移。": {
+    "en": "Session transcripts, project memory and tool output. This is user history: keep it whole and migrate after closing every session.",
+    "zh-TW": "工作階段記錄、專案記憶及工具輸出；屬於使用者歷史，完整保留，結束所有工作階段後遷移。",
+    "ja": "セッション記録、プロジェクトのメモリ、ツール出力。ユーザー履歴なので丸ごと保持し、すべてのセッションを終了してから移行します。",
+    "ko": "세션 기록, 프로젝트 메모리, 도구 출력입니다. 사용자 기록이므로 전체를 보존하고 모든 세션을 종료한 뒤 이전하세요.",
+    "de": "Sitzungsverläufe, Projektgedächtnis und Werkzeugausgaben. Benutzerverlauf: vollständig behalten und erst nach Beenden aller Sitzungen verschieben."
+  },
+  "文件修改前的恢复快照；用于回退，不能当作可丢弃缓存。": {
+    "en": "Snapshots taken before files are edited, used for rewinding. Not a disposable cache.",
+    "zh-TW": "檔案修改前的還原快照；用於回復，不能當作可丟棄的快取。",
+    "ja": "ファイル変更前の復元スナップショット。巻き戻しに使うため、破棄できるキャッシュではありません。",
+    "ko": "파일 수정 전 복원 스냅샷입니다. 되돌리기에 쓰이므로 버려도 되는 캐시가 아닙니다.",
+    "de": "Wiederherstellungs-Snapshots vor Dateiänderungen, zum Zurücksetzen. Kein verwerfbarer Cache."
+  },
+  "历史粘贴内容；删除可能影响历史提示词，迁移时完整保留。": {
+    "en": "Pasted content from past prompts. Deleting it can break prompt history; keep it whole when migrating.",
+    "zh-TW": "歷史貼上內容；刪除可能影響歷史提示詞，遷移時完整保留。",
+    "ja": "過去に貼り付けた内容。削除するとプロンプト履歴に影響する可能性があるため、移行時は丸ごと保持します。",
+    "ko": "과거에 붙여 넣은 내용입니다. 삭제하면 프롬프트 기록에 영향을 줄 수 있으므로 이전 시 전체를 보존하세요.",
+    "de": "Früher eingefügte Inhalte. Löschen kann den Prompt-Verlauf beschädigen; beim Verschieben vollständig behalten."
+  },
+  "版本说明等可重新获取的应用缓存。": {
+    "en": "Application cache that can be fetched again, such as release notes.",
+    "zh-TW": "版本說明等可重新取得的應用程式快取。",
+    "ja": "リリースノートなど、再取得できるアプリのキャッシュ。",
+    "ko": "릴리스 노트처럼 다시 받을 수 있는 앱 캐시입니다.",
+    "de": "Erneut abrufbarer Anwendungscache, etwa Versionshinweise."
+  },
+  "已安装插件、市场副本和插件状态；检测嵌套链接后按无链接分支处理。": {
+    "en": "Installed plugins, marketplace copies and plugin state. Nested links are detected; only branches without links are offered.",
+    "zh-TW": "已安裝外掛、市集副本和外掛狀態；偵測巢狀連結後，只處理不含連結的分支。",
+    "ja": "インストール済みプラグイン、マーケットプレイスの複製、プラグインの状態。入れ子のリンクを検出し、リンクのない分岐だけを扱います。",
+    "ko": "설치된 플러그인, 마켓플레이스 사본, 플러그인 상태입니다. 중첩 링크를 감지하고 링크가 없는 분기만 처리합니다.",
+    "de": "Installierte Plugins, Marktplatz-Kopien und Plugin-Status. Verschachtelte Links werden erkannt; nur Zweige ohne Links werden angeboten."
+  },
+  "诊断日志；其中 latest 可能是指向日志文件的绝对符号链接，整目录迁移须连同处理该链接，不能忽略。": {
+    "en": "Diagnostic logs. latest may be an absolute symbolic link to a log file; moving the whole folder must handle that link, not ignore it.",
+    "zh-TW": "診斷記錄；其中 latest 可能是指向記錄檔的絕對符號連結，整個目錄遷移時須一併處理該連結，不能忽略。",
+    "ja": "診断ログ。latest はログファイルへの絶対シンボリックリンクの場合があり、フォルダーごと移行するときはこのリンクも扱う必要があります。",
+    "ko": "진단 로그입니다. latest는 로그 파일을 가리키는 절대 심볼릭 링크일 수 있으므로, 폴더 전체를 이전할 때 이 링크도 함께 처리해야 합니다.",
+    "de": "Diagnoseprotokolle. latest kann ein absoluter symbolischer Link auf eine Protokolldatei sein; beim Verschieben des Ordners muss dieser Link mit behandelt werden."
+  },
+  "共享技能经常指向 .agents/skills；保留连接，不整体搬运。": {
+    "en": "Shared skills often point to .agents/skills. Keep the links; do not move the folder as a whole.",
+    "zh-TW": "共用技能經常指向 .agents/skills；保留連結，不整體搬移。",
+    "ja": "共有スキルは .agents/skills を指していることが多いため、リンクを保持し、丸ごと移動しません。",
+    "ko": "공유 스킬은 .agents/skills를 가리키는 경우가 많습니다. 링크를 유지하고 통째로 옮기지 마세요.",
+    "de": "Geteilte Skills verweisen oft auf .agents/skills. Links beibehalten, den Ordner nicht als Ganzes verschieben."
+  },
+  "可恢复会话的完整记录；用户历史，禁止按临时文件清理。": {
+    "en": "Complete records of resumable sessions. User history; never clean them up as temporary files.",
+    "zh-TW": "可繼續之工作階段的完整記錄；屬於使用者歷史，不得當作暫存檔清理。",
+    "ja": "再開可能なセッションの完全な記録。ユーザー履歴なので、一時ファイルとして削除してはいけません。",
+    "ko": "이어서 할 수 있는 세션의 전체 기록입니다. 사용자 기록이므로 임시 파일처럼 정리하면 안 됩니다.",
+    "de": "Vollständige Aufzeichnungen fortsetzbarer Sitzungen. Benutzerverlauf; nie als temporäre Dateien bereinigen."
+  },
+  "归档会话，迁移保留内容及 ACL。": {
+    "en": "Archived sessions. Migration keeps the contents and ACLs.",
+    "zh-TW": "封存的工作階段，遷移時保留內容及 ACL。",
+    "ja": "アーカイブ済みセッション。移行時は内容と ACL を保持します。",
+    "ko": "보관된 세션입니다. 이전 시 내용과 ACL을 보존합니다.",
+    "de": "Archivierte Sitzungen. Beim Verschieben bleiben Inhalt und ACLs erhalten."
+  },
+  "会话附件，可能仍被历史引用。": {
+    "en": "Session attachments, possibly still referenced by history.",
+    "zh-TW": "工作階段附件，可能仍被歷史參照。",
+    "ja": "セッションの添付ファイル。履歴から参照されている可能性があります。",
+    "ko": "세션 첨부 파일이며 기록에서 아직 참조될 수 있습니다.",
+    "de": "Sitzungsanhänge, möglicherweise noch vom Verlauf referenziert."
+  },
+  "已生成图片，属于用户产物。": {
+    "en": "Generated images. These are user output.",
+    "zh-TW": "已產生的圖片，屬於使用者產出。",
+    "ja": "生成された画像。ユーザーの成果物です。",
+    "ko": "생성된 이미지이며 사용자 결과물입니다.",
+    "de": "Erzeugte Bilder. Das sind Ergebnisse des Benutzers."
+  },
+  "应用缓存，具体子项随版本变化；退出应用后处理。": {
+    "en": "Application cache; its contents vary by version. Close the application first.",
+    "zh-TW": "應用程式快取，具體子項隨版本變化；結束應用程式後處理。",
+    "ja": "アプリのキャッシュ。中身はバージョンにより異なります。アプリを終了してから処理します。",
+    "ko": "앱 캐시이며 하위 항목은 버전에 따라 다릅니다. 앱을 종료한 뒤 처리하세요.",
+    "de": "Anwendungscache; der Inhalt hängt von der Version ab. Zuerst die Anwendung beenden."
+  },
+  "插件下载/版本目录；其中 chrome/latest 可能是指向版本目录的连接，可改选不含链接的其他分支。": {
+    "en": "Plugin downloads and version folders. chrome/latest may be a junction to a version folder; choose other branches without links instead.",
+    "zh-TW": "外掛下載/版本目錄；其中 chrome/latest 可能是指向版本目錄的連結，可改選不含連結的其他分支。",
+    "ja": "プラグインのダウンロード/バージョンフォルダー。chrome/latest はバージョンフォルダーへの接続の場合があるため、リンクのない別の分岐を選べます。",
+    "ko": "플러그인 다운로드/버전 폴더입니다. chrome/latest는 버전 폴더를 가리키는 연결일 수 있으니 링크가 없는 다른 분기를 선택하세요.",
+    "de": "Plugin-Downloads und Versionsordner. chrome/latest kann eine Verbindung zu einem Versionsordner sein; stattdessen andere Zweige ohne Links wählen."
+  },
+  "沙箱状态和权限关系，不作为缓存自动迁移。": {
+    "en": "Sandbox state and permission relationships. Not migrated automatically as a cache.",
+    "zh-TW": "沙箱狀態和權限關係，不作為快取自動遷移。",
+    "ja": "サンドボックスの状態と権限の関係。キャッシュとして自動移行しません。",
+    "ko": "샌드박스 상태와 권한 관계입니다. 캐시로 자동 이전하지 않습니다.",
+    "de": "Sandbox-Status und Berechtigungsbeziehungen. Wird nicht automatisch als Cache verschoben."
+  },
+  "沙箱执行文件，可能关联主机权限和版本绑定，需专门验证。": {
+    "en": "Sandbox executables, possibly tied to host permissions and a specific version. Needs dedicated verification.",
+    "zh-TW": "沙箱執行檔，可能關聯主機權限和版本綁定，需專門驗證。",
+    "ja": "サンドボックスの実行ファイル。ホストの権限や特定バージョンに結び付いている可能性があり、個別の検証が必要です。",
+    "ko": "샌드박스 실행 파일로 호스트 권한 및 특정 버전과 연결될 수 있어 별도 검증이 필요합니다.",
+    "de": "Sandbox-Programmdateien, eventuell an Host-Berechtigungen und eine Version gebunden. Gesondert prüfen."
+  },
+  "整个 Codex 用户目录；含沙箱状态与权限关系（.sandbox 排除自动迁移），整目录迁移前需人工确认。": {
+    "en": "The whole Codex user folder, including sandbox state and permissions (.sandbox is excluded from automatic migration). Review before moving the whole folder.",
+    "zh-TW": "整個 Codex 使用者目錄；含沙箱狀態與權限關係（.sandbox 排除自動遷移），整個目錄遷移前需人工確認。",
+    "ja": "Codex のユーザーフォルダー全体。サンドボックスの状態と権限を含みます（.sandbox は自動移行対象外）。フォルダーごと移行する前に確認が必要です。",
+    "ko": "Codex 사용자 폴더 전체입니다. 샌드박스 상태와 권한을 포함하며(.sandbox는 자동 이전 제외) 전체 이전 전에 직접 확인해야 합니다.",
+    "de": "Der gesamte Codex-Benutzerordner mit Sandbox-Status und Berechtigungen (.sandbox ist von der automatischen Migration ausgenommen). Vor dem Verschieben prüfen."
+  },
+  "Codex 托管运行时（primary-runtime）与安装暂存；升级与版本绑定尚未验证，需人工确认。": {
+    "en": "Codex managed runtime (primary-runtime) and install staging. Upgrades and version binding are not yet verified; review first.",
+    "zh-TW": "Codex 託管執行階段（primary-runtime）與安裝暫存；升級與版本綁定尚未驗證，需人工確認。",
+    "ja": "Codex の管理ランタイム（primary-runtime）とインストール用の一時領域。更新とバージョンの結び付きは未検証のため、確認が必要です。",
+    "ko": "Codex 관리 런타임(primary-runtime)과 설치 임시 파일입니다. 업그레이드와 버전 연결이 아직 검증되지 않아 직접 확인이 필요합니다.",
+    "de": "Verwaltete Codex-Laufzeit (primary-runtime) und Installations-Zwischenablage. Updates und Versionsbindung sind ungeprüft; zuerst prüfen."
+  },
+  "会话正文、任务、计划与会话日志；完整保留，先退出所有 CLI/桌面后台。": {
+    "en": "Session content, tasks, plans and session logs. Keep them whole; first exit every CLI, desktop app and background process.",
+    "zh-TW": "工作階段內容、任務、計畫與工作階段記錄；完整保留，先結束所有 CLI/桌面背景程式。",
+    "ja": "セッション本文、タスク、計画、セッションログ。丸ごと保持し、先に CLI とデスクトップのバックグラウンドをすべて終了します。",
+    "ko": "세션 본문, 작업, 계획, 세션 로그입니다. 전체를 보존하고 먼저 모든 CLI·데스크톱 백그라운드를 종료하세요.",
+    "de": "Sitzungsinhalte, Aufgaben, Pläne und Sitzungsprotokolle. Vollständig behalten; zuerst alle CLI-, Desktop- und Hintergrundprozesse beenden."
+  },
+  "诊断日志。": {
+    "en": "Diagnostic logs.",
+    "zh-TW": "診斷記錄。",
+    "ja": "診断ログ。",
+    "ko": "진단 로그입니다.",
+    "de": "Diagnoseprotokolle."
+  },
+  "应用缓存；格式随应用版本变化。": {
+    "en": "Application cache; the format changes with the application version.",
+    "zh-TW": "應用程式快取；格式隨應用程式版本變化。",
+    "ja": "アプリのキャッシュ。形式はアプリのバージョンにより変わります。",
+    "ko": "앱 캐시이며 형식은 앱 버전에 따라 달라집니다.",
+    "de": "Anwendungscache; das Format ändert sich mit der Anwendungsversion."
+  },
+  "附件文件，可能仍被历史引用。": {
+    "en": "Attachment files, possibly still referenced by history.",
+    "zh-TW": "附件檔案，可能仍被歷史參照。",
+    "ja": "添付ファイル。履歴から参照されている可能性があります。",
+    "ko": "첨부 파일이며 기록에서 아직 참조될 수 있습니다.",
+    "de": "Anhangsdateien, möglicherweise noch vom Verlauf referenziert."
+  },
+  "文件恢复快照；不是可丢弃缓存。": {
+    "en": "File restore snapshots. Not a disposable cache.",
+    "zh-TW": "檔案還原快照；不是可丟棄的快取。",
+    "ja": "ファイルの復元スナップショット。破棄できるキャッシュではありません。",
+    "ko": "파일 복원 스냅샷이며 버려도 되는 캐시가 아닙니다.",
+    "de": "Datei-Wiederherstellungs-Snapshots. Kein verwerfbarer Cache."
+  },
+  "搜索索引；先退出写入索引的进程。": {
+    "en": "Search index. First exit the processes that write to it.",
+    "zh-TW": "搜尋索引；先結束寫入索引的處理程序。",
+    "ja": "検索インデックス。先にインデックスに書き込むプロセスを終了します。",
+    "ko": "검색 색인입니다. 먼저 색인에 쓰는 프로세스를 종료하세요.",
+    "de": "Suchindex. Zuerst die Prozesse beenden, die ihn schreiben."
+  },
+  "桌面服务运行时，需验证升级器及后台服务停机行为。": {
+    "en": "Desktop service runtime. The updater and how the background service stops still need verification.",
+    "zh-TW": "桌面服務執行階段，需驗證更新程式及背景服務的停止行為。",
+    "ja": "デスクトップサービスのランタイム。アップデーターとバックグラウンドサービスの停止動作の検証が必要です。",
+    "ko": "데스크톱 서비스 런타임입니다. 업데이터와 백그라운드 서비스 중지 동작을 검증해야 합니다.",
+    "de": "Laufzeit des Desktop-Dienstes. Updater und Beenden des Hintergrunddienstes sind noch zu prüfen."
+  },
+  "整个 Kimi Code 用户目录（含服务运行时与凭据）；先退出 CLI、桌面及后台服务，需人工确认。": {
+    "en": "The whole Kimi Code user folder, including the service runtime and credentials. Exit the CLI, desktop app and background services first; review before moving.",
+    "zh-TW": "整個 Kimi Code 使用者目錄（含服務執行階段與憑證）；先結束 CLI、桌面及背景服務，需人工確認。",
+    "ja": "Kimi Code のユーザーフォルダー全体（サービスランタイムと資格情報を含む）。CLI、デスクトップ、バックグラウンドサービスを先に終了し、確認してから移行します。",
+    "ko": "Kimi Code 사용자 폴더 전체(서비스 런타임과 자격 증명 포함)입니다. CLI, 데스크톱, 백그라운드 서비스를 먼저 종료하고 직접 확인하세요.",
+    "de": "Der gesamte Kimi-Code-Benutzerordner mit Dienstlaufzeit und Anmeldedaten. Zuerst CLI, Desktop-App und Hintergrunddienste beenden; vor dem Verschieben prüfen."
+  },
+  "CLI 与桌面共享的会话历史。": {
+    "en": "Session history shared by the CLI and the desktop app.",
+    "zh-TW": "CLI 與桌面共用的工作階段歷史。",
+    "ja": "CLI とデスクトップで共有されるセッション履歴。",
+    "ko": "CLI와 데스크톱이 공유하는 세션 기록입니다.",
+    "de": "Sitzungsverlauf, den CLI und Desktop-App gemeinsam nutzen."
+  },
+  "会话附件。": {
+    "en": "Session attachments.",
+    "zh-TW": "工作階段附件。",
+    "ja": "セッションの添付ファイル。",
+    "ko": "세션 첨부 파일입니다.",
+    "de": "Sitzungsanhänge."
+  },
+  "应用缓存。": {
+    "en": "Application cache.",
+    "zh-TW": "應用程式快取。",
+    "ja": "アプリのキャッシュ。",
+    "ko": "앱 캐시입니다.",
+    "de": "Anwendungscache."
+  },
+  "运行时、插件存储与数据库的关系随版本变化，需人工确认后迁移。": {
+    "en": "How the runtime, plugin storage and databases relate changes by version; review before migrating.",
+    "zh-TW": "執行階段、外掛儲存與資料庫的關係隨版本變化，需人工確認後遷移。",
+    "ja": "ランタイム、プラグインの保存領域、データベースの関係はバージョンにより変わるため、確認してから移行します。",
+    "ko": "런타임, 플러그인 저장소, 데이터베이스의 관계가 버전마다 달라 직접 확인한 뒤 이전해야 합니다.",
+    "de": "Das Zusammenspiel von Laufzeit, Plugin-Speicher und Datenbanken ändert sich je Version; vor dem Verschieben prüfen."
+  },
+  "整个 DeepSeek Harness 用户目录（含运行时与存储）；先退出 CLI 与桌面，需人工确认。": {
+    "en": "The whole DeepSeek Harness user folder, including runtimes and storage. Exit the CLI and desktop app first; review before moving.",
+    "zh-TW": "整個 DeepSeek Harness 使用者目錄（含執行階段與儲存）；先結束 CLI 與桌面，需人工確認。",
+    "ja": "DeepSeek Harness のユーザーフォルダー全体（ランタイムと保存領域を含む）。CLI とデスクトップを先に終了し、確認してから移行します。",
+    "ko": "DeepSeek Harness 사용자 폴더 전체(런타임과 저장소 포함)입니다. CLI와 데스크톱을 먼저 종료하고 직접 확인하세요.",
+    "de": "Der gesamte DeepSeek-Harness-Benutzerordner mit Laufzeiten und Speicher. Zuerst CLI und Desktop-App beenden; vor dem Verschieben prüfen."
+  },
+  "会话正文和恢复元数据，属于用户历史。": {
+    "en": "Session content and resume metadata. This is user history.",
+    "zh-TW": "工作階段內容和繼續用的中繼資料，屬於使用者歷史。",
+    "ja": "セッション本文と再開用メタデータ。ユーザー履歴です。",
+    "ko": "세션 본문과 이어하기 메타데이터이며 사용자 기록입니다.",
+    "de": "Sitzungsinhalte und Fortsetzungs-Metadaten. Benutzerverlauf."
+  },
+  "下载暂存；先确认升级器未运行。": {
+    "en": "Download staging. Make sure the updater is not running first.",
+    "zh-TW": "下載暫存；先確認更新程式未執行。",
+    "ja": "ダウンロードの一時領域。アップデーターが動作していないことを先に確認します。",
+    "ko": "다운로드 임시 폴더입니다. 먼저 업데이터가 실행 중이 아닌지 확인하세요.",
+    "de": "Download-Zwischenablage. Zuerst sicherstellen, dass der Updater nicht läuft."
+  },
+  "插件市场缓存。": {
+    "en": "Plugin marketplace cache.",
+    "zh-TW": "外掛市集快取。",
+    "ja": "プラグインマーケットプレイスのキャッシュ。",
+    "ko": "플러그인 마켓플레이스 캐시입니다.",
+    "de": "Cache des Plugin-Marktplatzes."
+  },
+  "实际 CLI 程序及升级入口，不能当缓存。": {
+    "en": "The actual CLI program and its update entry point. Not a cache.",
+    "zh-TW": "實際的 CLI 程式及更新入口，不能當作快取。",
+    "ja": "CLI 本体と更新の入口。キャッシュではありません。",
+    "ko": "실제 CLI 프로그램과 업데이트 진입점이며 캐시가 아닙니다.",
+    "de": "Das eigentliche CLI-Programm und sein Update-Einstieg. Kein Cache."
+  },
+  "整个 Grok CLI 用户目录（含程序与升级入口）；先退出全部会话，需人工确认。": {
+    "en": "The whole Grok CLI user folder, including the program and update entry point. Exit every session first; review before moving.",
+    "zh-TW": "整個 Grok CLI 使用者目錄（含程式與更新入口）；先結束所有工作階段，需人工確認。",
+    "ja": "Grok CLI のユーザーフォルダー全体（本体と更新の入口を含む）。すべてのセッションを先に終了し、確認してから移行します。",
+    "ko": "Grok CLI 사용자 폴더 전체(프로그램과 업데이트 진입점 포함)입니다. 모든 세션을 먼저 종료하고 직접 확인하세요.",
+    "de": "Der gesamte Grok-CLI-Benutzerordner mit Programm und Update-Einstieg. Zuerst alle Sitzungen beenden; vor dem Verschieben prüfen."
+  },
+  "附件暂存；公开文档未确认其可重建性，先保留人工复核。": {
+    "en": "Attachment staging. Public documentation does not confirm it can be rebuilt; review it manually.",
+    "zh-TW": "附件暫存；公開文件未確認其可重建，先保留人工複核。",
+    "ja": "添付ファイルの一時領域。再生成できるかは公開文書で確認できないため、手動で確認します。",
+    "ko": "첨부 파일 임시 폴더입니다. 다시 만들 수 있는지 공개 문서로 확인되지 않아 직접 검토가 필요합니다.",
+    "de": "Zwischenablage für Anhänge. Laut öffentlicher Dokumentation ist nicht bestätigt, dass sie neu erzeugt werden kann; manuell prüfen."
+  },
+  "整个应用数据目录（设置、扩展状态、会话、缓存）；整目录迁移，完全退出应用及后台后进行。": {
+    "en": "The whole application data folder (settings, extension state, sessions, caches). Moved as one folder after fully exiting the application and its background processes.",
+    "zh-TW": "整個應用程式資料目錄（設定、擴充功能狀態、工作階段、快取）；整個目錄遷移，完全結束應用程式及背景程式後進行。",
+    "ja": "アプリのデータフォルダー全体（設定、拡張機能の状態、セッション、キャッシュ）。アプリとバックグラウンドを完全に終了してからフォルダーごと移行します。",
+    "ko": "앱 데이터 폴더 전체(설정, 확장 상태, 세션, 캐시)입니다. 앱과 백그라운드를 완전히 종료한 뒤 폴더째 이전합니다.",
+    "de": "Der gesamte Anwendungsdatenordner (Einstellungen, Erweiterungsstatus, Sitzungen, Caches). Wird als Ganzes verschoben, nachdem Anwendung und Hintergrundprozesse vollständig beendet sind."
+  },
+  "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。": {
+    "en": "Application-specific cache or logs. Only leaf folders that actually exist are handled; User, Cookies, sessions and databases stay.",
+    "zh-TW": "應用程式特定快取/記錄；只處理確實存在的末端目錄，保留 User、Cookies、工作階段和資料庫。",
+    "ja": "アプリ固有のキャッシュ/ログ。実在する末端フォルダーだけを扱い、User、Cookies、セッション、データベースはそのまま残します。",
+    "ko": "앱 전용 캐시/로그입니다. 실제로 있는 하위 폴더만 처리하고 User, Cookies, 세션, 데이터베이스는 그대로 둡니다.",
+    "de": "Anwendungsspezifischer Cache bzw. Protokolle. Nur tatsächlich vorhandene Blattordner werden behandelt; User, Cookies, Sitzungen und Datenbanken bleiben."
+  },
+  "编辑器用户目录（扩展、argv.json、CLI 数据）；整目录迁移，完全退出编辑器及扩展宿主后进行。": {
+    "en": "Editor user folder (extensions, argv.json, CLI data). Moved as one folder after fully exiting the editor and extension host.",
+    "zh-TW": "編輯器使用者目錄（擴充功能、argv.json、CLI 資料）；整個目錄遷移，完全結束編輯器及擴充功能主機後進行。",
+    "ja": "エディターのユーザーフォルダー（拡張機能、argv.json、CLI データ）。エディターと拡張機能ホストを完全に終了してからフォルダーごと移行します。",
+    "ko": "편집기 사용자 폴더(확장, argv.json, CLI 데이터)입니다. 편집기와 확장 호스트를 완전히 종료한 뒤 폴더째 이전합니다.",
+    "de": "Editor-Benutzerordner (Erweiterungen, argv.json, CLI-Daten). Wird als Ganzes verschoben, nachdem Editor und Erweiterungshost vollständig beendet sind."
+  },
+  "已安装扩展，不是缓存；完全退出编辑器及扩展宿主后迁移。": {
+    "en": "Installed extensions, not a cache. Migrate after fully exiting the editor and extension host.",
+    "zh-TW": "已安裝的擴充功能，不是快取；完全結束編輯器及擴充功能主機後遷移。",
+    "ja": "インストール済みの拡張機能で、キャッシュではありません。エディターと拡張機能ホストを完全に終了してから移行します。",
+    "ko": "설치된 확장이며 캐시가 아닙니다. 편집기와 확장 호스트를 완전히 종료한 뒤 이전하세요.",
+    "de": "Installierte Erweiterungen, kein Cache. Nach vollständigem Beenden von Editor und Erweiterungshost verschieben."
+  },
+  "用户级安装的程序目录；升级器按原路径写入，经连接后仍可用。退出编辑器和升级器后迁移。": {
+    "en": "Per-user program folder. The updater writes to the original path, which keeps working through the junction. Migrate after exiting the editor and updater.",
+    "zh-TW": "使用者層級安裝的程式目錄；更新程式按原路徑寫入，經連結後仍可用。結束編輯器和更新程式後遷移。",
+    "ja": "ユーザー単位でインストールされたプログラムフォルダー。アップデーターは元のパスに書き込み、接続経由でも動作します。エディターとアップデーターを終了してから移行します。",
+    "ko": "사용자 단위로 설치된 프로그램 폴더입니다. 업데이터는 원래 경로에 쓰며 연결을 거쳐도 동작합니다. 편집기와 업데이터를 종료한 뒤 이전하세요.",
+    "de": "Benutzerweit installierter Programmordner. Der Updater schreibt in den ursprünglichen Pfad, der über die Verbindung weiter funktioniert. Nach Beenden von Editor und Updater verschieben."
+  },
+  "插件代码及 data.json 设置，不是纯缓存；保留插件状态。": {
+    "en": "Plugin code and data.json settings, not just cache. Plugin state is kept.",
+    "zh-TW": "外掛程式碼及 data.json 設定，不是單純的快取；保留外掛狀態。",
+    "ja": "プラグインのコードと data.json の設定。単なるキャッシュではなく、プラグインの状態を保持します。",
+    "ko": "플러그인 코드와 data.json 설정이며 단순 캐시가 아닙니다. 플러그인 상태를 보존합니다.",
+    "de": "Plugin-Code und data.json-Einstellungen, nicht nur Cache. Der Plugin-Status bleibt erhalten."
+  },
+  "下载依赖、索引及源码缓存；停止所有 cargo/rustc 后迁移，保留全目录关系。": {
+    "en": "Downloaded dependencies, index and source cache. Migrate after stopping every cargo/rustc; folder relationships are kept.",
+    "zh-TW": "下載的相依套件、索引及原始碼快取；停止所有 cargo/rustc 後遷移，保留整個目錄的關係。",
+    "ja": "ダウンロードした依存関係、インデックス、ソースのキャッシュ。cargo/rustc をすべて停止してから移行し、フォルダー間の関係を保持します。",
+    "ko": "내려받은 의존성, 인덱스, 소스 캐시입니다. 모든 cargo/rustc를 중지한 뒤 이전하며 폴더 관계를 유지합니다.",
+    "de": "Heruntergeladene Abhängigkeiten, Index und Quellcache. Nach Beenden aller cargo/rustc verschieben; Ordnerbeziehungen bleiben erhalten."
+  },
+  "整个 CARGO_HOME（bin、registry、git、配置）；PATH 中的 .cargo/bin 经连接后保持原路径。停止所有 cargo/rustc 后迁移。": {
+    "en": "The whole CARGO_HOME (bin, registry, git, config). .cargo/bin on PATH keeps its original path through the junction. Migrate after stopping every cargo/rustc.",
+    "zh-TW": "整個 CARGO_HOME（bin、registry、git、設定）；PATH 中的 .cargo/bin 經連結後保持原路徑。停止所有 cargo/rustc 後遷移。",
+    "ja": "CARGO_HOME 全体（bin、registry、git、設定）。PATH にある .cargo/bin は接続経由で元のパスのまま使えます。cargo/rustc をすべて停止してから移行します。",
+    "ko": "CARGO_HOME 전체(bin, registry, git, 설정)입니다. PATH의 .cargo/bin은 연결을 통해 원래 경로를 유지합니다. 모든 cargo/rustc를 중지한 뒤 이전하세요.",
+    "de": "Das gesamte CARGO_HOME (bin, registry, git, Konfiguration). .cargo/bin im PATH behält über die Verbindung seinen Pfad. Nach Beenden aller cargo/rustc verschieben."
+  },
+  "已安装编译器/标准库，属于工具链，不是构建缓存。": {
+    "en": "Installed compilers and standard libraries. This is a toolchain, not a build cache.",
+    "zh-TW": "已安裝的編譯器/標準函式庫，屬於工具鏈，不是建置快取。",
+    "ja": "インストール済みのコンパイラーと標準ライブラリ。ツールチェーンであり、ビルドキャッシュではありません。",
+    "ko": "설치된 컴파일러/표준 라이브러리이며 빌드 캐시가 아니라 도구 체인입니다.",
+    "de": "Installierte Compiler und Standardbibliotheken. Eine Toolchain, kein Build-Cache."
+  },
+  "整个 RUSTUP_HOME（工具链、设置、下载）；停止 rustup、cargo、rustc 及 rust-analyzer 后迁移。": {
+    "en": "The whole RUSTUP_HOME (toolchains, settings, downloads). Migrate after stopping rustup, cargo, rustc and rust-analyzer.",
+    "zh-TW": "整個 RUSTUP_HOME（工具鏈、設定、下載）；停止 rustup、cargo、rustc 及 rust-analyzer 後遷移。",
+    "ja": "RUSTUP_HOME 全体（ツールチェーン、設定、ダウンロード）。rustup、cargo、rustc、rust-analyzer を停止してから移行します。",
+    "ko": "RUSTUP_HOME 전체(도구 체인, 설정, 다운로드)입니다. rustup, cargo, rustc, rust-analyzer를 중지한 뒤 이전하세요.",
+    "de": "Das gesamte RUSTUP_HOME (Toolchains, Einstellungen, Downloads). Nach Beenden von rustup, cargo, rustc und rust-analyzer verschieben."
+  },
+  "工具链下载/解压暂存，需停止 rustup 更新。": {
+    "en": "Toolchain download and unpack staging. Stop any rustup update first.",
+    "zh-TW": "工具鏈下載/解壓縮暫存，需停止 rustup 更新。",
+    "ja": "ツールチェーンのダウンロード/展開用の一時領域。rustup の更新を止めてから扱います。",
+    "ko": "도구 체인 다운로드/압축 해제 임시 폴더입니다. rustup 업데이트를 중지해야 합니다.",
+    "de": "Zwischenablage für Toolchain-Downloads und Entpacken. Zuerst laufende rustup-Updates beenden."
+  },
+  "项目构建产物，须同时存在 Cargo.toml；自定义 target-dir 另行解析。": {
+    "en": "Project build output; Cargo.toml must be present alongside. A custom target-dir is resolved separately.",
+    "zh-TW": "專案建置產物，須同時存在 Cargo.toml；自訂 target-dir 另行解析。",
+    "ja": "プロジェクトのビルド成果物。Cargo.toml が同じ場所に必要です。独自の target-dir は別途解決します。",
+    "ko": "프로젝트 빌드 결과물이며 Cargo.toml이 함께 있어야 합니다. 사용자 지정 target-dir은 따로 확인합니다.",
+    "de": "Build-Ausgabe eines Projekts; Cargo.toml muss daneben liegen. Ein eigenes target-dir wird gesondert ermittelt."
+  },
+  "Go 编译和测试缓存；设置了 GOCACHE 时以 go env GOCACHE 为准。": {
+    "en": "Go build and test cache. If GOCACHE is set, go env GOCACHE is authoritative.",
+    "zh-TW": "Go 編譯和測試快取；設定了 GOCACHE 時以 go env GOCACHE 為準。",
+    "ja": "Go のビルドとテストのキャッシュ。GOCACHE を設定している場合は go env GOCACHE が優先です。",
+    "ko": "Go 빌드 및 테스트 캐시입니다. GOCACHE가 설정되어 있으면 go env GOCACHE를 기준으로 합니다.",
+    "de": "Go-Build- und Testcache. Ist GOCACHE gesetzt, gilt go env GOCACHE."
+  },
+  "模块缓存含只读源码、下载及校验元数据；不是整个 GOPATH。": {
+    "en": "Module cache with read-only sources, downloads and checksum metadata. Not the whole GOPATH.",
+    "zh-TW": "模組快取含唯讀原始碼、下載及校驗中繼資料；不是整個 GOPATH。",
+    "ja": "モジュールキャッシュ。読み取り専用のソース、ダウンロード、検証メタデータを含みます。GOPATH 全体ではありません。",
+    "ko": "읽기 전용 소스, 다운로드, 검증 메타데이터가 든 모듈 캐시이며 GOPATH 전체가 아닙니다.",
+    "de": "Modulcache mit schreibgeschützten Quellen, Downloads und Prüfsummen-Metadaten. Nicht der gesamte GOPATH."
+  },
+  "已编译包的二进制归档缓存。": {
+    "en": "Binary archive cache of compiled packages.",
+    "zh-TW": "已編譯套件的二進位封存快取。",
+    "ja": "ビルド済みパッケージのバイナリアーカイブキャッシュ。",
+    "ko": "컴파일된 패키지의 바이너리 아카이브 캐시입니다.",
+    "de": "Binärarchiv-Cache kompilierter Pakete."
+  },
+  "下载/构建中间产物/暂存包；只在证实为 vcpkg 根后纳入。": {
+    "en": "Downloads, intermediate build output and staged packages. Included only after the folder is confirmed as a vcpkg root.",
+    "zh-TW": "下載/建置中間產物/暫存套件；只在證實為 vcpkg 根目錄後納入。",
+    "ja": "ダウンロード、ビルド中間生成物、一時パッケージ。vcpkg のルートと確認できた場合だけ対象にします。",
+    "ko": "다운로드, 빌드 중간 결과물, 임시 패키지입니다. vcpkg 루트로 확인된 경우에만 포함합니다.",
+    "de": "Downloads, Build-Zwischenergebnisse und bereitgestellte Pakete. Nur aufgenommen, wenn der Ordner als vcpkg-Stamm bestätigt ist."
+  },
+  "IntelliSense/PCH 缓存（ipch 及各工作区数据库）；可通过 C_Cpp.intelliSenseCachePath 更改位置。": {
+    "en": "IntelliSense/PCH cache (ipch and per-workspace databases). C_Cpp.intelliSenseCachePath can change its location.",
+    "zh-TW": "IntelliSense/PCH 快取（ipch 及各工作區資料庫）；可透過 C_Cpp.intelliSenseCachePath 變更位置。",
+    "ja": "IntelliSense/PCH キャッシュ（ipch とワークスペースごとのデータベース）。C_Cpp.intelliSenseCachePath で場所を変更できます。",
+    "ko": "IntelliSense/PCH 캐시(ipch 및 작업 영역별 데이터베이스)입니다. C_Cpp.intelliSenseCachePath로 위치를 바꿀 수 있습니다.",
+    "de": "IntelliSense/PCH-Cache (ipch und Datenbanken je Arbeitsbereich). Der Ort lässt sich über C_Cpp.intelliSenseCachePath ändern."
+  },
+  "HTTP 响应与已构建 wheel 缓存；不是 Python 安装或虚拟环境。": {
+    "en": "Cache of HTTP responses and built wheels. Not a Python installation or virtual environment.",
+    "zh-TW": "HTTP 回應與已建置 wheel 的快取；不是 Python 安裝或虛擬環境。",
+    "ja": "HTTP 応答とビルド済み wheel のキャッシュ。Python 本体や仮想環境ではありません。",
+    "ko": "HTTP 응답과 빌드된 wheel 캐시이며 Python 설치나 가상 환경이 아닙니다.",
+    "de": "Cache für HTTP-Antworten und gebaute Wheels. Keine Python-Installation und keine virtuelle Umgebung."
+  },
+  "内容寻址下载缓存及 npx 暂存；不包含全局安装程序。": {
+    "en": "Content-addressed download cache and npx staging. Does not contain globally installed programs.",
+    "zh-TW": "內容定址的下載快取及 npx 暫存；不包含全域安裝的程式。",
+    "ja": "内容アドレス方式のダウンロードキャッシュと npx の一時領域。グローバルにインストールしたプログラムは含みません。",
+    "ko": "콘텐츠 주소 기반 다운로드 캐시와 npx 임시 폴더이며 전역 설치 프로그램은 포함하지 않습니다.",
+    "de": "Inhaltsadressierter Download-Cache und npx-Zwischenablage. Enthält keine global installierten Programme."
+  },
+  "旧版 npm 配置遗留在用户目录下的缓存；按缓存结构识别。": {
+    "en": "Cache left in the user folder by an older npm configuration, recognized by its cache structure.",
+    "zh-TW": "舊版 npm 設定遺留在使用者目錄下的快取；依快取結構識別。",
+    "ja": "古い npm 設定によってユーザーフォルダーに残ったキャッシュ。キャッシュの構造で識別します。",
+    "ko": "이전 npm 설정 때문에 사용자 폴더에 남은 캐시이며 캐시 구조로 식별합니다.",
+    "de": "Von einer älteren npm-Konfiguration im Benutzerordner hinterlassener Cache, erkannt an seiner Cache-Struktur."
+  },
+  "Windows 默认使用硬链接；可能和环境共享数据。跨盘拆开共享关系不一定释放原盘空间，先专门复核。": {
+    "en": "Uses hard links by default on Windows and may share data with environments. Moving it to another drive splits that sharing and may not free space; review first.",
+    "zh-TW": "Windows 上預設使用硬連結；可能與環境共用資料。跨磁碟拆開共用關係不一定能釋放原磁碟空間，先專門複核。",
+    "ja": "Windows では既定でハードリンクを使い、環境とデータを共有している場合があります。別ドライブへ移すと共有が分かれ、空き容量が増えないこともあるため、先に確認します。",
+    "ko": "Windows에서는 기본적으로 하드 링크를 사용해 환경과 데이터를 공유할 수 있습니다. 다른 드라이브로 옮기면 공유가 끊겨 공간이 늘지 않을 수 있으니 먼저 확인하세요.",
+    "de": "Nutzt unter Windows standardmäßig harte Links und teilt eventuell Daten mit Umgebungen. Ein Verschieben auf ein anderes Laufwerk trennt diese Freigabe und spart nicht unbedingt Platz; zuerst prüfen."
+  },
+  "内容寻址包仓库可能硬链接到项目，先确认边界及同盘限制。": {
+    "en": "The content-addressed package store may be hard-linked into projects. Check its boundaries and same-drive constraints first.",
+    "zh-TW": "內容定址的套件倉庫可能硬連結到專案，先確認邊界及同磁碟限制。",
+    "ja": "内容アドレス方式のパッケージストアはプロジェクトにハードリンクされている場合があります。範囲と同一ドライブの制約を先に確認します。",
+    "ko": "콘텐츠 주소 기반 패키지 저장소가 프로젝트에 하드 링크되어 있을 수 있습니다. 경계와 같은 드라이브 제약을 먼저 확인하세요.",
+    "de": "Der inhaltsadressierte Paketspeicher kann per harten Links in Projekte verlinkt sein. Zuerst Grenzen und Einschränkungen auf demselben Laufwerk prüfen."
+  },
+  "包缓存可能与已安装包硬链接共享，先核验后迁移。": {
+    "en": "The package cache may share hard links with installed packages. Verify before migrating.",
+    "zh-TW": "套件快取可能與已安裝的套件以硬連結共用，先核驗再遷移。",
+    "ja": "パッケージキャッシュはインストール済みパッケージとハードリンクで共有されている場合があります。確認してから移行します。",
+    "ko": "패키지 캐시가 설치된 패키지와 하드 링크로 공유될 수 있습니다. 확인한 뒤 이전하세요.",
+    "de": "Der Paketcache kann harte Links mit installierten Paketen teilen. Vor dem Verschieben prüfen."
+  },
+  "npm 全局安装的命令行工具及其 node_modules；PATH 指向原路径，经连接后不变。停止所有 node 进程后迁移。": {
+    "en": "Command-line tools installed globally with npm and their node_modules. PATH points to the original path, which stays the same through the junction. Migrate after stopping every node process.",
+    "zh-TW": "npm 全域安裝的命令列工具及其 node_modules；PATH 指向原路徑，經連結後不變。停止所有 node 處理程序後遷移。",
+    "ja": "npm でグローバルにインストールしたコマンドラインツールとその node_modules。PATH は元のパスを指し、接続経由でも変わりません。node プロセスをすべて停止してから移行します。",
+    "ko": "npm으로 전역 설치한 명령줄 도구와 node_modules입니다. PATH는 원래 경로를 가리키며 연결을 거쳐도 그대로입니다. 모든 node 프로세스를 중지한 뒤 이전하세요.",
+    "de": "Global mit npm installierte Kommandozeilenwerkzeuge samt node_modules. PATH zeigt auf den ursprünglichen Pfad, der über die Verbindung gleich bleibt. Nach Beenden aller node-Prozesse verschieben."
+  },
+  "Python 安装管理器的解释器与缓存；注册表与 PATH 仍指向原路径。虚拟环境可能硬编码解释器路径，需人工确认。": {
+    "en": "Interpreters and cache of the Python install manager. The registry and PATH still point to the original path. Virtual environments may hard-code interpreter paths; review first.",
+    "zh-TW": "Python 安裝管理員的直譯器與快取；登錄檔與 PATH 仍指向原路徑。虛擬環境可能寫死直譯器路徑，需人工確認。",
+    "ja": "Python インストールマネージャーのインタープリターとキャッシュ。レジストリと PATH は元のパスを指したままです。仮想環境がインタープリターのパスを固定している場合があるため、確認が必要です。",
+    "ko": "Python 설치 관리자의 인터프리터와 캐시입니다. 레지스트리와 PATH는 원래 경로를 가리킵니다. 가상 환경이 인터프리터 경로를 고정했을 수 있으니 직접 확인하세요.",
+    "de": "Interpreter und Cache des Python-Installationsmanagers. Registry und PATH zeigen weiter auf den ursprünglichen Pfad. Virtuelle Umgebungen können Interpreterpfade fest enthalten; zuerst prüfen."
+  },
+  "Playwright 下载的浏览器二进制，可重新下载。停止测试与浏览器进程后迁移。": {
+    "en": "Browser binaries downloaded by Playwright; they can be downloaded again. Migrate after stopping tests and browser processes.",
+    "zh-TW": "Playwright 下載的瀏覽器二進位檔，可重新下載。停止測試與瀏覽器處理程序後遷移。",
+    "ja": "Playwright がダウンロードしたブラウザーのバイナリ。再ダウンロードできます。テストとブラウザーのプロセスを停止してから移行します。",
+    "ko": "Playwright가 내려받은 브라우저 바이너리로 다시 받을 수 있습니다. 테스트와 브라우저 프로세스를 중지한 뒤 이전하세요.",
+    "de": "Von Playwright heruntergeladene Browser-Programme; erneut herunterladbar. Nach Beenden von Tests und Browserprozessen verschieben."
+  },
+  "桌面端运行时与程序副本；升级与版本绑定尚未验证，需人工确认。": {
+    "en": "Desktop runtime and program copies. Upgrades and version binding are not yet verified; review first.",
+    "zh-TW": "桌面端執行階段與程式副本；升級與版本綁定尚未驗證，需人工確認。",
+    "ja": "デスクトップ版のランタイムとプログラムの複製。更新とバージョンの結び付きは未検証のため、確認が必要です。",
+    "ko": "데스크톱 런타임과 프로그램 사본입니다. 업그레이드와 버전 연결이 아직 검증되지 않아 직접 확인이 필요합니다.",
+    "de": "Desktop-Laufzeit und Programmkopien. Updates und Versionsbindung sind ungeprüft; zuerst prüfen."
+  },
+  "全局展开包；构建可能直接引用其中内容，停止构建后迁移。": {
+    "en": "Globally extracted packages; builds may reference their contents directly. Migrate after stopping builds.",
+    "zh-TW": "全域展開的套件；建置可能直接參照其中內容，停止建置後遷移。",
+    "ja": "グローバルに展開されたパッケージ。ビルドが中身を直接参照する場合があるため、ビルドを止めてから移行します。",
+    "ko": "전역으로 풀린 패키지이며 빌드가 내용을 직접 참조할 수 있습니다. 빌드를 중지한 뒤 이전하세요.",
+    "de": "Global entpackte Pakete; Builds können direkt auf ihren Inhalt verweisen. Nach Beenden der Builds verschieben."
+  },
+  "依赖/构建缓存或 Gradle 分发包；先停止 Gradle daemon。": {
+    "en": "Dependency and build cache or Gradle distributions. Stop the Gradle daemon first.",
+    "zh-TW": "相依套件/建置快取或 Gradle 發行套件；先停止 Gradle daemon。",
+    "ja": "依存関係/ビルドのキャッシュ、または Gradle の配布物。先に Gradle デーモンを停止します。",
+    "ko": "의존성/빌드 캐시 또는 Gradle 배포판입니다. 먼저 Gradle 데몬을 중지하세요.",
+    "de": "Abhängigkeits- und Build-Cache bzw. Gradle-Distributionen. Zuerst den Gradle-Daemon beenden."
+  },
+  "模型缓存必须保留 blobs/refs/snapshots 关系；可能有内部符号链接，不能仅搬某个大权重文件。": {
+    "en": "Model cache: blobs, refs and snapshots must stay together. It may contain internal symbolic links; never move a single large weight file alone.",
+    "zh-TW": "模型快取必須保留 blobs/refs/snapshots 的關係；可能有內部符號連結，不能只搬某個大型權重檔。",
+    "ja": "モデルキャッシュは blobs/refs/snapshots の関係を保つ必要があります。内部にシンボリックリンクがある場合があり、大きな重みファイルだけを移してはいけません。",
+    "ko": "모델 캐시는 blobs/refs/snapshots 관계를 유지해야 합니다. 내부 심볼릭 링크가 있을 수 있으니 큰 가중치 파일 하나만 옮기면 안 됩니다.",
+    "de": "Modellcache: blobs, refs und snapshots müssen zusammenbleiben. Er kann interne symbolische Links enthalten; nie nur eine große Gewichtsdatei verschieben."
+  },
+  "模型及下载元数据；不能把 .modelscope/credentials 当模型目录。": {
+    "en": "Models and download metadata. .modelscope/credentials is not a model folder.",
+    "zh-TW": "模型及下載中繼資料；不能把 .modelscope/credentials 當作模型目錄。",
+    "ja": "モデルとダウンロードのメタデータ。.modelscope/credentials はモデルフォルダーではありません。",
+    "ko": "모델과 다운로드 메타데이터입니다. .modelscope/credentials는 모델 폴더가 아닙니다.",
+    "de": "Modelle und Download-Metadaten. .modelscope/credentials ist kein Modellordner."
+  },
+  "Hub 下载代码与 checkpoints；保留整体。": {
+    "en": "Code and checkpoints downloaded from Hub. Keep them together.",
+    "zh-TW": "Hub 下載的程式碼與 checkpoints；保留整體。",
+    "ja": "Hub からダウンロードしたコードと checkpoints。まとめて保持します。",
+    "ko": "Hub에서 내려받은 코드와 checkpoints이며 함께 보존합니다.",
+    "de": "Von Hub heruntergeladener Code und Checkpoints. Zusammen behalten."
+  },
+  "共享权重 blobs 和 manifests 必须整体保留；停止模型服务和下载后迁移。": {
+    "en": "Shared weight blobs and manifests must stay together. Migrate after stopping the model service and downloads.",
+    "zh-TW": "共用權重 blobs 和 manifests 必須整體保留；停止模型服務和下載後遷移。",
+    "ja": "共有された重みの blobs と manifests はまとめて保持する必要があります。モデルサービスとダウンロードを停止してから移行します。",
+    "ko": "공유 가중치 blobs와 manifests는 함께 보존해야 합니다. 모델 서비스와 다운로드를 중지한 뒤 이전하세요.",
+    "de": "Gemeinsam genutzte Gewichts-Blobs und Manifeste müssen zusammenbleiben. Nach Beenden von Modelldienst und Downloads verschieben."
+  },
+  "模型目录；需确认对应工具和模型文件格式，不能仅凭文件夹名判断。": {
+    "en": "Model folder. Confirm the owning tool and model file format; the folder name alone is not enough.",
+    "zh-TW": "模型目錄；需確認對應工具和模型檔案格式，不能只憑資料夾名稱判斷。",
+    "ja": "モデルフォルダー。対応するツールとモデルファイルの形式を確認する必要があり、フォルダー名だけでは判断できません。",
+    "ko": "모델 폴더입니다. 해당 도구와 모델 파일 형식을 확인해야 하며 폴더 이름만으로 판단할 수 없습니다.",
+    "de": "Modellordner. Zugehöriges Werkzeug und Dateiformat bestätigen; der Ordnername allein reicht nicht."
+  },
+  "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。": {
+    "en": "Only the disk cache inside a browser profile. Exit every browser background process. Cookies, Login Data, History and session databases are excluded.",
+    "zh-TW": "僅限瀏覽器設定檔下的磁碟快取；結束所有瀏覽器背景程式。排除 Cookies、Login Data、History 和工作階段資料庫。",
+    "ja": "ブラウザープロファイル内のディスクキャッシュのみ。ブラウザーのバックグラウンドをすべて終了します。Cookies、Login Data、History、セッションのデータベースは対象外です。",
+    "ko": "브라우저 프로필 안의 디스크 캐시만 해당합니다. 브라우저 백그라운드를 모두 종료하세요. Cookies, Login Data, History, 세션 데이터베이스는 제외합니다.",
+    "de": "Nur der Festplattencache innerhalb eines Browserprofils. Alle Browser-Hintergrundprozesse beenden. Cookies, Login Data, History und Sitzungsdatenbanken sind ausgenommen."
+  },
+  "离线网站资源可能不可重新获取，不等同普通 HTTP 缓存。": {
+    "en": "Offline website resources may not be retrievable again; this is not an ordinary HTTP cache.",
+    "zh-TW": "離線網站資源可能無法重新取得，不等同一般 HTTP 快取。",
+    "ja": "オフライン用のウェブサイトのリソースは再取得できない場合があり、通常の HTTP キャッシュとは異なります。",
+    "ko": "오프라인 웹사이트 리소스는 다시 받을 수 없을 수 있으며 일반 HTTP 캐시와 다릅니다.",
+    "de": "Offline gespeicherte Website-Ressourcen sind eventuell nicht erneut abrufbar; kein gewöhnlicher HTTP-Cache."
+  },
+  "磁盘网络缓存；保留 Roaming 下书签、密码与配置数据库。": {
+    "en": "Disk network cache. Bookmarks, passwords and settings databases under Roaming stay.",
+    "zh-TW": "磁碟網路快取；保留 Roaming 下的書籤、密碼與設定資料庫。",
+    "ja": "ディスク上のネットワークキャッシュ。Roaming にあるブックマーク、パスワード、設定のデータベースはそのまま残します。",
+    "ko": "디스크 네트워크 캐시입니다. Roaming 아래의 북마크, 비밀번호, 설정 데이터베이스는 그대로 둡니다.",
+    "de": "Netzwerkcache auf der Festplatte. Lesezeichen, Passwörter und Einstellungsdatenbanken unter Roaming bleiben."
+  },
+  "聊天、附件、账号与数据库混合。不同版本位置不同，须以客户端设置中显示的数据路径核实，暂不自动纳入。": {
+    "en": "Chats, attachments, accounts and databases mixed together. The location differs by version; check it against the data path shown in the client's settings. Not included automatically.",
+    "zh-TW": "聊天、附件、帳號與資料庫混在一起。不同版本位置不同，須以用戶端設定中顯示的資料路徑核實，暫不自動納入。",
+    "ja": "チャット、添付ファイル、アカウント、データベースが混在しています。場所はバージョンにより異なるため、クライアントの設定に表示されるデータパスで確認してください。自動では対象にしません。",
+    "ko": "채팅, 첨부 파일, 계정, 데이터베이스가 섞여 있습니다. 위치가 버전마다 다르므로 클라이언트 설정에 표시된 데이터 경로로 확인하세요. 자동으로 포함하지 않습니다.",
+    "de": "Chats, Anhänge, Konten und Datenbanken gemischt. Der Ort hängt von der Version ab; mit dem in den Client-Einstellungen angezeigten Datenpfad abgleichen. Wird nicht automatisch aufgenommen."
+  },
+  "独立日志目录；退出企业微信全部后台后预检，保留其他组件和账号数据。": {
+    "en": "Separate log folder. Check after exiting every WeCom background process; other components and account data stay.",
+    "zh-TW": "獨立記錄目錄；結束企業微信所有背景程式後預先檢查，保留其他元件和帳號資料。",
+    "ja": "独立したログフォルダー。WeCom のバックグラウンドをすべて終了してから事前確認し、他のコンポーネントとアカウントのデータは残します。",
+    "ko": "별도 로그 폴더입니다. WeCom 백그라운드를 모두 종료한 뒤 사전 점검하며 다른 구성 요소와 계정 데이터는 그대로 둡니다.",
+    "de": "Separater Protokollordner. Nach Beenden aller WeCom-Hintergrundprozesse prüfen; andere Komponenten und Kontodaten bleiben."
+  },
+  "账号、配置、数据库与附件混合；须完全退出客户端（含托盘）后整目录迁移，需人工确认。": {
+    "en": "Accounts, settings, databases and attachments mixed together. Fully exit the client, including the tray icon, then move the whole folder; review first.",
+    "zh-TW": "帳號、設定、資料庫與附件混在一起；須完全結束用戶端（含系統匣）後整個目錄遷移，需人工確認。",
+    "ja": "アカウント、設定、データベース、添付ファイルが混在しています。クライアント（タスクトレイを含む）を完全に終了してからフォルダーごと移行します。確認が必要です。",
+    "ko": "계정, 설정, 데이터베이스, 첨부 파일이 섞여 있습니다. 클라이언트(트레이 포함)를 완전히 종료한 뒤 폴더째 이전하며 직접 확인이 필요합니다.",
+    "de": "Konten, Einstellungen, Datenbanken und Anhänge gemischt. Den Client einschließlich Infobereich vollständig beenden, dann den ganzen Ordner verschieben; zuerst prüfen."
+  }
+}

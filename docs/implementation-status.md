@@ -9,7 +9,7 @@
 | 范围 | 现状 |
 | --- | --- |
 | 扫描 | 自研 `FSCTL_ENUM_USN_DATA` 枚举与 USN_RECORD V2 解析、路径重建；权限不足或不支持时回退只读 Win32 遍历并即时显示原因。范围为用户目录及其中的 AppData，报告含 `scope_roots` |
-| 候选规则 | schema v2 知识库（revision 2026102801，124 条规则；GUI 不再提供导入，CLI `rules --import` 保留），路径锚定并要求应用标志；仅有名称的 v1 规则不产生候选。见[应用存储调研](application-storage-research.md) |
+| 候选规则 | schema v2 知识库（revision 2026102901，124 条规则，说明含六种界面语言；GUI 不再提供导入，CLI `rules --import` 保留），路径锚定并要求应用标志；仅有名称的 v1 规则不产生候选。见[应用存储调研](application-storage-research.md) |
 | 选择 | 原生 SysListView32 候选列表（每个候选目录一行、整行选择、列排序，默认按递归逻辑大小降序，不可选行灰显）、共享选择核心（按候选根归并）、CLI `--selection`，链接明细进入 CLI JSON |
 | 迁移 | 一次不打开文件的目录遍历（大小、特殊对象） → 系统 robocopy 暂存复制（返回码） → 切换 → robocopy `/MOVE` 收尾，源剩任何文件即停止 → 仅移除空目录 → `mklink /J`。参数见[系统命令后端](system-command-backend.md) |
 | 恢复 | 从盘上实际连接（含手工创建、无历史记录）复制真实目标当前内容替换连接，真实目标保留；整卷 MFT 扫描可发现 VHD 上的手工 Junction |

@@ -4,7 +4,11 @@ use crate::{
     fail, platform, Result,
 };
 use serde::{Deserialize, Serialize};
-use std::{collections::HashSet, fs, path::Path};
+use std::{
+    collections::{BTreeMap, HashSet},
+    fs,
+    path::Path,
+};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -22,7 +26,10 @@ pub struct Rule {
 #[serde(deny_unknown_fields)]
 pub struct Knowledge {
     pub application: String,
+    /// Simplified Chinese; `purposes` holds the other interface languages by tag.
     pub purpose: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub purposes: BTreeMap<String, String>,
     pub kind: String,
     pub confidence: String,
     pub migration: String,
@@ -31,6 +38,21 @@ pub struct Knowledge {
     pub markers: Vec<Vec<String>>,
     pub sources: Vec<String>,
     pub relocation_env: Vec<String>,
+}
+impl Knowledge {
+    /// The purpose in the interface language, falling back to English, then to Simplified Chinese.
+    pub fn purpose_text(&self) -> &str {
+        self.purpose_for(crate::i18n::language())
+    }
+    fn purpose_for(&self, tag: &str) -> &str {
+        if tag == "zh-CN" {
+            return &self.purpose;
+        }
+        self.purposes
+            .get(tag)
+            .or_else(|| self.purposes.get("en"))
+            .unwrap_or(&self.purpose)
+    }
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -95,6 +117,12 @@ pub fn validate(pack: &Pack) -> Result<()> {
                 || k.application.len() > 128
                 || k.purpose.is_empty()
                 || k.purpose.len() > 2048
+                || k.purposes.iter().any(|(tag, text)| {
+                    tag == "zh-CN"
+                        || crate::i18n::index(tag).is_none()
+                        || text.is_empty()
+                        || text.len() > 2048
+                })
                 || ![
                     "cache",
                     "logs",
@@ -323,6 +351,24 @@ pub fn candidate(path: &Path, rule: &Rule) -> Candidate {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn builtin_purposes_cover_every_language() {
+        for rule in builtin().rules {
+            let k = rule.knowledge.unwrap();
+            for tag in crate::i18n::TAGS {
+                assert!(
+                    tag == "zh-CN" || k.purposes.contains_key(tag),
+                    "{} lacks {tag}",
+                    rule.id
+                );
+            }
+            assert_eq!(k.purpose_for("zh-CN"), k.purpose);
+            assert_eq!(k.purpose_for("de"), k.purposes["de"]);
+            let mut english_only = k.clone();
+            english_only.purposes.retain(|tag, _| tag == "en");
+            assert_eq!(english_only.purpose_for("ja"), k.purposes["en"]);
+        }
+    }
     #[test]
     fn builtin_is_valid() {
         validate(&builtin()).unwrap();

@@ -232,7 +232,7 @@
   "handles.users_stop": "Copying has not started; the original directory is unchanged.",
   "system.residue_at": "robocopy left {0} in place (not copied, changed or new); stopped and kept the data.",
   "history.leftover": "Leftover directory not owned by an open transaction; delete it by hand once you have checked it: {0}",
-  "about.button": "バージョン情報",
+  "about.button": "情報",
   "about.text": "SaveMyCDrive {0}\n\nrobocopy でフォルダーを別のドライブへ移動し、元の場所にディレクトリ ジャンクションを作成します。復元は逆の操作です。\n\nライセンス: {1}\nリポジトリ: {2}\nQQ: {3}",
   "drive.free": "{0}  空き {1}",
   "app.name": "SaveMyCDrive"
