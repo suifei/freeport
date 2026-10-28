@@ -187,6 +187,11 @@ pub fn run() -> Result<()> {
                 eprintln!("{} -> {}", i.source.display(), i.target.display());
             }
             eprintln!("{}", crate::i18n::t("system.policy"));
+            let sources: Vec<_> = plan.items.iter().map(|i| i.source.clone()).collect();
+            let users = crate::handles::users(&sources);
+            if !users.is_empty() {
+                eprint!("{}", crate::handles::advice(&users));
+            }
             confirm(yes)?;
             let records = elevation::execute(
                 &Job::Migrate {

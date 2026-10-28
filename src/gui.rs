@@ -643,6 +643,12 @@ unsafe fn apply(ui: &mut Ui) {
                         preview.push_str(&format!("\n{}", p.display()));
                     }
                 }
+                let sources: Vec<_> = plan.items.iter().map(|i| i.source.clone()).collect();
+                let users = handles::users(&sources);
+                if !users.is_empty() {
+                    preview.push_str("\n");
+                    preview.push_str(&handles::advice(&users));
+                }
                 Job::Migrate {
                     plan,
                     store,

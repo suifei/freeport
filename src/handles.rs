@@ -363,6 +363,159 @@ pub fn discover(roots: &[PathBuf]) -> Result<Vec<OpenHandle>> {
     }
 }
 
+/// A program using a selected directory: it holds a handle inside it, or its executable
+/// was started from it. Detection only; nothing is closed.
+#[derive(Clone, Debug)]
+pub struct User {
+    pub root: PathBuf,
+    pub pid: u32,
+    pub exe: String,
+    pub app: String,
+    pub runs_inside: bool,
+}
+fn image(pid: u32) -> Option<PathBuf> {
+    let h = unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) };
+    if h.is_null() {
+        return None;
+    }
+    let f = unsafe { File::from_raw_handle(h) };
+    let mut b = vec![0u16; 32768];
+    let mut len = b.len() as u32;
+    if unsafe { QueryFullProcessImageNameW(f.as_raw_handle() as _, 0, b.as_mut_ptr(), &mut len) }
+        == 0
+    {
+        return None;
+    }
+    Some(PathBuf::from(String::from_utf16_lossy(&b[..len as usize])))
+}
+/// The product's own description ("Visual Studio Code"), falling back to the file name.
+fn app_name(exe: &Path) -> String {
+    let fallback = exe
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    let wide = p::wide(exe.as_os_str());
+    let size = unsafe { GetFileVersionInfoSizeW(wide.as_ptr(), std::ptr::null_mut()) };
+    if size == 0 {
+        return fallback;
+    }
+    let mut data = vec![0u8; size as usize];
+    if unsafe { GetFileVersionInfoW(wide.as_ptr(), 0, size, data.as_mut_ptr() as _) } == 0 {
+        return fallback;
+    }
+    let query = |key: &str| -> Option<&[u8]> {
+        let mut ptr = std::ptr::null_mut();
+        let mut len = 0u32;
+        let key = p::wide(key);
+        if unsafe { VerQueryValueW(data.as_ptr() as _, key.as_ptr(), &mut ptr, &mut len) } == 0
+            || ptr.is_null()
+        {
+            return None;
+        }
+        Some(unsafe { std::slice::from_raw_parts(ptr as *const u8, len as usize * 2) })
+    };
+    let Some(t) = query(r"\VarFileInfo\Translation").filter(|t| t.len() >= 4) else {
+        return fallback;
+    };
+    let (lang, page) = (
+        u16::from_le_bytes([t[0], t[1]]),
+        u16::from_le_bytes([t[2], t[3]]),
+    );
+    query(&format!(
+        r"\StringFileInfo\{lang:04x}{page:04x}\FileDescription"
+    ))
+    .map(|b| {
+        let w: Vec<u16> = b
+            .chunks_exact(2)
+            .map(|c| u16::from_le_bytes([c[0], c[1]]))
+            .take_while(|c| *c != 0)
+            .collect();
+        String::from_utf16_lossy(&w).trim().to_string()
+    })
+    .filter(|s| !s.is_empty())
+    .unwrap_or(fallback)
+}
+pub fn users(roots: &[PathBuf]) -> Vec<User> {
+    let own = std::process::id();
+    let mut found: Vec<(PathBuf, u32, bool)> = vec![];
+    for (pid, _) in p::processes() {
+        if pid <= 4 || pid == own {
+            continue;
+        }
+        if let Some(path) = image(pid) {
+            if let Some(root) = roots.iter().find(|r| p::within(&path, r)) {
+                found.push((root.clone(), pid, true));
+            }
+        }
+    }
+    // A failed or partial handle query only narrows the advice; it never blocks.
+    for h in discover(roots).unwrap_or_default() {
+        if let Some(root) = roots.iter().find(|r| p::within(&h.path, r)) {
+            if !found.iter().any(|(r, pid, _)| *pid == h.pid && r == root) {
+                found.push((root.clone(), h.pid, false));
+            }
+        }
+    }
+    let mut names = std::collections::HashMap::new();
+    found
+        .into_iter()
+        .filter_map(|(root, pid, runs_inside)| {
+            let exe = image(pid)?;
+            let app = names
+                .entry(exe.clone())
+                .or_insert_with(|| app_name(&exe))
+                .clone();
+            Some(User {
+                root,
+                pid,
+                exe: exe.file_name()?.to_string_lossy().into_owned(),
+                app,
+                runs_inside,
+            })
+        })
+        .collect()
+}
+/// Per directory, which programs to quit first, grouped by product.
+pub fn advice(users: &[User]) -> String {
+    let mut roots: Vec<&PathBuf> = vec![];
+    for u in users {
+        if !roots.contains(&&u.root) {
+            roots.push(&u.root);
+        }
+    }
+    let mut text = String::new();
+    for root in roots {
+        text.push_str(&crate::i18n::format(
+            "handles.users",
+            &[root.display().to_string()],
+        ));
+        let mut groups: Vec<(&str, &str, usize, bool)> = vec![];
+        for u in users.iter().filter(|u| &u.root == root) {
+            match groups
+                .iter_mut()
+                .find(|g| g.0 == u.app.as_str() && g.1 == u.exe.as_str())
+            {
+                Some(g) => {
+                    g.2 += 1;
+                    g.3 |= u.runs_inside;
+                }
+                None => groups.push((&u.app, &u.exe, 1, u.runs_inside)),
+            }
+        }
+        for (app, exe, count, inside) in groups {
+            text.push_str(&crate::i18n::format(
+                if inside {
+                    "handles.user_inside"
+                } else {
+                    "handles.user"
+                },
+                &[app.into(), exe.into(), count.to_string()],
+            ));
+        }
+    }
+    text
+}
+
 pub fn force_close(roots: &[PathBuf], audit: &Path, progress: &dyn Fn(String)) -> Result<usize> {
     use std::fs::OpenOptions;
     let mut log = OpenOptions::new().create(true).append(true).open(audit)?;
@@ -501,4 +654,37 @@ fn request_exit(roots: &[PathBuf], progress: &dyn Fn(String)) -> Result<()> {
         progress(crate::i18n::format("msg.183475d929", &[format!("{}", rc)]));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn users_name_programs_started_from_a_directory() {
+        let dir = std::env::current_dir()
+            .unwrap()
+            .join(".build")
+            .join("unit-tests")
+            .join(format!("users-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let system =
+            std::path::PathBuf::from(std::env::var("SystemRoot").unwrap()).join("System32");
+        std::fs::copy(system.join("PING.EXE"), dir.join("ping.exe")).unwrap();
+        // Handle holders need the fp.exe query helper and are covered by acceptance P04.
+        let mut child = Command::new(dir.join("ping.exe"))
+            .args(["-n", "6", "127.0.0.1"])
+            .current_dir(&dir)
+            .stdout(Stdio::null())
+            .spawn()
+            .unwrap();
+        std::thread::sleep(Duration::from_millis(1500));
+        let found = users(std::slice::from_ref(&dir));
+        let _ = child.kill();
+        let _ = child.wait();
+        assert!(found
+            .iter()
+            .any(|u| u.exe.eq_ignore_ascii_case("ping.exe") && u.runs_inside));
+        let text = advice(&found);
+        assert!(text.contains(&dir.display().to_string()) && text.contains("ping.exe"));
+    }
 }

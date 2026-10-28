@@ -274,6 +274,8 @@ class NativeAcceptance(unittest.TestCase):
             failed = run("migrate", "--source", source, "--target", target, "--state", state,
                          "--yes", success=False)
             self.assertNotEqual(failed.returncode, 0)
+            # The holder is named before any copy starts.
+            self.assertIn(Path(CLI).name.lower(), failed.stderr.decode("utf-8", "replace").lower())
             self.assertIsNone(junction_target(source))
             self.assertFalse(target.exists())
         finally:

@@ -326,5 +326,9 @@
   "system.policy": "系统复制保留数据、属性和文件时间；权限继承目标目录。",
   "rule.review": "{0}（需确认）",
   "scan.skipped_links": "未列入恢复：{0} 个 Windows 管理的连接、{1} 个 node_modules 内的包管理器连接、{2} 个目标在同一盘的连接。",
-  "handles.unresolved": "有 {0} 个句柄在限时内未能解析，占用列表可能不完整；迁移仍以复制、校验和改名结果为准。"
+  "handles.unresolved": "有 {0} 个句柄在限时内未能解析，占用列表可能不完整；迁移仍以复制、校验和改名结果为准。",
+  "handles.users": "以下程序正在使用 {0}，请先完全退出：\n",
+  "handles.user": "  {0}（{1}，{2} 个进程）\n",
+  "handles.user_inside": "  {0}（{1}，{2} 个进程，从该目录运行）\n",
+  "handles.users_stop": "尚未开始复制，原目录未改动。"
 }

@@ -326,5 +326,9 @@
   "system.policy": "System copying preserves data, attributes and file times. Destination permissions are inherited.",
   "rule.review": "{0} (review first)",
   "scan.skipped_links": "Not listed for restore: {0} Windows-managed links, {1} package-manager links under node_modules and {2} links whose target is on the same drive.",
-  "handles.unresolved": "{0} handles could not be resolved in time, so the list may be incomplete; migration still relies on copy, verification and rename checks."
+  "handles.unresolved": "{0} handles could not be resolved in time, so the list may be incomplete; migration still relies on copy, verification and rename checks.",
+  "handles.users": "These programs are using {0}; quit them completely first:\n",
+  "handles.user": "  {0} ({1}, {2} processes)\n",
+  "handles.user_inside": "  {0} ({1}, {2} processes, started from this directory)\n",
+  "handles.users_stop": "Copying has not started; the original directory is unchanged."
 }

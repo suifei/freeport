@@ -1118,6 +1118,15 @@ pub fn migrate(
         batch.transaction(index, &r.id)?;
         fault("prepared");
         let result = (|| -> Result<()> {
+            // A directory still in use fails at the switch after a full copy; stop first.
+            let users = handles::users(std::slice::from_ref(&r.source));
+            if !users.is_empty() {
+                return fail(format!(
+                    "{}{}",
+                    handles::advice(&users),
+                    crate::i18n::t("handles.users_stop")
+                ));
+            }
             let before = tree(&r.source, control, progress)?;
             if before.entries.len() < 2 {
                 return fail(crate::i18n::t("msg.bd053e736a"));
