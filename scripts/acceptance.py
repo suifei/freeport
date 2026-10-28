@@ -8,8 +8,11 @@ import argparse
 import json
 import os
 from pathlib import Path
+import shutil
+import stat
 import subprocess
 import tempfile
+import time
 import unittest
 
 p = argparse.ArgumentParser()
@@ -61,7 +64,64 @@ def verify(source):
     assert (source / "empty").is_dir()
 
 
+def is_reparse(path):
+    return bool(os.lstat(path).st_file_attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT)
+
+
+def junction_target(path):
+    if not os.path.lexists(path) or not is_reparse(path):
+        return None
+    return os.path.normcase(os.readlink(path).removeprefix("\\\\?\\"))
+
+
+def contents(root):
+    """Relative path -> bytes for every regular file under root, never following reparse points."""
+    found = {}
+    for top, dirs, files in os.walk(root):
+        dirs[:] = [d for d in dirs if not is_reparse(os.path.join(top, d))]
+        for f in files:
+            full = Path(top, f)
+            found[str(full.relative_to(root))] = full.read_bytes()
+    return found
+
+
+def lock(path):
+    holder = subprocess.Popen([CLI, "--lang", "en", "__lock-test", "--path", str(path)], env=ENV,
+                              stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                              creationflags=subprocess.CREATE_NO_WINDOW)
+    assert holder.stdout.readline().strip() == b"locked"
+    return holder
+
+
+def unlock(holder):
+    if holder.poll() is None:
+        holder.communicate(b"exit\n", timeout=10)
+
+
+def write_plan(path, items):
+    plan = {"version": 1, "items": [{"id": f"item{i}", "name": Path(s).name, "source": str(s),
+                                     "target": str(t), "bytes": 0} for i, (s, t) in enumerate(items)]}
+    path.write_text(json.dumps(plan), encoding="utf-8")
+    return path
+
+
+def history(state):
+    return json.loads(run("history", "--state", state).stdout)
+
+
+def powershell(command):
+    subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", command], check=True,
+                   capture_output=True, timeout=120, creationflags=subprocess.CREATE_NO_WINDOW)
+
+
 class NativeAcceptance(unittest.TestCase):
+    def second_volume(self):
+        if not args.second_volume:
+            self.fail("Requires --second-volume; not verified")
+        second = Path(args.second_volume).resolve()
+        self.assertNotEqual(second.drive.lower(), BASE.drive.lower())
+        return Path(tempfile.mkdtemp(prefix="freeport-test-", dir=second))
+
     def test_migration_crash_at_every_durable_phase(self):
         for phase in PHASES:
             with self.subTest(phase=phase):
@@ -158,9 +218,251 @@ class NativeAcceptance(unittest.TestCase):
         verify(source)
         verify(target)
 
+    # P01: cross-volume migration keeps content and metadata; the app keeps using the original path.
+    def test_p01_metadata_and_use_through_original_path(self):
+        root, target = fixture("p01"), self.second_volume() / "target"
+        source, state = root / "source", root / "state"
+        populate(source)
+        (source / "deep" / "deeper").mkdir(parents=True)
+        readonly = source / "deep" / "deeper" / "readonly.bin"
+        readonly.write_bytes(os.urandom(256 * 1024))
+        stamp = 1_600_000_000
+        os.utime(readonly, (stamp, stamp))
+        os.chmod(readonly, stat.S_IREAD)
+        before = contents(source)
+        run("migrate", "--source", source, "--target", target, "--state", state, "--yes")
+        self.assertEqual(junction_target(source), os.path.normcase(str(target)))
+        self.assertEqual(contents(target), before)
+        verify(target)
+        moved = target / "deep" / "deeper" / "readonly.bin"
+        self.assertEqual(int(moved.stat().st_mtime), stamp)
+        self.assertFalse(moved.stat().st_mode & stat.S_IWRITE, "read-only attribute lost")
+        (source / "written-via-link.txt").write_bytes(b"app write")
+        (source / "日本語-한국어.txt").write_bytes(b"app update")
+        self.assertEqual((target / "written-via-link.txt").read_bytes(), b"app write")
+        self.assertEqual((target / "日本語-한국어.txt").read_bytes(), b"app update")
+        self.assertEqual(history(state)[0]["phase"], "completed")
+
+    # P04: robocopy cannot read a locked file -> source untouched, no cleanup, recover rolls back.
+    def test_p04_locked_file_keeps_source(self):
+        root = fixture("p04")
+        source, target, state = root / "source", root / "target", root / "state"
+        populate(source)
+        locked = source / "locked.db"
+        locked.write_bytes(b"in use")
+        before = contents(source)
+        holder = lock(locked)
+        try:
+            failed = run("migrate", "--source", source, "--target", target, "--state", state,
+                         "--yes", success=False)
+            self.assertNotEqual(failed.returncode, 0)
+            self.assertIsNone(junction_target(source))
+            self.assertFalse(target.exists())
+        finally:
+            unlock(holder)
+        self.assertEqual(contents(source), before)
+        records = history(state)
+        self.assertEqual(len(records), 1)
+        self.assertNotIn(records[0]["phase"], ("completed", "source_cleaned", "linked"))
+        recovered = json.loads(run("recover", "--transaction", records[0]["id"], "--state", state,
+                                   "--yes").stdout)
+        self.assertEqual(recovered["phase"], "rolled_back")
+        self.assertEqual(contents(source), before)
+        self.assertFalse(target.exists())
+
+    # P05: source files changed or added after verification are never lost.
+    def test_p05_changes_after_verification_are_kept(self):
+        for phase in ("verified", "source_held"):
+            with self.subTest(phase=phase):
+                root = fixture("p05-" + phase)
+                source, target, state = root / "source", root / "target", root / "state"
+                populate(source)
+                run("migrate", "--source", source, "--target", target, "--state", state, "--yes",
+                    phase=phase, success=False)
+                record = history(state)[0]
+                hold = Path(record["hold"])
+                live = source if phase == "verified" else hold
+                (live / "日本語-한국어.txt").write_bytes(b"changed after verify")
+                (live / "added-after-verify.txt").write_bytes(b"new file")
+                run("recover", "--transaction", record["id"], "--state", state, "--yes", success=False)
+                values = []
+                for top in (source, target, hold):
+                    if top.exists() and junction_target(top) is None:
+                        values += contents(top).values()
+                self.assertIn(b"changed after verify", values, "modified file was lost")
+                self.assertIn(b"new file", values, "file added after verification was lost")
+
+    # P07a: an existing target is never merged or overwritten.
+    def test_p07_existing_target_is_rejected(self):
+        root = fixture("p07-exists")
+        source, target, state = root / "source", root / "target", root / "state"
+        populate(source)
+        target.mkdir()
+        (target / "keep.txt").write_bytes(b"existing")
+        before = contents(source)
+        self.assertNotEqual(run("migrate", "--source", source, "--target", target, "--state", state,
+                                "--yes", success=False).returncode, 0)
+        self.assertEqual(contents(target), {"keep.txt": b"existing"})
+        self.assertEqual(contents(source), before)
+        self.assertIsNone(junction_target(source))
+
+    # P07b: not enough space on the target volume is detected before copying.
+    def test_p07_insufficient_space_is_blocked(self):
+        root, target = fixture("p07-space"), self.second_volume() / "target"
+        source, state = root / "source", root / "state"
+        populate(source)
+        with open(source / "large.bin", "wb") as f:
+            f.truncate(shutil.disk_usage(target.parent).free + 64 * 1024 * 1024)
+        try:
+            self.assertNotEqual(run("migrate", "--source", source, "--target", target, "--state", state,
+                                    "--yes", success=False).returncode, 0)
+            self.assertFalse(target.exists())
+            self.assertIsNone(junction_target(source))
+            verify(source)
+            for record in history(state):
+                self.assertEqual(record["phase"], "rolled_back", "copy started despite no space")
+            verify(source)
+        finally:
+            (source / "large.bin").unlink()
+
+    # P07c: a missing target drive is rejected.
+    def test_p07_missing_drive_is_rejected(self):
+        letter = next(c for c in "ZYXWVUTSRQPONMLKJIHG" if not os.path.exists(c + ":\\"))
+        root = fixture("p07-drive")
+        source, state = root / "source", root / "state"
+        populate(source)
+        self.assertNotEqual(run("migrate", "--source", source, "--target", letter + ":\\Dev\\x",
+                                "--state", state, "--yes", success=False).returncode, 0)
+        verify(source)
+        self.assertIsNone(junction_target(source))
+
+    # P07d: the target disk disappears after the source was renamed away, then comes back.
+    def test_p07_target_disk_removed_mid_transaction(self):
+        vhd = os.environ.get("FP_TEST_VHD")
+        if not vhd:
+            self.fail("Requires FP_TEST_VHD (set by test-native.ps1); not verified")
+        root, target = fixture("p07-unplug"), self.second_volume() / "target"
+        source, state = root / "source", root / "state"
+        populate(source)
+        before = contents(source)
+        run("migrate", "--source", source, "--target", target, "--state", state, "--yes",
+            phase="source_held", success=False)
+        record = history(state)[0]
+        hold = Path(record["hold"])
+        powershell(f"Dismount-DiskImage -ImagePath '{vhd}'")
+        try:
+            self.assertFalse(target.exists())
+            run("recover", "--transaction", record["id"], "--state", state, "--yes", success=False)
+            self.assertEqual(contents(hold) if hold.exists() else contents(source), before,
+                             "source data must survive while the target disk is missing")
+        finally:
+            powershell(f"Mount-DiskImage -ImagePath '{vhd}'")
+            for _ in range(50):
+                if target.parent.exists():
+                    break
+                time.sleep(0.2)
+        self.assertTrue(target.parent.exists(), "test VHD did not return on the same drive letter")
+        recovered = json.loads(run("recover", "--transaction", record["id"], "--state", state,
+                                   "--yes").stdout)
+        self.assertIn(recovered["phase"], ("completed", "rolled_back"))
+        self.assertEqual(contents(source if recovered["phase"] == "rolled_back" else target), before)
+
+    # P08: special objects that must not be restored or migrated.
+    def test_p08_special_objects_are_blocked(self):
+        root = fixture("p08")
+        state = root / "state"
+        broken, gone = root / "broken", root / "gone"
+        populate(gone)
+        run("__junction-test", "--source", broken, "--target", gone)
+        shutil.rmtree(gone)
+        cycle = root / "cycle"
+        cycle.mkdir()
+        (cycle / "freeport-fixture.marker").write_bytes(b"FreePort test fixture\n")
+        loop = cycle / "loop"
+        run("__junction-test", "--source", loop, "--target", cycle)
+        mount, volume = root / "mount", None
+        if args.second_volume:
+            mount.mkdir()
+            volume = subprocess.run(["mountvol", args.second_volume, "/L"], capture_output=True,
+                                    text=True, check=True).stdout.strip()
+            subprocess.run(["mountvol", str(mount), volume], check=True, capture_output=True)
+        try:
+            for link in [broken, loop] + ([mount] if volume else []):
+                with self.subTest(restore=link.name):
+                    self.assertNotEqual(run("restore", "--source", link, "--state", state, "--yes",
+                                            success=False).returncode, 0)
+                    self.assertTrue(is_reparse(link), "link was removed")
+            with self.subTest(migrate="nested junction"):
+                nested = root / "nested"
+                populate(nested)
+                (nested / "freeport-fixture.marker").write_bytes(b"FreePort test fixture\n")
+                run("__junction-test", "--source", nested / "inner", "--target", nested / "empty")
+                before = contents(nested)
+                self.assertNotEqual(run("migrate", "--source", nested, "--target", root / "t-nested",
+                                        "--state", state, "--yes", success=False).returncode, 0)
+                self.assertEqual(contents(nested), before)
+                self.assertFalse((root / "t-nested").exists())
+            with self.subTest(migrate="external hard link"):
+                shared = root / "shared"
+                populate(shared)
+                os.link(shared / "日本語-한국어.txt", root / "outside-link.txt")
+                self.assertNotEqual(run("migrate", "--source", shared, "--target", root / "t-hard",
+                                        "--state", state, "--yes", success=False).returncode, 0)
+                verify(shared)
+                self.assertIsNone(junction_target(shared))
+            with self.subTest(apply="parent/child overlap"):
+                parent = root / "parent"
+                populate(parent)
+                plan = write_plan(root / "overlap.json", [(parent, root / "t-parent"),
+                                                          (parent / "empty", root / "t-child")])
+                self.assertNotEqual(run("apply", "--plan", plan, "--state", state, "--yes",
+                                        success=False).returncode, 0)
+                verify(parent)
+                self.assertFalse((root / "t-parent").exists() or (root / "t-child").exists())
+            for record in history(state):
+                self.assertIn(record["phase"], ("completed", "restored", "rolled_back"),
+                              "a blocked operation left an open transaction")
+        finally:
+            if volume:
+                subprocess.run(["mountvol", str(mount), "/D"], capture_output=True)
+
+    # P09: a batch with one failing item is never reported as a whole success.
+    def test_p09_partial_batch_is_reported_accurately(self):
+        root = fixture("p09")
+        state = root / "state"
+        sources = [root / f"s{i}" for i in range(3)]
+        for s in sources:
+            populate(s)
+        locked = sources[1] / "locked.db"
+        locked.write_bytes(b"in use")
+        plan = write_plan(root / "plan.json", [(s, root / f"t{i}") for i, s in enumerate(sources)])
+        holder = lock(locked)
+        try:
+            self.assertNotEqual(run("apply", "--plan", plan, "--state", state, "--yes",
+                                    success=False).returncode, 0)
+        finally:
+            unlock(holder)
+        batches = json.loads(run("history", "--state", state, "--batches").stdout)
+        self.assertEqual(len(batches), 1)
+        self.assertNotEqual(batches[0]["phase"], "completed")
+        status = [i["status"] for i in batches[0]["items"]]
+        self.assertEqual(status[0], "completed")
+        self.assertNotEqual(status[1], "completed")
+        self.assertNotEqual(status[2], "completed")
+        self.assertEqual(junction_target(sources[0]), os.path.normcase(str(root / "t0")))
+        verify(sources[1])
+        verify(sources[2])
+        self.assertIsNone(junction_target(sources[2]))
+
 
 if __name__ == "__main__":
-    suite=unittest.TestSuite([NativeAcceptance("test_force_closes_only_own_test_holder_selected_handles")]) if args.test=="handles" else unittest.defaultTestLoader.loadTestsFromTestCase(NativeAcceptance)
+    handles_test = "test_force_closes_only_own_test_holder_selected_handles"
+    if args.test == "handles":
+        suite = unittest.TestSuite([NativeAcceptance(handles_test)])
+    else:
+        # Force-closing handles is deferred to the next milestone (docs/requirements.md 2.1).
+        names = [n for n in unittest.defaultTestLoader.getTestCaseNames(NativeAcceptance) if n != handles_test]
+        suite = unittest.TestSuite([NativeAcceptance(n) for n in names])
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     Path(args.out).write_text(json.dumps({"tests": result.testsRun, "failures": len(result.failures),
         "errors": len(result.errors), "passed": result.wasSuccessful(), "power_loss_tested": False,

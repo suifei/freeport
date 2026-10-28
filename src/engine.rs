@@ -1186,6 +1186,11 @@ pub fn migrate(
             if r.error.is_none() {
                 r.error = Some(primary);
             }
+            // Preflight rejections (nested links, external hard links, free space) happen
+            // before any copy starts; leaving them open would block every later transaction.
+            if r.phase == "prepared" {
+                r.phase = "rolled_back".into();
+            }
             save(store, &r)?;
             return fail(crate::i18n::format(
                 "msg.868a502327",

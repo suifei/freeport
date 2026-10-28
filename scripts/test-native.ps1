@@ -23,8 +23,13 @@ try {
     $partition=Initialize-Disk -Number $disk.Number -PartitionStyle MBR -PassThru | New-Partition -UseMaximumSize -AssignDriveLetter
     $volume=$partition | Format-Volume -FileSystem NTFS -NewFileSystemLabel 'FREEPORT_TEST' -Confirm:$false
     if ($volume.FileSystem -ne 'NTFS' -or $volume.FileSystemLabel -ne 'FREEPORT_TEST') { throw 'Test volume validation failed.' }
-    & python scripts/acceptance.py --cli ([IO.Path]::GetFullPath($Cli)) --second-volume ($volume.DriveLetter+':\')
-    if ($LASTEXITCODE -ne 0) { throw 'Strict native acceptance failed; fixtures retained.' }
+    # unittest reports progress on stderr; Windows PowerShell 5.1 would turn that into a terminating error.
+    $ErrorActionPreference='Continue'
+    $env:FP_TEST_VHD=$vhdPath
+    & python scripts/acceptance.py --cli ([IO.Path]::GetFullPath($Cli)) --second-volume ($volume.DriveLetter+':\') 2>&1 | ForEach-Object { "$_" }
+    $code=$LASTEXITCODE
+    $ErrorActionPreference='Stop'
+    if ($code -ne 0) { throw 'Strict native acceptance failed; fixtures retained.' }
 } finally {
     if ($null -ne $image) { Dismount-DiskImage -ImagePath $vhdPath }
     Pop-Location
