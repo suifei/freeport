@@ -2,7 +2,7 @@
 
 产品运行只需 Windows；Rust、Python、MinGW 和 GitHub CLI 都是开发工具，不是产品运行时依赖。支持 Windows 10 / 11 x64；验收状态见 [实现状态](implementation-status.md)。
 
-安装 stable 的 `stable-x86_64-pc-windows-gnu` 工具链，把 MinGW-w64 的 `gcc`、`windres` 放入 PATH（例如 MSYS2 的 `mingw64in`）。PATH 中只放 MinGW 的 `bin` 目录，`cargo` 应使用 rustup 安装的版本。
+安装 stable 的 `stable-x86_64-pc-windows-gnu` 工具链，把 MinGW-w64 的 `gcc`、`windres` 放入 PATH（例如 MSYS2 MINGW64 的 `mingw64\bin`，或 GitHub Windows 运行器自带的 `C:\mingw64\bin`；须为 MSVCRT 版本，不用 UCRT64）。PATH 中只放 MinGW 的 `bin` 目录，`cargo` 应使用 rustup 安装的版本。
 
 ```powershell
 rustup toolchain install stable-x86_64-pc-windows-gnu --component rustfmt

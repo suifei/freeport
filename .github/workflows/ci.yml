@@ -6,7 +6,7 @@ jobs:
   windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Windows PowerShell 5.1 script encoding and syntax
         run: python scripts/check-powershell.py
       - name: Offline publisher encoding and resume checks
@@ -17,14 +17,16 @@ jobs:
           toolchain: stable-x86_64-pc-windows-gnu
           targets: x86_64-pc-windows-gnu
           components: rustfmt
-      - uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          install: mingw-w64-x86_64-gcc mingw-w64-x86_64-binutils
-          path-type: inherit
-      - name: Add the MSVCRT MinGW toolchain
-        shell: msys2 {0}
-        run: cygpath -w /mingw64/bin >> "$GITHUB_PATH"
+      # The runner image ships an MSVCRT MinGW-w64; the build only needs its windres.
+      # MSYS2's UCRT64 would mix C runtimes with the msvcrt-based Rust gnu target.
+      - name: Use the runner's MSVCRT MinGW-w64
+        shell: powershell
+        run: |
+          $bin = 'C:\mingw64\bin'
+          if (-not (Test-Path -LiteralPath "$bin\windres.exe")) { throw "MinGW-w64 not found at $bin" }
+          $config = cmd /c "`"$bin\gcc.exe`" -v 2>&1" | Out-String
+          if ($config -match 'msvcrt=ucrt') { throw 'Runner MinGW-w64 targets UCRT; the build expects MSVCRT.' }
+          [IO.File]::AppendAllText($env:GITHUB_PATH, "$bin`n")
       - name: Unit and boundary tests (failures are never skipped)
         shell: powershell
         run: cargo +stable-x86_64-pc-windows-gnu test --locked --lib --target x86_64-pc-windows-gnu
@@ -39,7 +41,7 @@ jobs:
       - name: Real NTFS, cross-volume, crash recovery and GUI flow
         shell: powershell
         run: ./scripts/test-native.ps1 -Cli target/x86_64-pc-windows-gnu/debug/fp.exe
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: validation-evidence
