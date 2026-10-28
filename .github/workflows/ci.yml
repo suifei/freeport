@@ -43,6 +43,8 @@ jobs:
         if: always()
         with:
           name: validation-evidence
+          # .build starts with a dot; upload-artifact skips hidden paths unless told otherwise.
+          include-hidden-files: true
           path: |
             .build/*result.json
             .build/pe-audit.json
