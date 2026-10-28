@@ -266,20 +266,8 @@ unsafe fn init(ui: &mut Ui) {
         WS_BORDER | WS_TABSTOP | ES_AUTOHSCROLL as u32,
     );
     button(ui, BROWSE, l::t("msg.e7f468a900"));
-    ui.request = child(
-        ui,
-        REQUEST,
-        "BUTTON",
-        l::t("msg.1ace177481"),
-        BS_AUTOCHECKBOX as u32 | BS_MULTILINE as u32 | WS_TABSTOP,
-    );
-    ui.force = child(
-        ui,
-        FORCE,
-        "BUTTON",
-        l::t("msg.f8077addd1"),
-        BS_AUTOCHECKBOX as u32 | BS_MULTILINE as u32 | WS_TABSTOP,
-    );
+    // The app-exit and force-close switches are deferred to the next milestone
+    // (docs/requirements.md 2.1); ui.request / ui.force stay null and read unchecked.
     ui.elevate = child(
         ui,
         ELEVATE,
@@ -370,9 +358,7 @@ unsafe fn layout(ui: &Ui) {
     move_id(ui, 4, pad, h - 268, w - 36, 22);
     move_id(ui, 5, pad, h - 242, w - 200, 28);
     move_id(ui, BROWSE, w - 172, h - 242, 154, 28);
-    move_id(ui, REQUEST, pad, h - 206, w / 2 - 24, 28);
-    move_id(ui, ELEVATE, w / 2, h - 206, w / 2 - 18, 28);
-    move_id(ui, FORCE, pad, h - 176, w - 330, 34);
+    move_id(ui, ELEVATE, pad, h - 206, w - 36, 28);
     move_id(ui, APPLY, w - 304, h - 176, 180, 32);
     move_id(ui, STOP, w - 114, h - 176, 96, 32);
     move_id(ui, 6, pad, h - 134, w - 36, 25);
@@ -1164,8 +1150,6 @@ fn main() {
                 .selection
                 .set(&ui.rows[0].candidate.source, true);
             ui.tree.as_ref().unwrap().sync();
-            setcheck(ui.request, true);
-            setcheck(ui.force, true);
             let ids = selected(&ui);
             let destination = read(ui.target);
             let mut labels = std::collections::BTreeMap::new();
@@ -1173,9 +1157,7 @@ fn main() {
                 l::set(tag).unwrap();
                 ui.requested = tag.into();
                 refresh(&mut ui);
-                switches_preserved &= check(ui.request)
-                    && check(ui.force)
-                    && selected(&ui) == ids
+                switches_preserved &= selected(&ui) == ids
                     && read(ui.target) == destination;
                 labels.insert(tag, read(ui.description));
             }

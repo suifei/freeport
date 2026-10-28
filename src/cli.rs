@@ -50,14 +50,12 @@ pub fn run() -> Result<()> {
         "--import",
         "--volumes",
     ];
-    let boolean_flags = [
-        "--yes",
-        "--elevate",
-        "--measure",
-        "--batches",
-        "--request-app-exit",
-        "--force-close-handles",
-    ];
+    let mut boolean_flags = vec!["--yes", "--elevate", "--measure", "--batches"];
+    // Occupancy actions are deferred (docs/requirements.md 2.1); only the debug
+    // __force-test helper still accepts the flag.
+    if cfg!(debug_assertions) {
+        boolean_flags.push("--force-close-handles");
+    }
     let mut seen = std::collections::HashSet::new();
     let mut i = 1;
     while i < args.len() {
@@ -93,10 +91,6 @@ pub fn run() -> Result<()> {
         .unwrap_or_else(engine::default_store);
     let yes = args.iter().any(|a| a == "--yes");
     let control = Control {
-        options: handles::Options {
-            request_app_exit: args.iter().any(|a| a == "--request-app-exit"),
-            force_close_handles: args.iter().any(|a| a == "--force-close-handles"),
-        },
         ..Control::default()
     };
     #[cfg(debug_assertions)]
@@ -192,9 +186,6 @@ pub fn run() -> Result<()> {
             for i in &plan.items {
                 eprintln!("{} -> {}", i.source.display(), i.target.display());
             }
-            if control.options.force_close_handles {
-                eprintln!("{}", handles::warning());
-            }
             eprintln!("{}", crate::i18n::t("system.policy"));
             confirm(yes)?;
             let records = elevation::execute(
@@ -230,9 +221,6 @@ pub fn run() -> Result<()> {
                 };
                 selection.restore_sources(&r.rows)?
             };
-            if control.options.force_close_handles {
-                eprintln!("{}", handles::warning());
-            }
             eprintln!("{}", crate::i18n::t("msg.5960ff2c33"));
             eprintln!("{}", crate::i18n::t("system.policy"));
             confirm(yes)?;
@@ -331,7 +319,7 @@ pub fn run() -> Result<()> {
         "__force-test" => {
             let root = path("--path")?;
             fixture_boundary(&root)?;
-            if !yes || !control.options.force_close_handles {
+            if !yes || !args.iter().any(|a| a == "--force-close-handles") {
                 return fail("Test helper requires explicit --yes --force-close-handles.");
             }
             let n = handles::force_close(

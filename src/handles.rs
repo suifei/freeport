@@ -377,6 +377,11 @@ pub fn release(
     progress: &dyn Fn(String),
 ) -> Result<()> {
     std::fs::create_dir_all(store)?;
+    // Deferred to the next milestone (docs/requirements.md 2.1). Refuse here as
+    // well so a crafted plan or worker request cannot enable them.
+    if options.request_app_exit || options.force_close_handles {
+        return fail("Requesting app exit and force-closing handles are not available in this release.");
+    }
     if options.request_app_exit {
         request_exit(roots, progress)?;
     }
