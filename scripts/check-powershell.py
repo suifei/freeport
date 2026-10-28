@@ -1,4 +1,4 @@
-"""Read-only parser regression for Windows PowerShell 5.1 and PowerShell 7.
+"""Read-only parser regression for Windows PowerShell 5.1.
 
 Never runs the checked scripts, changes execution policy, or contacts GitHub.
 """
@@ -11,9 +11,9 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = sorted((ROOT / "scripts").glob("*.ps1"))
-engines = [shutil.which(name) for name in ("powershell.exe", "pwsh.exe")]
+engines = [shutil.which("powershell.exe")]
 if not all(engines):
-    raise SystemExit("Both Windows PowerShell 5.1 and PowerShell 7 are required")
+    raise SystemExit("Windows PowerShell 5.1 (powershell.exe) is required")
 # Explicit encoding avoids a locale-dependent read of non-ASCII string literals.
 for path in SCRIPTS:
     data = path.read_bytes()

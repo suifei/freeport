@@ -110,30 +110,9 @@ fn process(pid: u32) -> Result<(File, u64)> {
     if unsafe { GetProcessTimes(h, &mut a, &mut b, &mut c, &mut d) } == 0 {
         return Err(std::io::Error::last_os_error().into());
     }
-    type Critical = unsafe extern "system" fn(HANDLE, *mut i32) -> i32;
-    let k = unsafe { GetModuleHandleW(p::wide("kernel32.dll").as_ptr()) };
-    if let Some(proc) = unsafe { GetProcAddress(k, c"IsProcessCritical".as_ptr() as _) } {
-        let call: Critical = unsafe { std::mem::transmute(proc) };
-        let mut critical = 0;
-        if unsafe { call(h, &mut critical) } == 0 || critical != 0 {
-            return fail(crate::i18n::t("msg.4dfff48e3e"));
-        }
-    } else {
-        // Windows 7: Microsoft's documented compatibility query. Failure means exclude.
-        type QueryProcess =
-            unsafe extern "system" fn(HANDLE, u32, *mut std::ffi::c_void, u32, *mut u32) -> i32;
-        let module = unsafe { GetModuleHandleW(p::wide("ntdll.dll").as_ptr()) };
-        let symbol = unsafe { GetProcAddress(module, c"NtQueryInformationProcess".as_ptr() as _) }
-            .ok_or(crate::i18n::t("msg.4dfff48e3e"))?;
-        let query: QueryProcess = unsafe { std::mem::transmute(symbol) };
-        let mut critical = 0u32;
-        let mut length = 0;
-        if unsafe { query(h, 29, &mut critical as *mut _ as _, 4, &mut length) } < 0
-            || length != 4
-            || critical != 0
-        {
-            return fail(crate::i18n::t("msg.4dfff48e3e"));
-        }
+    let mut critical = 0;
+    if unsafe { IsProcessCritical(h, &mut critical) } == 0 || critical != 0 {
+        return fail(crate::i18n::t("msg.4dfff48e3e"));
     }
     // Keep system binaries excluded in addition to checking critical-process state.
     let mut image = vec![0u16; 32768];

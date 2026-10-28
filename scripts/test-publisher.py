@@ -11,7 +11,6 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
-PWSH = shutil.which("pwsh.exe")
 PS5 = shutil.which("powershell.exe")
 NAME = "FreePort-v0.1.1-dev.1-windows-x64"
 TAG = "v0.1.1-dev.1"
@@ -113,7 +112,7 @@ class PublisherTests(unittest.TestCase):
         code = "[Console]::OutputEncoding=[Text.Encoding]::GetEncoding(936); "
         code += "foreach($name in @('git','gh','python')) { if ((Get-Command $name).Source -notlike '*mock-bin*') { throw 'Unsafe fixture command resolution' } }; "
         code += f"& '{path}' -RetireOldSourceBundle"
-        result = subprocess.run([PWSH, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", code],
+        result = subprocess.run([PS5, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", code],
                                 env=self.env, capture_output=True, timeout=45)
         self.state = json.loads(self.state_path.read_text(encoding="ascii"))
         if expected == 0:
@@ -162,7 +161,7 @@ class PublisherTests(unittest.TestCase):
         self.assertFalse(self.release_calls("create"))
         self.assertFalse(self.release_calls("delete-asset"))
 
-    def test_utf8_transport_in_windows_powershell_and_pwsh(self):
+    def test_utf8_transport_in_windows_powershell(self):
         self.state_path.write_text(json.dumps(self.state, ensure_ascii=True), encoding="ascii")
         expected = base64.b64encode(self.state["release"]["body"].encode("utf-8")).decode("ascii")
         code = "[Console]::OutputEncoding=[Text.Encoding]::GetEncoding(936); "
@@ -172,16 +171,14 @@ class PublisherTests(unittest.TestCase):
         code += "$actual=(ConvertFrom-Json -InputObject $json).body; "
         code += "$expected=$utf8.GetString([Convert]::FromBase64String('" + expected + "')); "
         code += "if($actual -cne $expected){throw 'UTF-8 transport corrupted Unicode JSON'}; 'PASS'"
-        for engine in (PS5, PWSH):
-            with self.subTest(engine=engine):
-                result = subprocess.run([engine, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", code],
-                                        env=self.env, capture_output=True, timeout=30)
-                self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", errors="replace"))
-                self.assertIn(b"PASS", result.stdout)
+        result = subprocess.run([PS5, "-NoLogo", "-NoProfile", "-NonInteractive", "-Command", code],
+                                env=self.env, capture_output=True, timeout=30)
+        self.assertEqual(result.returncode, 0, result.stderr.decode("utf-8", errors="replace"))
+        self.assertIn(b"PASS", result.stdout)
 
 
 if __name__ == "__main__":
-    if not PWSH or not PS5:
-        raise SystemExit("Windows PowerShell and pwsh are required")
+    if not PS5:
+        raise SystemExit("Windows PowerShell 5.1 (powershell.exe) is required")
     (ROOT / ".build").mkdir(exist_ok=True)
     unittest.main(verbosity=2)

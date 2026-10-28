@@ -7,7 +7,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: PowerShell 5.1 and 7 script encoding and syntax
+      - name: Windows PowerShell 5.1 script encoding and syntax
         run: python scripts/check-powershell.py
       - name: Offline publisher encoding and resume checks
         run: python scripts/test-publisher.py
@@ -25,18 +25,18 @@ jobs:
         shell: msys2 {0}
         run: cygpath -w /mingw64/bin >> "$GITHUB_PATH"
       - name: Unit and boundary tests (failures are never skipped)
-        shell: pwsh
+        shell: powershell
         run: cargo +stable-x86_64-pc-windows-gnu test --locked --lib --target x86_64-pc-windows-gnu
       - name: Build release and audit imports
-        shell: pwsh
+        shell: powershell
         run: ./scripts/build.ps1
       - name: Six-language CLI and native GUI checks
         run: python scripts/smoke.py --cli target/x86_64-pc-windows-gnu/release/fp.exe --gui target/x86_64-pc-windows-gnu/release/freeport.exe
       - name: Build fault-injection executable
-        shell: pwsh
+        shell: powershell
         run: ./scripts/build.ps1 -Profile dev
       - name: Real NTFS, cross-volume, crash recovery and GUI flow
-        shell: pwsh
+        shell: powershell
         run: ./scripts/test-native.ps1 -Cli target/x86_64-pc-windows-gnu/debug/fp.exe
       - uses: actions/upload-artifact@v4
         if: always()

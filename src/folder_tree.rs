@@ -97,7 +97,7 @@ impl Tree {
             };
             SendMessageW(header, HDM_INSERTITEMW, i, &item as *const _ as isize);
         }
-        // Common Controls v6 supplies checked/unchecked/partial state images on Win7.
+        // Common Controls v6 supplies checked/unchecked/partial state images.
         let style = GetWindowLongPtrW(self.hwnd, GWL_STYLE) as u32;
         SetWindowLongPtrW(
             self.hwnd,

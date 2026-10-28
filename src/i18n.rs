@@ -10,7 +10,7 @@ use std::{
         OnceLock,
     },
 };
-use windows_sys::Win32::System::LibraryLoader::{GetModuleHandleW, GetProcAddress};
+use windows_sys::Win32::Globalization::GetUserDefaultGeoName;
 
 pub const TAGS: [&str; 6] = ["en", "zh-CN", "zh-TW", "ja", "ko", "de"];
 pub const NAMES: [&str; 6] = [
@@ -132,29 +132,9 @@ pub fn from_country(country: Option<&str>) -> &'static str {
         _ => "en",
     }
 }
-#[link(name = "kernel32")]
-extern "system" {
-    fn GetUserGeoID(class: u32) -> i32;
-    fn GetGeoInfoW(id: i32, kind: u32, data: *mut u16, len: i32, language: u16) -> i32;
-}
 fn country() -> Option<String> {
-    type Geo = unsafe extern "system" fn(*mut u16, i32) -> i32;
-    let module = unsafe { GetModuleHandleW(platform::wide("kernel32.dll").as_ptr()) };
     let mut b = [0u16; 32];
-    if let Some(p) = unsafe { GetProcAddress(module, c"GetUserDefaultGeoName".as_ptr() as _) } {
-        let f: Geo = unsafe { std::mem::transmute(p) };
-        let n = unsafe { f(b.as_mut_ptr(), b.len() as i32) };
-        if n <= 1 {
-            return None;
-        }
-        return String::from_utf16(&b[..(n as usize - 1).min(b.len())]).ok();
-    }
-    // Legacy geography APIs read the same user country setting on Windows 7/8.
-    let id = unsafe { GetUserGeoID(16) };
-    if id == -1 {
-        return None;
-    }
-    let n = unsafe { GetGeoInfoW(id, 4, b.as_mut_ptr(), b.len() as i32, 0) };
+    let n = unsafe { GetUserDefaultGeoName(b.as_mut_ptr(), b.len() as i32) };
     if n <= 1 {
         return None;
     }
