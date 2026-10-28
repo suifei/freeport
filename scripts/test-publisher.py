@@ -102,8 +102,12 @@ class PublisherTests(unittest.TestCase):
                 f'@echo off\r\n"{sys.executable}" "{mock}" {tool} %*\r\nexit /b %errorlevel%\r\n', encoding="utf-8")
         self.env = dict(os.environ, PATH=str(self.root / "mock-bin") + os.pathsep + os.environ["PATH"],
                         FP_PUBLISH_FIXTURE_STATE=str(self.state_path), POWERSHELL_TELEMETRY_OPTOUT="1")
-        for key in ("GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL"):
-            self.env.pop(key, None)
+        # PowerShell 7's PSModulePath makes Windows PowerShell 5.1 load incompatible modules
+        # (Get-FileHash then disappears); 5.1 rebuilds its own default when it is unset.
+        for key in ("GIT_AUTHOR_NAME", "GIT_COMMITTER_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_EMAIL",
+                    "PSMODULEPATH"):
+            for actual in [k for k in self.env if k.upper() == key]:
+                self.env.pop(actual)
 
     def run_publisher(self, expected=0):
         self.state_path.write_text(json.dumps(self.state, ensure_ascii=True), encoding="ascii")

@@ -110,7 +110,9 @@ def history(state):
 
 
 def powershell(command):
-    subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", command], check=True,
+    # Without PowerShell 7's PSModulePath, Windows PowerShell 5.1 loads its own modules.
+    env = {k: v for k, v in os.environ.items() if k.upper() != "PSMODULEPATH"}
+    subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", command], check=True, env=env,
                    capture_output=True, timeout=120, creationflags=subprocess.CREATE_NO_WINDOW)
 
 

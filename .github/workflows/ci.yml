@@ -10,6 +10,7 @@ jobs:
       - name: Windows PowerShell 5.1 script encoding and syntax
         run: python scripts/check-powershell.py
       - name: Offline publisher encoding and resume checks
+        shell: powershell
         run: python scripts/test-publisher.py
       - uses: dtolnay/rust-toolchain@stable
         with:
