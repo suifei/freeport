@@ -12,12 +12,8 @@ SYSTEM_DLLS = {
     "ws2_32.dll", "bcrypt.dll", "userenv.dll", "ntdll.dll", "msvcrt.dll",
     "psapi.dll", "crypt32.dll", "secur32.dll", "version.dll", "rpcrt4.dll",
     "uxtheme.dll", "dwmapi.dll", "shlwapi.dll", "oleaut32.dll",
-}
-NEWER_APIS = {
-    "CopyFile2", "IsProcessCritical", "GetUserDefaultGeoName", "SetThreadDescription",
-    "GetSystemTimePreciseAsFileTime", "WaitOnAddress", "WakeByAddressSingle",
-    "WakeByAddressAll", "GetDpiForWindow", "SetProcessDpiAwarenessContext",
-    "GetOverlappedResultEx", "SetProcessInformation", "GetProcessInformation",
+    # Imported by the Rust standard library on Windows 10+ (WaitOnAddress, ProcessPrng).
+    "api-ms-win-core-synch-l1-2-0.dll", "bcryptprimitives.dll",
 }
 
 def audit(path, limit=5 * 1024 * 1024):
@@ -65,12 +61,10 @@ def audit(path, limit=5 * 1024 * 1024):
         imports[dll] = names
         at += 20
     bad_dlls = sorted(set(imports) - SYSTEM_DLLS)
-    bad_apis = sorted({name for names in imports.values() for name in names} & NEWER_APIS)
     delayed = u32(directories + 13 * 8)
     issues = []
     if len(data) > limit: issues.append("EXE exceeds size limit")
     if bad_dlls: issues.append("Unapproved runtime DLL imports: " + ", ".join(bad_dlls))
-    if bad_apis: issues.append("Static APIs newer than Windows 7: " + ", ".join(bad_apis))
     if delayed: issues.append("Delay imports require separate review")
     return {
         "file": pathlib.Path(path).name, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(), "limit_bytes": limit,

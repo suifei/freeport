@@ -80,6 +80,6 @@
 
 `knowledge` 记录 application、purpose、kind、confidence、migration、scope、owner_suffix、markers、sources、relocation_env。外部包通过原有 `fp rules --import FILE --state STORE` 或 GUI 导入；revision 必须递增。规则更新仅更新数据，是否可迁移仍由本机预检决定。
 
-原生 TreeList 采用 **SysHeader32 + SysTreeView32 + Custom Draw**，保留 Win7 原生三态复选框、键盘和懒展开，不新增 DLL。显示目录、递归总大小、应用、状态/链接目标；选择节点可查看具体连接路径和目标。每个已加载的兄弟组按数值 total 降序、同值按路径稳定排序；未知大小排后，不能按格式化的字符串排序。导航祖先只汇总不重叠候选，明确显示“仅汇总已识别候选目录”，不冒充整个 C 盘或用户根的实际总量。
+原生 TreeList 采用 **SysHeader32 + SysTreeView32 + Custom Draw**，保留原生三态复选框、键盘和懒展开，不新增 DLL。显示目录、递归总大小、应用、状态/链接目标；选择节点可查看具体连接路径和目标。每个已加载的兄弟组按数值 total 降序、同值按路径稳定排序；未知大小排后，不能按格式化的字符串排序。导航祖先只汇总不重叠候选，明确显示“仅汇总已识别候选目录”，不冒充整个 C 盘或用户根的实际总量。
 
 一次计量同时产生目录总量和链接明细，避免每展开一层重新递归统计；每个候选保存最多 16,384 个目录总量、128 个链接明细，优先保留浅层目录。截断标志明确输出，未知子级大小不伪装为零。CLI 的 `scan --measure` 报告同样包含 directory_totals、link_details、details_truncated，兄弟组按数值总量降序；include/exclude 选择文件继续复用原有安全规划。**当前 total 是逻辑字节，不是 NTFS 唯一簇占用。** 分配空间与外部硬链接去重尚未实现，应作为独立度量补齐。

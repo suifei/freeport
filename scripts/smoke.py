@@ -194,5 +194,5 @@ if __name__ == "__main__":
     Path(args.out).write_text(json.dumps({"tests": result.testsRun, "failures": len(result.failures),
         "errors": len(result.errors), "passed": result.wasSuccessful(),
         "binaries": {Path(p).name:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in [CLI, GUI]},
-        "note": "Interface tests only; does not prove migration, force-close, power-loss safety or Windows 7 runtime compatibility."}, indent=2) + "\n", encoding="utf-8")
+        "note": "Interface tests only; does not prove migration, force-close, or power-loss safety."}, indent=2) + "\n", encoding="utf-8")
     raise SystemExit(0 if result.wasSuccessful() else 1)

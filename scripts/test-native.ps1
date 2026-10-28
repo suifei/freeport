@@ -1,4 +1,6 @@
-param([Parameter(Mandatory=$true)][string]$Cli)
+param([Parameter(Mandatory=$true)][string]$Cli,[string]$Gui)
+# The GUI flow uses the freeport.exe next to fp.exe unless -Gui names another build.
+if (-not $Gui) { $Gui=Join-Path (Split-Path -Parent $Cli) 'freeport.exe' }
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 $fixtureRoot=[IO.Path]::GetFullPath((Join-Path $projectRoot '.build/test-disks'))
@@ -28,8 +30,11 @@ try {
     $env:FP_TEST_VHD=$vhdPath
     & python scripts/acceptance.py --cli ([IO.Path]::GetFullPath($Cli)) --second-volume ($volume.DriveLetter+':\') 2>&1 | ForEach-Object { "$_" }
     $code=$LASTEXITCODE
+    & python scripts/gui_e2e.py --gui ([IO.Path]::GetFullPath($Gui)) --second-volume ($volume.DriveLetter+':\') 2>&1 | ForEach-Object { "$_" }
+    $guiCode=$LASTEXITCODE
     $ErrorActionPreference='Stop'
     if ($code -ne 0) { throw 'Strict native acceptance failed; fixtures retained.' }
+    if ($guiCode -ne 0) { throw 'GUI end-to-end flow failed; fixtures retained.' }
 } finally {
     if ($null -ne $image) { Dismount-DiskImage -ImagePath $vhdPath }
     Pop-Location

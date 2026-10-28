@@ -7,7 +7,7 @@
 
 | 问题 | 方案 | 原因与边界 |
 | --- | --- | --- |
-| 语言 | Rust，Windows x64；最低目标 Windows 7 SP1 | 使用 Win32 API 精确控制文件对象与重解析点 |
+| 语言 | Rust，Windows 10 / 11 x64 | 使用 Win32 API 精确控制文件对象与重解析点 |
 | 入口 | CLI `fp` 与原生 Win32 GUI 共用一个核心库 | 无 WebView / Node 运行时；GUI 只有迁移与恢复两个入口 |
 | 发现 | 自研 NTFS 扫描器，调用 `FSCTL_ENUM_USN_DATA`（MFT / USN） | 不依赖第三方搜索软件；不解析裸盘 `$MFT`；不可用时回退 Win32 只读遍历并说明原因 |
 | 复制与连接 | 系统 `robocopy` 与 `cmd /c mklink /J` | 不自写复制器；FreePort 提供预检、校验、日志与恢复 |
@@ -246,7 +246,7 @@ CLI 简单选择用 `--select id1,id2`；复杂树选择用 `--selection selecti
 
 ## 10. 兼容与规则包
 
-最低目标 Windows 7 SP1 x64，GUI 用 Win32 控件，产品不要求第三方运行时 DLL。编译目标 `x86_64-win7-windows-gnu`、静态 CRT；较新系统 API 动态解析并提供保守回退。体积与导入检查只是构建门槛，Windows 7、后续 Windows 与高 DPI 须实测；不提供 x86/ARM 构建。
+支持 Windows 10 / 11 x64，不再支持 Windows 7/8。GUI 用 Win32 控件，产品不要求第三方运行时 DLL。stable 工具链、编译目标 `x86_64-pc-windows-gnu`、静态 CRT；PE 导入只允许系统 DLL。不提供 x86/ARM 构建。
 
 规则位于 `rules/freeport-rules.json`（`schema_version`、递增 `revision`、数据规则），仅离线导入：限制包大小、数量、ID、后缀组件、进程名与未知字段，持锁并原子替换。保护目录、重解析点与身份检查、默认选中状态不受规则控制；规则不能执行命令或启动软件。
 
@@ -264,4 +264,4 @@ CLI 简单选择用 `--select id1,id2`；复杂树选择用 `--selection selecti
 6. [Tree-View 样式](https://learn.microsoft.com/en-us/windows/win32/controls/tree-view-control-window-styles)
 7. [NetShareEnum](https://learn.microsoft.com/en-us/windows/win32/api/lmshare/nf-lmshare-netshareenum)
 8. [Hugging Face 缓存机制](https://huggingface.co/docs/huggingface_hub/guides/manage-cache)
-9. [Rust Win7 target](https://doc.rust-lang.org/rustc/platform-support/win7-windows-gnu.html)
+9. [Rust Windows GNU target](https://doc.rust-lang.org/rustc/platform-support/windows-gnu.html)

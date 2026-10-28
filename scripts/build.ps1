@@ -1,29 +1,28 @@
 param(
     [ValidateSet('release','dev')][string]$Profile='release',
-    [string]$Toolchain='nightly'
+    [string]$Toolchain='stable-x86_64-pc-windows-gnu'
 )
 $ErrorActionPreference='Stop'
 $projectRoot=Split-Path -Parent $PSScriptRoot
 Push-Location $projectRoot
 try {
-    if (-not (Get-Command windres -ErrorAction SilentlyContinue)) { throw 'MinGW-w64 gcc and windres must be on PATH (MSVCRT, not UCRT, for Windows 7).' }
+    if (-not (Get-Command windres -ErrorAction SilentlyContinue)) { throw 'MinGW-w64 gcc and windres must be on PATH.' }
     $env:RUSTFLAGS='-C target-feature=+crt-static -C link-arg=-static'
-    $cargoArguments=@("+$Toolchain",'build','--locked','--target','x86_64-win7-windows-gnu','-Zbuild-std=std,panic_abort','-Zbuild-std-features=optimize_for_size')
-    if ($Profile -eq 'release') {
-        $cargoArguments+='--release'
-    } else {
-        # build-std-features replaces the default panic-unwind feature. The dev
-        # profile would still compile std for unwind and then fail to find
-        # panic_unwind. Abort matches the Win7 release std and keeps debug_assertions.
-        $cargoArguments+=@('--config','profile.dev.panic="abort"')
-    }
-    & cargo @cargoArguments
-    if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+    $cargoArguments=@("+$Toolchain",'build','--locked','--target','x86_64-pc-windows-gnu')
+    if ($Profile -eq 'release') { $cargoArguments+='--release' }
+    # cargo reports progress on stderr; Windows PowerShell 5.1 would turn that into a terminating error.
+    $ErrorActionPreference='Continue'
+    & cargo @cargoArguments 2>&1 | ForEach-Object { "$_" }
+    $code=$LASTEXITCODE
+    $ErrorActionPreference='Stop'
+    if ($code -ne 0) { throw 'Build failed.' }
     $folder=if($Profile -eq 'release'){'release'}else{'debug'}
-    $binRoot=Join-Path $projectRoot "target/x86_64-win7-windows-gnu/$folder"
+    $binRoot=Join-Path $projectRoot "target/x86_64-pc-windows-gnu/$folder"
     if ($Profile -eq 'release') {
         New-Item -ItemType Directory -Force (Join-Path $projectRoot '.build') | Out-Null
-        & python scripts/audit_pe.py (Join-Path $binRoot 'fp.exe') (Join-Path $binRoot 'freeport.exe') --out .build/pe-audit.json
+        $ErrorActionPreference='Continue'
+        & python scripts/audit_pe.py (Join-Path $binRoot 'fp.exe') (Join-Path $binRoot 'freeport.exe') --out .build/pe-audit.json 2>&1 | ForEach-Object { "$_" }
+        $ErrorActionPreference='Stop'
         if ($LASTEXITCODE -ne 0) { throw 'PE import or EXE size gate failed.' }
     }
     & rustc "+$Toolchain" --version --verbose

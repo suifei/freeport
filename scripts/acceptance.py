@@ -465,6 +465,5 @@ if __name__ == "__main__":
         suite = unittest.TestSuite([NativeAcceptance(n) for n in names])
     result = unittest.TextTestRunner(verbosity=2).run(suite)
     Path(args.out).write_text(json.dumps({"tests": result.testsRun, "failures": len(result.failures),
-        "errors": len(result.errors), "passed": result.wasSuccessful(), "power_loss_tested": False,
-        "windows7_runtime_tested": False}, indent=2) + "\n", encoding="utf-8")
+        "errors": len(result.errors), "passed": result.wasSuccessful(), "power_loss_tested": False}, indent=2) + "\n", encoding="utf-8")
     raise SystemExit(0 if result.wasSuccessful() else 1)

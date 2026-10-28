@@ -8,7 +8,7 @@ import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-BIN, REPORT, DIST = ROOT / "target/x86_64-win7-windows-gnu/release", ROOT / ".build", ROOT / "dist"
+BIN, REPORT, DIST = ROOT / "target/x86_64-pc-windows-gnu/release", ROOT / ".build", ROOT / "dist"
 VERSION = re.search(r'^version = "([^"]+)"', (ROOT / "Cargo.toml").read_text(), re.M)[1]
 PREFIX = "v" + "".join(VERSION.split("-", 1)[0].split("."))
 pe = json.loads((REPORT / f"{PREFIX}-pe-audit.json").read_text(encoding="utf-8"))
@@ -49,9 +49,9 @@ DEVELOPMENT PREVIEW. Native data-safety acceptance is incomplete.
 仅供开发验证。原生数据安全验收尚未完成，不用于迁移真实用户数据。
 Unit tests: {validation['unit_tests']['passed']} passed / {validation['unit_tests']['failed']} access-denied failures.
 Interface checks: {smoke['tests']} passed.
-User-reported acceptance (2026-10-24): UAC interaction, Windows 7 and power loss passed.
+User-reported acceptance (2026-10-24): UAC interaction and power loss passed. Requires Windows 10 or 11 x64.
 Complete cross-volume and forced-handle-closure acceptance remain unverified here.
-用户已反馈 UAC 实际交互、Win7 和断电验收通过；完整跨盘及强制句柄关闭仍未在此环境完成验收。
+用户已反馈 UAC 实际交互和断电验收通过；需要 Windows 10 或 11 x64。完整跨盘及强制句柄关闭仍未在此环境完成验收。
 
 This ZIP contains EXEs, required dependency notices and this file only.
 本包只含 EXE、必要的依赖版权声明和说明，不含项目源码或用户数据。
