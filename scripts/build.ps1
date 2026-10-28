@@ -21,7 +21,7 @@ try {
     if ($Profile -eq 'release') {
         New-Item -ItemType Directory -Force (Join-Path $projectRoot '.build') | Out-Null
         $ErrorActionPreference='Continue'
-        & python scripts/audit_pe.py (Join-Path $binRoot 'fp.exe') (Join-Path $binRoot 'freeport.exe') --out .build/pe-audit.json 2>&1 | ForEach-Object { "$_" }
+        & python scripts/audit_pe.py (Join-Path $binRoot 'smcd.exe') (Join-Path $binRoot 'SaveMyCDrive.exe') --out .build/pe-audit.json 2>&1 | ForEach-Object { "$_" }
         $ErrorActionPreference='Stop'
         if ($LASTEXITCODE -ne 0) { throw 'PE import or EXE size gate failed.' }
     }

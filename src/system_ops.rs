@@ -1,5 +1,5 @@
 //! Thin adapters for Windows' own robocopy and cmd built-ins.
-//! FreePort supplies validation/journaling; these tools do the copying/linking.
+//! SaveMyCDrive supplies validation/journaling; these tools do the copying/linking.
 use crate::{engine::Control, fail, platform as p, Result};
 use std::{
     ffi::OsString,

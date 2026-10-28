@@ -88,7 +88,7 @@
   "msg.06ee3e938c": "是否核驗並復原交易 {0}？\n{1}\n階段：{2}\n不會重播舊的強制關閉控制代碼動作。",
   "msg.32d5908bc7": "已請求停止；正在等待目前檔案到達安全點。",
   "msg.640ae839a9": "請等待操作安全停止後再關閉視窗。",
-  "msg.7540ee4199": "FreePort — 目錄遷移與還原",
+  "msg.7540ee4199": "SaveMyCDrive — 目錄遷移與還原",
   "msg.a8078003c7": "無法建立視窗：{0}",
   "msg.ddafa0a53a": "NtQuerySystemInformation 無法使用",
   "msg.e399792f89": "系統控制代碼資訊超過安全記憶體上限",
@@ -124,7 +124,7 @@
   "msg.e27c8aea75": "缺少磁碟代號",
   "msg.a611755bee": "遷移僅支援本機磁碟",
   "msg.8b4edf812c": "需要 NTFS；實際檔案系統：{0}",
-  "msg.b95d01d42e": "無法鎖定交易儲存區；可能有其他 FreePort 執行個體正在作業：{0}",
+  "msg.b95d01d42e": "無法鎖定交易儲存區；可能有其他 SaveMyCDrive 執行個體正在作業：{0}",
   "msg.4e66c1f6af": "檔案正在寫入或無法讀取，請關閉相關程式：{0}：{1}",
   "msg.91352f1748": "目錄使用中：{0}：{1}",
   "msg.6da5c00f50": "連結已變更；拒絕操作：{0}",
@@ -179,7 +179,7 @@
   "status.linked": "已有連結",
   "status.nested_links": "包含連結",
   "status.unknown": "未知狀態",
-  "cli.help": "FreePort — 目錄遷移與還原\n\n用法：\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de 僅覆寫本次語言。\n--state PATH 指定可攜式交易目錄。掃描不會移動或刪除資料。\n",
+  "cli.help": "SaveMyCDrive — 目錄遷移與還原\n\n用法：\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de 僅覆寫本次語言。\n--state PATH 指定可攜式交易目錄。掃描不會移動或刪除資料。\n",
   "dialog.path_invalid": "請輸入有效的本機絕對路徑；規則檔案必須已存在。",
   "dialog.path_hint": "輸入或貼上路徑；按兩下目錄進入。",
   "dialog.parent": "上層目錄",
@@ -233,6 +233,7 @@
   "system.residue_at": "robocopy left {0} in place (not copied, changed or new); stopped and kept the data.",
   "history.leftover": "Leftover directory not owned by an open transaction; delete it by hand once you have checked it: {0}",
   "about.button": "關於",
-  "about.text": "FreePort {0}\n\n以 robocopy 將目錄搬到其他磁碟，並在原路徑建立目錄連接；還原為反向操作。\n\n授權：{1}\n儲存庫：{2}\nQQ：{3}",
-  "drive.free": "{0}  可用 {1}"
+  "about.text": "SaveMyCDrive {0}\n\n以 robocopy 將目錄搬到其他磁碟，並在原路徑建立目錄連接；還原為反向操作。\n\n授權：{1}\n儲存庫：{2}\nQQ：{3}",
+  "drive.free": "{0}  可用 {1}",
+  "app.name": "SaveMyCDrive"
 }

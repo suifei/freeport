@@ -76,11 +76,11 @@
 
 ## 知识库和界面实现约定
 
-逐项清单：[application-storage-list.md](application-storage-list.md)。运行时文件：[freeport-rules.json](../rules/freeport-rules.json)，schema_version=2，revision=2026102801。由 `scripts/build-knowledge.py` 同源生成清单与 JSON。CLI/GUI 共用 `rules::active/load/import/discover`；规则包不能执行命令、启动软件、更改事务策略或开启风险选项。schema 1 仍可读取，但没有应用证据的名称规则不再产生候选，迁移扫描保留旧文件并回退内置 v2 库，同时显示升级提示，避免旧包造成空白结果。恢复扫描独立于规则文件，即使旧库损坏也能找连接。
+逐项清单：[application-storage-list.md](application-storage-list.md)。运行时文件：[savemycdrive-rules.json](../rules/savemycdrive-rules.json)，schema_version=2，revision=2026102801。由 `scripts/build-knowledge.py` 同源生成清单与 JSON。CLI/GUI 共用 `rules::active/load/import/discover`；规则包不能执行命令、启动软件、更改事务策略或开启风险选项。schema 1 仍可读取，但没有应用证据的名称规则不再产生候选，迁移扫描保留旧文件并回退内置 v2 库，同时显示升级提示，避免旧包造成空白结果。恢复扫描独立于规则文件，即使旧库损坏也能找连接。
 
 `candidate` 与 `review` 都会列出，均不勾选；`review` 在“所属应用”列标注“需确认”，用户核对说明后自行勾选；`exclude` 不列出。`kind=app` 为整个应用目录（如 `Roaming\Code`、`.vscode`、`Roaming\obsidian`、用户级安装的 `Programs\Microsoft VS Code`/`Programs\cursor`），对应原批处理的整目录迁移；与其下叶目录同时勾选时只迁移外层目录。`category` 由 `kind` 唯一推导。
 
-`knowledge` 记录 application、purpose、kind、confidence、migration、scope、owner_suffix、markers、sources、relocation_env。外部包通过原有 `fp rules --import FILE --state STORE` 或 GUI 导入；revision 必须递增。规则更新仅更新数据，是否可迁移仍由本机预检决定。
+`knowledge` 记录 application、purpose、kind、confidence、migration、scope、owner_suffix、markers、sources、relocation_env。外部包通过原有 `smcd rules --import FILE --state STORE` 或 GUI 导入；revision 必须递增。规则更新仅更新数据，是否可迁移仍由本机预检决定。
 
 原生 TreeList 采用 **SysHeader32 + SysTreeView32 + Custom Draw**，保留原生三态复选框、键盘和懒展开，不新增 DLL。显示目录、递归总大小、应用、状态/链接目标；选择节点可查看具体连接路径和目标。每个已加载的兄弟组按数值 total 降序、同值按路径稳定排序；未知大小排后，不能按格式化的字符串排序。导航祖先只汇总不重叠候选，明确显示“仅汇总已识别候选目录”，不冒充整个 C 盘或用户根的实际总量。
 

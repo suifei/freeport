@@ -1,7 +1,7 @@
 /target/
 /.build/
 /dist/
-/freeport-state/
+/savemycdrive-state/
 /reports/
 *.log
 /scan-results/

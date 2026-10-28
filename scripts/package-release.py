@@ -23,27 +23,27 @@ pe = json.loads((REPORT / "pe-audit.json").read_text(encoding="utf-8"))
 smoke = json.loads((REPORT / "smoke-result.json").read_text(encoding="utf-8"))
 if not smoke["passed"] or not all(x["passed"] for x in pe):
     raise SystemExit("PE audit or interface checks did not pass")
-name = f"FreePort-v{VERSION}-windows-x64"
-readme = f"""FreePort {VERSION}
+name = f"SaveMyCDrive-v{VERSION}-windows-x64"
+readme = f"""SaveMyCDrive {VERSION}
 
-freeport.exe  Windows GUI / 图形界面
-fp.exe        command line / 命令行
+SaveMyCDrive.exe  Windows GUI / 图形界面
+smcd.exe        command line / 命令行
 
 Moves selected folders to another drive with robocopy and leaves a directory
 junction (mklink /J) at the original path; restore reverses it.
 用 robocopy 把选中目录搬到其他盘，并在原路径建立目录连接；恢复为反向操作。
 
-Requires Windows 10 or 11 x64. Close the programs FreePort names as using a
-folder before migrating it. FreePort never ends processes itself.
-需要 Windows 10/11 x64。迁移前请关闭 FreePort 提示正在使用该目录的程序。
+Requires Windows 10 or 11 x64. Close the programs SaveMyCDrive names as using a
+folder before migrating it. SaveMyCDrive never ends processes itself.
+需要 Windows 10/11 x64。迁移前请关闭 SaveMyCDrive 提示正在使用该目录的程序。
 
 License: MIT OR Apache-2.0 (LICENSE-MIT, LICENSE-APACHE).
 Dependencies keep their own terms (third-party-notices/).
-Source: https://github.com/suifei/freeport
+Source: https://github.com/suifei/save-my-c-drive
 """
 entries = {}
 binaries = []
-for filename in ["fp.exe", "freeport.exe"]:
+for filename in ["smcd.exe", "SaveMyCDrive.exe"]:
     data = (BIN / filename).read_bytes()
     digest = hashlib.sha256(data).hexdigest()
     audit = [p for p in pe if p["file"] == filename]
@@ -57,7 +57,7 @@ for filename in ["LICENSE-MIT", "LICENSE-APACHE"]:
 # Only crates compiled into the EXEs: no build scripts, proc macros or other-platform crates.
 tree = subprocess.check_output(["cargo", "+stable-x86_64-pc-windows-gnu", "tree", "--locked", "--target",
     "x86_64-pc-windows-gnu", "-e", "normal,no-proc-macro", "--prefix", "none", "-f", "{p}"], cwd=ROOT, text=True)
-linked = {tuple(line.split()[:2]) for line in tree.splitlines() if line.strip()} - {("freeport", "v" + VERSION)}
+linked = {tuple(line.split()[:2]) for line in tree.splitlines() if line.strip()} - {("savemycdrive", "v" + VERSION)}
 NOTICES = ROOT / "third-party-notices"
 inventory = json.loads((NOTICES / "dependencies.json").read_text(encoding="utf-8"))
 crates = [c for c in inventory if (c["name"], "v" + c["version"]) in linked]

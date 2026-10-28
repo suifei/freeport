@@ -145,7 +145,7 @@ fn settings_path() -> Option<PathBuf> {
     if !base.is_absolute() || base.to_string_lossy().starts_with(r"\\") {
         return None;
     }
-    Some(base.join("FreePort/language.json"))
+    Some(base.join("SaveMyCDrive/language.json"))
 }
 pub fn resolve(
     explicit: Option<&str>,

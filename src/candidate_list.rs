@@ -1,6 +1,6 @@
 //! Native candidate list: one row per discovered directory. Checkbox intent lives in the
 //! shared selection model; the view only mirrors it.
-use freeport::{i18n as l, inventory::Row, platform as p, selection::Selection};
+use savemycdrive::{i18n as l, inventory::Row, platform as p, selection::Selection};
 use std::path::PathBuf;
 use windows_sys::Win32::{
     Foundation::*,
@@ -163,7 +163,7 @@ impl List {
     unsafe fn texts(&self, index: usize, row: usize) {
         let (bytes, application, status, pending) = &self.cells[row];
         let values = [
-            bytes.map(freeport::human).unwrap_or_else(|| {
+            bytes.map(savemycdrive::human).unwrap_or_else(|| {
                 // Links are never measured; only show "counting" while a measure is due.
                 if *pending {
                     l::t("msg.8284301049")
@@ -399,10 +399,14 @@ impl List {
         self.selection.set(&path, true);
         self.sync();
         let mirrored = checked(self);
-        let root = PathBuf::from(r"E:\freeport-sort-fixture");
+        let root = PathBuf::from(r"E:\savemycdrive-sort-fixture");
         let make = |relative: &str, bytes: u64| Row {
-            candidate: freeport::catalog::custom(&root.join(relative), "sort fixture", "custom"),
-            stats: freeport::inventory::Stats {
+            candidate: savemycdrive::catalog::custom(
+                &root.join(relative),
+                "sort fixture",
+                "custom",
+            ),
+            stats: savemycdrive::inventory::Stats {
                 bytes,
                 ..Default::default()
             },

@@ -1,7 +1,7 @@
-"""End-to-end GUI flow test. Drives the real freeport.exe window with Win32 messages only.
+"""End-to-end GUI flow test. Drives the real SaveMyCDrive.exe window with Win32 messages only.
 
-Use a debug freeport.exe (fault injection). Every run copies the EXE into a new directory under
-.build so its freeport-state is isolated, and only touches fixtures created here. Never use real data.
+Use a debug SaveMyCDrive.exe (fault injection). Every run copies the EXE into a new directory under
+.build so its savemycdrive-state is isolated, and only touches fixtures created here. Never use real data.
 """
 import argparse
 import ctypes
@@ -99,8 +99,8 @@ def junction_target(path):
 
 
 def history(app):
-    out = subprocess.run([str(GUI.parent / "fp.exe"), "--lang", "en", "history", "--state",
-                          str(app / "freeport-state")],
+    out = subprocess.run([str(GUI.parent / "smcd.exe"), "--lang", "en", "history", "--state",
+                          str(app / "savemycdrive-state")],
                          capture_output=True, check=True, env=ENV,
                          creationflags=subprocess.CREATE_NO_WINDOW).stdout
     return json.loads(out)
@@ -115,13 +115,13 @@ def planned(preview, source):
 
 class Gui:
     def __init__(self, app, fail_at=None):
-        """app: a private copy of freeport.exe, so its freeport-state is isolated per test."""
+        """app: a private copy of SaveMyCDrive.exe, so its savemycdrive-state is isolated per test."""
         env = ENV.copy()
         if fail_at:
-            env["FP_TEST_FAIL_AT"] = fail_at
-        self.process = subprocess.Popen([str(app / "freeport.exe"), "--lang", "zh-CN"], env=env)
+            env["SMCD_TEST_FAIL_AT"] = fail_at
+        self.process = subprocess.Popen([str(app / "SaveMyCDrive.exe"), "--lang", "zh-CN"], env=env)
         self.main = self.wait(lambda: next((h for h, c in windows(self.process.pid)
-                                            if c == "FreePortNativeWindow"), None), "main window")
+                                            if c == "SaveMyCDriveNativeWindow"), None), "main window")
 
     def wait(self, condition, what, timeout=60):
         end = time.time() + timeout
@@ -203,7 +203,7 @@ class GuiFlow(unittest.TestCase):
         self.gui = None
         self.app = BASE / self._testMethodName / "app"
         self.app.mkdir(parents=True)
-        shutil.copy2(GUI, self.app / "freeport.exe")
+        shutil.copy2(GUI, self.app / "SaveMyCDrive.exe")
 
     def tearDown(self):
         if self.gui and self.gui.process.poll() is None:
@@ -213,7 +213,7 @@ class GuiFlow(unittest.TestCase):
 
     def target_root(self, name):
         if args.second_volume:
-            return Path(tempfile.mkdtemp(prefix="freeport-gui-", dir=Path(args.second_volume))) / name
+            return Path(tempfile.mkdtemp(prefix="savemycdrive-gui-", dir=Path(args.second_volume))) / name
         return BASE / self._testMethodName / "targets" / name
 
     def test_defaults_have_no_deferred_switches_and_nothing_checked(self):
@@ -328,7 +328,7 @@ class GuiFlow(unittest.TestCase):
         kind, h, _ = gui.apply()
         gui.answer(h, IDOK)
         gui.process.wait(timeout=120)
-        self.assertNotEqual(gui.process.returncode, 0, "fault injection needs a debug freeport.exe")
+        self.assertNotEqual(gui.process.returncode, 0, "fault injection needs a debug SaveMyCDrive.exe")
         [record] = history(self.app)
         self.assertEqual(record["phase"], "source_held")
 

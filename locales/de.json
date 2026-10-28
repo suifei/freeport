@@ -88,7 +88,7 @@
   "msg.06ee3e938c": "Transaktion {0} prüfen und wiederherstellen?\n{1}\nPhase: {2}\nFrühere Handle-Schließvorgänge werden nicht erneut ausgeführt.",
   "msg.32d5908bc7": "Anhalten angefordert. Der sichere Haltepunkt für die aktuelle Datei wird abgewartet.",
   "msg.640ae839a9": "Vor dem Schließen des Fensters auf das sichere Anhalten warten.",
-  "msg.7540ee4199": "FreePort — Verzeichnisse verschieben und wiederherstellen",
+  "msg.7540ee4199": "SaveMyCDrive — Verzeichnisse verschieben und wiederherstellen",
   "msg.a8078003c7": "Fenster kann nicht erstellt werden: {0}",
   "msg.ddafa0a53a": "NtQuerySystemInformation ist nicht verfügbar",
   "msg.e399792f89": "System-Handleinformationen überschreiten das sichere Speicherlimit",
@@ -124,7 +124,7 @@
   "msg.e27c8aea75": "Laufwerksbuchstabe fehlt",
   "msg.a611755bee": "Verschieben wird nur für lokale Laufwerke unterstützt",
   "msg.8b4edf812c": "NTFS ist erforderlich. Tatsächliches Dateisystem: {0}",
-  "msg.b95d01d42e": "Transaktionsspeicher kann nicht gesperrt werden. Möglicherweise ist eine weitere FreePort-Instanz aktiv: {0}",
+  "msg.b95d01d42e": "Transaktionsspeicher kann nicht gesperrt werden. Möglicherweise ist eine weitere SaveMyCDrive-Instanz aktiv: {0}",
   "msg.4e66c1f6af": "Datei wird beschrieben oder ist nicht lesbar. Zugehörige Anwendungen schließen: {0}: {1}",
   "msg.91352f1748": "Verzeichnis wird verwendet: {0}: {1}",
   "msg.6da5c00f50": "Verknüpfung geändert; Vorgang verweigert: {0}",
@@ -179,7 +179,7 @@
   "status.linked": "Bereits verknüpft",
   "status.nested_links": "Enthält Verknüpfungen",
   "status.unknown": "Unbekannter Status",
-  "cli.help": "FreePort — Verzeichnisse verschieben und wiederherstellen\n\nVerwendung:\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de gilt nur für diesen Aufruf.\n--state PATH wählt den Transaktionsspeicher. Die Suche verschiebt oder löscht keine Daten.\n",
+  "cli.help": "SaveMyCDrive — Verzeichnisse verschieben und wiederherstellen\n\nVerwendung:\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de gilt nur für diesen Aufruf.\n--state PATH wählt den Transaktionsspeicher. Die Suche verschiebt oder löscht keine Daten.\n",
   "dialog.path_invalid": "Gültigen lokalen absoluten Pfad eingeben. Eine Regeldatei muss bereits existieren.",
   "dialog.path_hint": "Pfad eingeben oder einfügen; Ordner zum Öffnen doppelt anklicken.",
   "dialog.parent": "Übergeordneter Ordner",
@@ -233,6 +233,7 @@
   "system.residue_at": "robocopy left {0} in place (not copied, changed or new); stopped and kept the data.",
   "history.leftover": "Leftover directory not owned by an open transaction; delete it by hand once you have checked it: {0}",
   "about.button": "Info",
-  "about.text": "FreePort {0}\n\nVerschiebt Ordner mit robocopy auf ein anderes Laufwerk und legt am ursprünglichen Pfad eine Verzeichnisverbindung an; Wiederherstellen kehrt das um.\n\nLizenz: {1}\nRepository: {2}\nQQ: {3}",
-  "drive.free": "{0}  {1} frei"
+  "about.text": "SaveMyCDrive {0}\n\nVerschiebt Ordner mit robocopy auf ein anderes Laufwerk und legt am ursprünglichen Pfad eine Verzeichnisverbindung an; Wiederherstellen kehrt das um.\n\nLizenz: {1}\nRepository: {2}\nQQ: {3}",
+  "drive.free": "{0}  {1} frei",
+  "app.name": "SaveMyCDrive"
 }

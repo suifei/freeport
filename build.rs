@@ -4,7 +4,7 @@ fn main() {
     // Keep the reviewed JSON readable in Git; omit insignificant whitespace from
     // embedded data. No runtime decoder, compression library or extra DLL.
     for source in [
-        "rules/freeport-rules.json",
+        "rules/savemycdrive-rules.json",
         "locales/en.json",
         "locales/zh-CN.json",
         "locales/zh-TW.json",
@@ -39,16 +39,18 @@ fn main() {
         )
         .unwrap();
     }
-    println!("cargo:rerun-if-changed=resources/freeport.manifest");
-    println!("cargo:rerun-if-changed=resources/freeport.ico");
+    println!("cargo:rerun-if-changed=resources/savemycdrive.manifest");
+    println!("cargo:rerun-if-changed=resources/savemycdrive.ico");
     if env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
     let manifest = env::current_dir()
         .unwrap()
-        .join("resources/freeport.manifest");
-    let icon = env::current_dir().unwrap().join("resources/freeport.ico");
-    let rc = out.join("freeport.rc");
+        .join("resources/savemycdrive.manifest");
+    let icon = env::current_dir()
+        .unwrap()
+        .join("resources/savemycdrive.ico");
+    let rc = out.join("savemycdrive.rc");
     fs::write(
         &rc,
         format!(
@@ -59,7 +61,7 @@ fn main() {
     )
     .unwrap();
     if env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("gnu") {
-        let obj = out.join("freeport-resource.o");
+        let obj = out.join("savemycdrive-resource.o");
         let result = Command::new("windres")
             .args(["-i"])
             .arg(&rc)
@@ -70,7 +72,7 @@ fn main() {
         assert!(result.success(), "windres failed");
         println!("cargo:rustc-link-arg-bins={}", obj.display());
     } else {
-        let res = out.join("freeport.res");
+        let res = out.join("savemycdrive.res");
         let result = Command::new("rc.exe")
             .arg("/nologo")
             .arg(format!("/fo{}", res.display()))

@@ -1,4 +1,4 @@
-"""Draw the FreePort icon: resources/freeport.ico (16-256 px) and resources/freeport.png (256 px).
+"""Draw the SaveMyCDrive icon: resources/savemycdrive.ico (16-256 px) and resources/savemycdrive.png (256 px).
 
 Development tool only (Pillow); the EXEs embed the generated .ico through build.rs.
 """
@@ -42,9 +42,9 @@ def main():
     image = master()
     sizes = [16, 20, 24, 32, 40, 48, 64, 128, 256]
     frames = [image.resize((n, n), Image.LANCZOS) for n in sizes]
-    frames[-1].save(ROOT / "resources/freeport.ico", sizes=[(n, n) for n in sizes], append_images=frames[:-1])
-    frames[-1].save(ROOT / "resources/freeport.png", optimize=True)
-    print("resources/freeport.ico, resources/freeport.png")
+    frames[-1].save(ROOT / "resources/savemycdrive.ico", sizes=[(n, n) for n in sizes], append_images=frames[:-1])
+    frames[-1].save(ROOT / "resources/savemycdrive.png", optimize=True)
+    print("resources/savemycdrive.ico, resources/savemycdrive.png")
 
 
 if __name__ == "__main__":

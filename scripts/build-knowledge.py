@@ -195,7 +195,7 @@ for prefix, name, folder, markers, exes in [
 def main():
     ids = [r["id"] for r in RULES]
     assert len(ids) == len(set(ids))
-    output = ROOT / "rules/freeport-rules.json"
+    output = ROOT / "rules/savemycdrive-rules.json"
     output.write_text(json.dumps(dict(schema_version=2, revision=2026102801, rules=RULES), ensure_ascii=False, indent=2)+"\n", encoding="utf-8")
     terms = {
         "en": ["Folder", "Total size", "Application", "Status / link target", "Name-only legacy rules are disabled. Import a version 2 application knowledge pack."],

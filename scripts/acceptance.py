@@ -1,6 +1,6 @@
 """Strict native acceptance. Uses only newly created fixtures and retains all evidence.
 
-Run on an elevated test machine or disposable VM with a debug fp.exe. Never use real caches.
+Run on an elevated test machine or disposable VM with a debug smcd.exe. Never use real caches.
 --second-volume points at an EXISTING mounted test NTFS volume; this script never formats volumes.
 Process-crash checks do not simulate VM power loss.
 """
@@ -34,9 +34,9 @@ RESTORE_PHASES = ["prepared", "copying", "verified", "source_rename_intent", "so
 def run(*values, phase=None, success=True):
     env = ENV.copy()
     if phase:
-        env["FP_TEST_FAIL_AT"] = phase
+        env["SMCD_TEST_FAIL_AT"] = phase
     else:
-        env.pop("FP_TEST_FAIL_AT", None)
+        env.pop("SMCD_TEST_FAIL_AT", None)
     result = subprocess.run([CLI, "--lang", "en", *map(str, values)], env=env,
                             capture_output=True, timeout=60, creationflags=subprocess.CREATE_NO_WINDOW)
     if success and result.returncode:
@@ -47,7 +47,7 @@ def run(*values, phase=None, success=True):
 def fixture(name):
     root = BASE / name
     root.mkdir()
-    (root / "freeport-fixture.marker").write_bytes(b"FreePort test fixture\n")
+    (root / "savemycdrive-fixture.marker").write_bytes(b"SaveMyCDrive test fixture\n")
     return root
 
 
@@ -122,7 +122,7 @@ class NativeAcceptance(unittest.TestCase):
             self.fail("Requires --second-volume; not verified")
         second = Path(args.second_volume).resolve()
         self.assertNotEqual(second.drive.lower(), BASE.drive.lower())
-        return Path(tempfile.mkdtemp(prefix="freeport-test-", dir=second))
+        return Path(tempfile.mkdtemp(prefix="savemycdrive-test-", dir=second))
 
     def test_migration_crash_at_every_durable_phase(self):
         for phase in PHASES:
@@ -209,7 +209,7 @@ class NativeAcceptance(unittest.TestCase):
             self.fail("Cross-volume acceptance requires --second-volume; not verified")
         second = Path(args.second_volume).resolve()
         self.assertNotEqual(second.drive.lower(), BASE.drive.lower())
-        target_root = Path(tempfile.mkdtemp(prefix="freeport-test-", dir=second))
+        target_root = Path(tempfile.mkdtemp(prefix="savemycdrive-test-", dir=second))
         root = fixture("cross-volume")
         source, target, state = root / "source", target_root / "target", root / "state"
         populate(source)
@@ -249,7 +249,7 @@ class NativeAcceptance(unittest.TestCase):
     # a same-drive junction frees nothing and is not listed.
     def test_p02_volume_restore_scan_finds_handmade_junction(self):
         holder = self.second_volume()
-        (holder / "freeport-fixture.marker").write_bytes(b"FreePort test fixture\n")
+        (holder / "savemycdrive-fixture.marker").write_bytes(b"SaveMyCDrive test fixture\n")
         target, link, local = fixture("p02") / "real", holder / "link", holder / "local"
         populate(target)
         populate(holder / "real")
@@ -360,9 +360,9 @@ class NativeAcceptance(unittest.TestCase):
 
     # P07d: the target disk disappears after the source was renamed away, then comes back.
     def test_p07_target_disk_removed_mid_transaction(self):
-        vhd = os.environ.get("FP_TEST_VHD")
+        vhd = os.environ.get("SMCD_TEST_VHD")
         if not vhd:
-            self.fail("Requires FP_TEST_VHD (set by test-native.ps1); not verified")
+            self.fail("Requires SMCD_TEST_VHD (set by test-native.ps1); not verified")
         root, target = fixture("p07-unplug"), self.second_volume() / "target"
         source, state = root / "source", root / "state"
         populate(source)
@@ -399,7 +399,7 @@ class NativeAcceptance(unittest.TestCase):
         shutil.rmtree(gone)
         cycle = root / "cycle"
         cycle.mkdir()
-        (cycle / "freeport-fixture.marker").write_bytes(b"FreePort test fixture\n")
+        (cycle / "savemycdrive-fixture.marker").write_bytes(b"SaveMyCDrive test fixture\n")
         loop = cycle / "loop"
         run("__junction-test", "--source", loop, "--target", cycle)
         mount, volume = root / "mount", None
@@ -417,7 +417,7 @@ class NativeAcceptance(unittest.TestCase):
             with self.subTest(migrate="nested junction"):
                 nested = root / "nested"
                 populate(nested)
-                (nested / "freeport-fixture.marker").write_bytes(b"FreePort test fixture\n")
+                (nested / "savemycdrive-fixture.marker").write_bytes(b"SaveMyCDrive test fixture\n")
                 run("__junction-test", "--source", nested / "inner", "--target", nested / "empty")
                 before = contents(nested)
                 self.assertNotEqual(run("migrate", "--source", nested, "--target", root / "t-nested",

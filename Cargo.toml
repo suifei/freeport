@@ -1,21 +1,21 @@
 [package]
-name = "freeport"
-version = "1.1.0"
+name = "savemycdrive"
+version = "2.0.0"
 edition = "2021"
 description = "Windows directory migration with reversible NTFS junctions"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/suifei/freeport"
+repository = "https://github.com/suifei/save-my-c-drive"
 
 [lib]
-name = "freeport"
+name = "savemycdrive"
 path = "src/lib.rs"
 
 [[bin]]
-name = "fp"
+name = "smcd"
 path = "src/main.rs"
 
 [[bin]]
-name = "freeport"
+name = "SaveMyCDrive"
 path = "src/gui.rs"
 
 [dependencies]

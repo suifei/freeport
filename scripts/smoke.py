@@ -18,7 +18,7 @@ TAGS = ["en", "zh-CN", "zh-TW", "ja", "ko", "de"]
 Path(".build").mkdir(exist_ok=True)
 ROOT = Path(tempfile.mkdtemp(prefix="interface-", dir=Path(".build").resolve()))
 ENV = dict(os.environ, LOCALAPPDATA=str(ROOT / "local"), USERPROFILE=str(ROOT / "home"))
-PREF = ROOT / "local" / "FreePort" / "language.json"
+PREF = ROOT / "local" / "SaveMyCDrive" / "language.json"
 PREF.parent.mkdir(parents=True)
 FIXTURE = ROOT / "home"
 for rel in [".claude", ".cache/huggingface", ".vscode/extensions", "go/pkg/mod"]:
@@ -50,7 +50,7 @@ class InterfaceTests(unittest.TestCase):
         helps = []
         for tag in TAGS:
             text, _ = invoke("--help", lang=tag)
-            self.assertIn("fp scan --volumes", text)
+            self.assertIn("smcd scan --volumes", text)
             self.assertIn("--lang", text)
             helps.append(text)
             _, error = invoke("not-a-command", lang=tag, code=1)
@@ -184,7 +184,7 @@ class InterfaceTests(unittest.TestCase):
 
     def test_explicit_elevation_does_not_change_defaults_or_parameter_validation(self):
         version, _ = invoke("--version", "--elevate", lang="en")
-        self.assertIn("FreePort", version)
+        self.assertIn("SaveMyCDrive", version)
         invoke("scan", "--elevate", "--elevate", lang="en", code=1)
         invoke("plan", "--select", "x", "--selection", "missing.json", lang="en", code=1)
 

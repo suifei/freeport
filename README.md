@@ -1,15 +1,15 @@
 <div align="center">
 
-<img src="resources/freeport.png" width="112" alt="FreePort icon">
+<img src="resources/savemycdrive.png" width="112" alt="SaveMyCDrive icon">
 
-# FreePort
+# SaveMyCDrive
 
 **Set your C: drive free.**<br>
 Move your data. Keep your workflow.<br>
 **Nothing deleted · One-click migrate · One-click restore**
 
-[![Release](https://img.shields.io/github/v/release/suifei/freeport?label=download&color=2563eb)](https://github.com/suifei/freeport/releases/latest)
-[![CI](https://github.com/suifei/freeport/actions/workflows/ci.yml/badge.svg)](https://github.com/suifei/freeport/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/suifei/save-my-c-drive?label=download&color=2563eb)](https://github.com/suifei/save-my-c-drive/releases/latest)
+[![CI](https://github.com/suifei/save-my-c-drive/actions/workflows/ci.yml/badge.svg)](https://github.com/suifei/save-my-c-drive/actions/workflows/ci.yml)
 ![Windows 10/11 x64](https://img.shields.io/badge/Windows-10%20%7C%2011%20x64-0d9488)
 [![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-64748b)](#license)
 
@@ -17,18 +17,18 @@ Move your data. Keep your workflow.<br>
 
 </div>
 
-FreePort moves the space-hungry folders under `AppData` and your home directory to another drive, then leaves a directory junction at the original path. Your apps keep using the path they know while the data lives where you chose. Want it back? Restore it.
+SaveMyCDrive moves the space-hungry folders under `AppData` and your home directory to another drive, then leaves a directory junction at the original path. Your apps keep using the path they know while the data lives where you chose. Want it back? Restore it.
 
-<p align="center"><img src="docs/images/screenshot.en.png" width="860" alt="FreePort main window: candidate folders with size, application and status"></p>
+<p align="center"><img src="docs/images/screenshot.en.png" width="860" alt="SaveMyCDrive main window: candidate folders with size, application and status"></p>
 
 ## Download and use
 
-Get `FreePort-v<version>-windows-x64.zip` from [Releases](https://github.com/suifei/freeport/releases/latest), unzip, and run. No installer and no runtime to install.
+Get `SaveMyCDrive-v<version>-windows-x64.zip` from [Releases](https://github.com/suifei/save-my-c-drive/releases/latest), unzip, and run. No installer and no runtime to install.
 
 | File | Purpose |
 | --- | --- |
-| `freeport.exe` | Graphical interface |
-| `fp.exe` | Command line, sharing the same core and checks |
+| `SaveMyCDrive.exe` | Graphical interface |
+| `smcd.exe` | Command line, sharing the same core and checks |
 
 **In the GUI:**
 
@@ -40,14 +40,14 @@ Get `FreePort-v<version>-windows-x64.zip` from [Releases](https://github.com/sui
 **From the command line:**
 
 ```powershell
-fp scan --volumes C: --mode migrate --measure --out scan.json
-fp plan --scan scan.json --select <id> --destination D:\Dev --out plan.json
-fp apply --plan plan.json
-fp restore --source C:\Users\You\.cache\huggingface
-fp history
+smcd scan --volumes C: --mode migrate --measure --out scan.json
+smcd plan --scan scan.json --select <id> --destination D:\Dev --out plan.json
+smcd apply --plan plan.json
+smcd restore --source C:\Users\You\.cache\huggingface
+smcd history
 ```
 
-`fp --help` lists every command; `--state PATH` keeps transaction records in a folder you choose (portable use).
+`smcd --help` lists every command; `--state PATH` keeps transaction records in a folder you choose (portable use).
 
 ## “I installed my apps on D:. Why is C: full again?”
 
@@ -55,13 +55,13 @@ You picked D: in the installer, keep projects elsewhere, and emptied the Recycle
 
 An AI tool downloaded another model. Your editor added extensions. A compiler built its cache, and a package manager kept its own copy of everything, all under `AppData` or hidden folders in your home directory. Then an update fails, a build stops, or a download runs out of room halfway.
 
-**Your computer has room. Your tools just keep choosing the same place.** If you're new to this, unfamiliar folders are scary to touch. If you're experienced, you can write `mklink`, but you still have to find folders, check what's using them, move data and remember what went where, every time. FreePort puts discovery, review, migration and restoration in one flow.
+**Your computer has room. Your tools just keep choosing the same place.** If you're new to this, unfamiliar folders are scary to touch. If you're experienced, you can write `mklink`, but you still have to find folders, check what's using them, move data and remember what went where, every time. SaveMyCDrive puts discovery, review, migration and restoration in one flow.
 
 ## Move, don't delete: how it compares
 
-Cleaning only buys time: deleted caches grow back, models have to be downloaded again, and session history or extensions can't be deleted at all. FreePort deletes nothing; it gives that data a home on another drive.
+Cleaning only buys time: deleted caches grow back, models have to be downloaded again, and session history or extensions can't be deleted at all. SaveMyCDrive deletes nothing; it gives that data a home on another drive.
 
-| | Disk cleaners<br>(CCleaner, Storage Sense, 360, etc.) | Asking an AI assistant / AI skill each time | **FreePort** |
+| | Disk cleaners<br>(CCleaner, Storage Sense, 360, etc.) | Asking an AI assistant / AI skill each time | **SaveMyCDrive** |
 | --- | --- | --- | --- |
 | Approach | Delete caches and "junk" | The AI inspects folders, decides and runs commands on the spot | Move whole folders to another drive, junction at the original path |
 | AI coding tool data<br>(sessions, models, extensions) | Mostly unrecognized: delete or ignore | Judged on the fly; conclusions can change each time | 124 built-in rules match location and app markers |
@@ -83,7 +83,7 @@ AI is great for one-off, unfamiliar problems. Freeing C: every few weeks is the 
 - **Token cost.** Every run lists folders, sums sizes and looks things up, often tens of thousands of lines of output; two weeks later C: is full again and you pay again.
 - **Treats the symptom.** Whatever was deleted grows back.
 
-FreePort turns those judgments into reviewable rules and a fixed procedure: the same input gives the same result, you preview before anything runs, you can roll back afterwards, and it costs no tokens.
+SaveMyCDrive turns those judgments into reviewable rules and a fixed procedure: the same input gives the same result, you preview before anything runs, you can roll back afterwards, and it costs no tokens.
 
 ## How it works
 
@@ -94,9 +94,9 @@ FreePort turns those judgments into reviewable rules and a fixed procedure: the 
 
 It relies on the tools Windows already ships:
 
-1. **Check.** Programs using the folder are listed by product name so you can close them. FreePort never ends processes.
+1. **Check.** Programs using the folder are listed by product name so you can close them. SaveMyCDrive never ends processes.
 2. **Copy.** The system `robocopy` copies, multi-threaded, into a staging folder next to the destination; its exit code decides success.
-3. **Switch.** The staged copy takes its place and `robocopy /MOVE` retires the source. If any file is left behind, FreePort stops and keeps the data.
+3. **Switch.** The staged copy takes its place and `robocopy /MOVE` retires the source. If any file is left behind, SaveMyCDrive stops and keeps the data.
 4. **Link.** The system `mklink /J` creates the junction at the original path.
 
 Every step is journaled. After a power loss or interruption, *Recover interrupted work* continues or rolls back from the journal and the actual disk state; each folder's result and the batch result are recorded separately.
@@ -126,7 +126,7 @@ See the [directory list](docs/application-storage-list.md) (Chinese). Folders ma
 ## FAQ
 
 **Do I need administrator rights?**
-Whole-drive fast scanning (NTFS MFT) does; FreePort asks via UAC when needed and falls back to a normal scan if you decline. Migrating user folders usually doesn't.
+Whole-drive fast scanning (NTFS MFT) does; SaveMyCDrive asks via UAC when needed and falls back to a normal scan if you decline. Migrating user folders usually doesn't.
 
 **Will every app work after migration?**
 Keeping the original path is the method, not a universal compatibility guarantee. Updaters, permissions and folder contents all matter; known restrictions are shown in the list and log.
@@ -145,12 +145,12 @@ Simplified Chinese is the maintained interface language. English, Traditional Ch
 
 See the [requirements](docs/requirements.md), [technical design](docs/technical-design.md), [system command contract](docs/system-command-backend.md), [build and validation](docs/development.md) and [implementation status](docs/implementation-status.md) (Chinese). Written in Rust; the CLI and the native Win32 GUI share one core. Repository conventions are in [AGENTS.md](AGENTS.md).
 
-If FreePort helps, a **Star** helps the next person with a full C: drive find it.
+If SaveMyCDrive helps, a **Star** helps the next person with a full C: drive find it.
 
 ## Contact
 
 - QQ: 410000
-- Issues and suggestions: [GitHub Issues](https://github.com/suifei/freeport/issues)
+- Issues and suggestions: [GitHub Issues](https://github.com/suifei/save-my-c-drive/issues)
 
 ## License
 

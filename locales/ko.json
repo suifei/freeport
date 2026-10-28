@@ -88,7 +88,7 @@
   "msg.06ee3e938c": "트랜잭션 {0}을 검증하고 복구할까요?\n{1}\n단계: {2}\n기존 핸들 강제 닫기 동작은 다시 실행하지 않습니다.",
   "msg.32d5908bc7": "중지를 요청했습니다. 현재 파일이 안전한 지점에 도달할 때까지 기다립니다.",
   "msg.640ae839a9": "작업이 안전하게 중지된 후 창을 닫으세요.",
-  "msg.7540ee4199": "FreePort — 폴더 이전 및 복원",
+  "msg.7540ee4199": "SaveMyCDrive — 폴더 이전 및 복원",
   "msg.a8078003c7": "창을 만들 수 없습니다: {0}",
   "msg.ddafa0a53a": "NtQuerySystemInformation을 사용할 수 없습니다",
   "msg.e399792f89": "시스템 핸들 정보가 안전한 메모리 제한을 초과했습니다",
@@ -124,7 +124,7 @@
   "msg.e27c8aea75": "드라이브 문자가 없습니다",
   "msg.a611755bee": "로컬 드라이브만 이전을 지원합니다",
   "msg.8b4edf812c": "NTFS가 필요합니다. 현재 파일 시스템: {0}",
-  "msg.b95d01d42e": "트랜잭션 저장소를 잠글 수 없습니다. 다른 FreePort가 실행 중일 수 있습니다: {0}",
+  "msg.b95d01d42e": "트랜잭션 저장소를 잠글 수 없습니다. 다른 SaveMyCDrive가 실행 중일 수 있습니다: {0}",
   "msg.4e66c1f6af": "파일에 쓰는 중이거나 읽을 수 없습니다. 관련 앱을 종료하세요: {0}: {1}",
   "msg.91352f1748": "폴더 사용 중: {0}: {1}",
   "msg.6da5c00f50": "링크가 변경되었습니다. 작업을 거부합니다: {0}",
@@ -179,7 +179,7 @@
   "status.linked": "이미 연결됨",
   "status.nested_links": "링크 포함",
   "status.unknown": "알 수 없는 상태",
-  "cli.help": "FreePort — 폴더 이전 및 복원\n\n사용법:\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de는 이번 실행의 언어만 바꿉니다.\n--state PATH는 트랜잭션 저장 위치를 지정합니다. 검색은 데이터를 이동하거나 삭제하지 않습니다.\n",
+  "cli.help": "SaveMyCDrive — 폴더 이전 및 복원\n\n사용법:\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de는 이번 실행의 언어만 바꿉니다.\n--state PATH는 트랜잭션 저장 위치를 지정합니다. 검색은 데이터를 이동하거나 삭제하지 않습니다.\n",
   "dialog.path_invalid": "올바른 로컬 절대 경로를 입력하세요. 규칙 파일은 이미 있어야 합니다.",
   "dialog.path_hint": "경로를 입력/붙여넣거나 폴더를 두 번 클릭하세요.",
   "dialog.parent": "상위 폴더",
@@ -233,6 +233,7 @@
   "system.residue_at": "robocopy left {0} in place (not copied, changed or new); stopped and kept the data.",
   "history.leftover": "Leftover directory not owned by an open transaction; delete it by hand once you have checked it: {0}",
   "about.button": "정보",
-  "about.text": "FreePort {0}\n\nrobocopy로 폴더를 다른 드라이브로 옮기고 원래 경로에 디렉터리 정션을 만듭니다. 복원은 그 반대입니다.\n\n라이선스: {1}\n저장소: {2}\nQQ: {3}",
-  "drive.free": "{0}  여유 {1}"
+  "about.text": "SaveMyCDrive {0}\n\nrobocopy로 폴더를 다른 드라이브로 옮기고 원래 경로에 디렉터리 정션을 만듭니다. 복원은 그 반대입니다.\n\n라이선스: {1}\n저장소: {2}\nQQ: {3}",
+  "drive.free": "{0}  여유 {1}",
+  "app.name": "SaveMyCDrive"
 }

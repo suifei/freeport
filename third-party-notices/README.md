@@ -1,6 +1,6 @@
 # Third-party notices
 
-These notices cover linked Rust crates, the Rust standard library, and the MinGW runtime used by the build. FreePort's own code is licensed separately under MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`).
+These notices cover linked Rust crates, the Rust standard library, and the MinGW runtime used by the build. SaveMyCDrive's own code is licensed separately under MIT OR Apache-2.0 (`LICENSE-MIT`, `LICENSE-APACHE`).
 
 The compiled product has no third-party runtime DLL dependency. Statically linked dependencies still carry notice obligations. Regenerate and review this directory if the compiler, linker or Cargo.lock changes; archive the exact toolchain versions with a release.
 

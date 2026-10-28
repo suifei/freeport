@@ -88,7 +88,7 @@
   "msg.06ee3e938c": "トランザクション {0} を確認して復旧しますか？\n{1}\n段階: {2}\n以前のハンドル強制クローズは再実行しません。",
   "msg.32d5908bc7": "停止を要求しました。現在のファイルが安全な区切りに達するまで待っています。",
   "msg.640ae839a9": "操作が安全に停止してからウィンドウを閉じてください。",
-  "msg.7540ee4199": "FreePort — ディレクトリの移動と復元",
+  "msg.7540ee4199": "SaveMyCDrive — ディレクトリの移動と復元",
   "msg.a8078003c7": "ウィンドウを作成できません: {0}",
   "msg.ddafa0a53a": "NtQuerySystemInformation を利用できません",
   "msg.e399792f89": "システムハンドル情報が安全なメモリ上限を超えました",
@@ -124,7 +124,7 @@
   "msg.e27c8aea75": "ドライブ文字がありません",
   "msg.a611755bee": "移動はローカルドライブのみ対応しています",
   "msg.8b4edf812c": "NTFS が必要です。実際のファイルシステム: {0}",
-  "msg.b95d01d42e": "トランザクション保存先をロックできません。別の FreePort が動作中の可能性があります: {0}",
+  "msg.b95d01d42e": "トランザクション保存先をロックできません。別の SaveMyCDrive が動作中の可能性があります: {0}",
   "msg.4e66c1f6af": "書き込み中、または読み取り不能です。関連アプリを終了してください: {0}: {1}",
   "msg.91352f1748": "ディレクトリが使用中です: {0}: {1}",
   "msg.6da5c00f50": "リンクが変わりました。操作を拒否: {0}",
@@ -179,7 +179,7 @@
   "status.linked": "リンク済み",
   "status.nested_links": "リンクを含む",
   "status.unknown": "不明な状態",
-  "cli.help": "FreePort — ディレクトリの移動と復元\n\n使用方法:\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de は今回のみの言語指定です。\n--state PATH はトランザクション保存先を指定します。スキャンは移動・削除を行いません。\n",
+  "cli.help": "SaveMyCDrive — ディレクトリの移動と復元\n\n使用方法:\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de は今回のみの言語指定です。\n--state PATH はトランザクション保存先を指定します。スキャンは移動・削除を行いません。\n",
   "dialog.path_invalid": "有効なローカル絶対パスを入力してください。ルールファイルは既存のものを指定します。",
   "dialog.path_hint": "パスを入力・貼り付けるか、フォルダーをダブルクリックしてください。",
   "dialog.parent": "親フォルダー",
@@ -233,6 +233,7 @@
   "system.residue_at": "robocopy left {0} in place (not copied, changed or new); stopped and kept the data.",
   "history.leftover": "Leftover directory not owned by an open transaction; delete it by hand once you have checked it: {0}",
   "about.button": "バージョン情報",
-  "about.text": "FreePort {0}\n\nrobocopy でフォルダーを別のドライブへ移動し、元の場所にディレクトリ ジャンクションを作成します。復元は逆の操作です。\n\nライセンス: {1}\nリポジトリ: {2}\nQQ: {3}",
-  "drive.free": "{0}  空き {1}"
+  "about.text": "SaveMyCDrive {0}\n\nrobocopy でフォルダーを別のドライブへ移動し、元の場所にディレクトリ ジャンクションを作成します。復元は逆の操作です。\n\nライセンス: {1}\nリポジトリ: {2}\nQQ: {3}",
+  "drive.free": "{0}  空き {1}",
+  "app.name": "SaveMyCDrive"
 }

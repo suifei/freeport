@@ -219,7 +219,7 @@ pub fn maybe_helper() -> bool {
     if std::env::args().nth(1).as_deref() != Some("__handles-query") {
         return false;
     }
-    let _ = crate::i18n::set(&std::env::var("FP_INTERNAL_LANG").unwrap_or_else(|_| "en".into()));
+    let _ = crate::i18n::set(&std::env::var("SMCD_INTERNAL_LANG").unwrap_or_else(|_| "en".into()));
     let result = (|| -> Result<()> {
         let mut input = String::new();
         std::io::stdin().read_line(&mut input)?;
@@ -299,7 +299,7 @@ pub fn query(roots: &[PathBuf]) -> Result<(Vec<OpenHandle>, String)> {
         .collect::<Result<_>>()?;
     let mut child = Command::new(std::env::current_exe()?)
         .arg("__handles-query")
-        .env("FP_INTERNAL_LANG", crate::i18n::language())
+        .env("SMCD_INTERNAL_LANG", crate::i18n::language())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -673,7 +673,7 @@ mod tests {
         let system =
             std::path::PathBuf::from(std::env::var("SystemRoot").unwrap()).join("System32");
         std::fs::copy(system.join("PING.EXE"), dir.join("ping.exe")).unwrap();
-        // Handle holders need the fp.exe query helper and are covered by acceptance P04.
+        // Handle holders need the smcd.exe query helper and are covered by acceptance P04.
         let mut child = Command::new(dir.join("ping.exe"))
             .args(["-n", "6", "127.0.0.1"])
             .current_dir(&dir)

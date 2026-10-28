@@ -42,7 +42,7 @@ pub struct Pack {
 pub fn builtin() -> Pack {
     serde_json::from_str(include_str!(concat!(
         env!("OUT_DIR"),
-        "/freeport-rules.json"
+        "/savemycdrive-rules.json"
     )))
     .expect("validated bundled rules")
 }
@@ -327,7 +327,7 @@ mod tests {
     fn builtin_is_valid() {
         validate(&builtin()).unwrap();
         let source: serde_json::Value =
-            serde_json::from_str(include_str!("../rules/freeport-rules.json")).unwrap();
+            serde_json::from_str(include_str!("../rules/savemycdrive-rules.json")).unwrap();
         assert_eq!(serde_json::to_value(builtin()).unwrap(), source);
     }
     #[test]

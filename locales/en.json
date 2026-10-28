@@ -88,7 +88,7 @@
   "msg.06ee3e938c": "Verify and recover transaction {0}?\n{1}\nPhase: {2}\nOld handle-close actions will not be replayed.",
   "msg.32d5908bc7": "Stop requested; waiting for the current file to reach a safe point.",
   "msg.640ae839a9": "Wait for the operation to stop safely before closing the window.",
-  "msg.7540ee4199": "FreePort — Directory migration and restoration",
+  "msg.7540ee4199": "SaveMyCDrive — Directory migration and restoration",
   "msg.a8078003c7": "Cannot create the window: {0}",
   "msg.ddafa0a53a": "NtQuerySystemInformation is unavailable",
   "msg.e399792f89": "System handle information exceeds the safe memory limit",
@@ -124,7 +124,7 @@
   "msg.e27c8aea75": "Drive letter is missing",
   "msg.a611755bee": "Migration supports local drives only",
   "msg.8b4edf812c": "NTFS is required; actual filesystem: {0}",
-  "msg.b95d01d42e": "Cannot lock transaction storage; another FreePort instance may be active: {0}",
+  "msg.b95d01d42e": "Cannot lock transaction storage; another SaveMyCDrive instance may be active: {0}",
   "msg.4e66c1f6af": "File is being written or cannot be read. Close related applications: {0}: {1}",
   "msg.91352f1748": "Directory is in use: {0}: {1}",
   "msg.6da5c00f50": "Link changed; operation refused: {0}",
@@ -179,7 +179,7 @@
   "status.linked": "Already linked",
   "status.nested_links": "Contains links",
   "status.unknown": "Unknown status",
-  "cli.help": "FreePort — Directory migration and restoration\n\nUsage:\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de changes only this invocation.\n--state PATH chooses portable transaction storage. Scanning never moves or deletes data.\n",
+  "cli.help": "SaveMyCDrive — Directory migration and restoration\n\nUsage:\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de changes only this invocation.\n--state PATH chooses portable transaction storage. Scanning never moves or deletes data.\n",
   "dialog.path_invalid": "Enter a valid local absolute path. A rule file must already exist.",
   "dialog.path_hint": "Enter or paste a path; double-click a folder to open it.",
   "dialog.parent": "Parent folder",
@@ -233,6 +233,7 @@
   "system.residue_at": "robocopy left {0} in place (not copied, changed or new); stopped and kept the data.",
   "history.leftover": "Leftover directory not owned by an open transaction; delete it by hand once you have checked it: {0}",
   "about.button": "About",
-  "about.text": "FreePort {0}\n\nMoves folders to another drive with robocopy and leaves a directory junction at the original path; restore reverses it.\n\nLicense: {1}\nRepository: {2}\nQQ: {3}",
-  "drive.free": "{0}  {1} free"
+  "about.text": "SaveMyCDrive {0}\n\nMoves folders to another drive with robocopy and leaves a directory junction at the original path; restore reverses it.\n\nLicense: {1}\nRepository: {2}\nQQ: {3}",
+  "drive.free": "{0}  {1} free",
+  "app.name": "SaveMyCDrive"
 }

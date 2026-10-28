@@ -88,7 +88,7 @@
   "msg.06ee3e938c": "核验并恢复事务 {0}？\n{1}\n阶段：{2}\n不会重放旧的强关句柄动作。",
   "msg.32d5908bc7": "已请求停止，等待当前文件到达安全点。",
   "msg.640ae839a9": "等待操作安全停止后，可关闭窗口。",
-  "msg.7540ee4199": "FreePort — 目录迁移与恢复",
+  "msg.7540ee4199": "C盘救星 — 目录迁移与恢复",
   "msg.a8078003c7": "创建窗口失败：{0}",
   "msg.ddafa0a53a": "NtQuerySystemInformation 不可用",
   "msg.e399792f89": "系统句柄信息超过安全内存上限",
@@ -124,7 +124,7 @@
   "msg.e27c8aea75": "无盘符",
   "msg.a611755bee": "迁移仅支持本地磁盘",
   "msg.8b4edf812c": "需要 NTFS，实际文件系统：{0}",
-  "msg.b95d01d42e": "无法锁定状态目录（其他 Freeport 可能正在工作）：{0}",
+  "msg.b95d01d42e": "无法锁定状态目录（其他 C盘救星 实例可能正在工作）：{0}",
   "msg.4e66c1f6af": "文件正在写入或不可读，请关闭相关程序：{0}：{1}",
   "msg.91352f1748": "目录正在使用：{0}：{1}",
   "msg.6da5c00f50": "连接已变化，拒绝操作：{0}",
@@ -179,7 +179,7 @@
   "status.linked": "已有连接",
   "status.nested_links": "包含连接",
   "status.unknown": "未知状态",
-  "cli.help": "FreePort — 目录迁移与恢复\n\n用法：\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de 仅覆盖本次语言。\n--state PATH 指定便携事务目录。扫描不会移动或删除数据。\n",
+  "cli.help": "C盘救星 SaveMyCDrive — 目录迁移与恢复\n\n用法：\n{0}\n--lang auto|en|zh-CN|zh-TW|ja|ko|de 仅覆盖本次语言。\n--state PATH 指定便携事务目录。扫描不会移动或删除数据。\n",
   "dialog.path_invalid": "请输入有效的本机绝对路径；规则文件必须已存在。",
   "dialog.path_hint": "输入或粘贴路径；双击目录进入。",
   "dialog.parent": "上级目录",
@@ -233,6 +233,7 @@
   "system.residue_at": "robocopy 未能移走 {0}（未复制、已变化或新增），已停止且保留数据。",
   "history.leftover": "未关联未完成事务的遗留目录，确认无用后可手动删除：{0}",
   "about.button": "关于",
-  "about.text": "FreePort {0}\n\n用 robocopy 把目录搬到其他盘，并在原路径建立目录连接；恢复为反向操作。\n\n许可证：{1}\n仓库：{2}\nQQ：{3}",
-  "drive.free": "{0}  可用 {1}"
+  "about.text": "C盘救星 SaveMyCDrive {0}\n\n用 robocopy 把目录搬到其他盘，并在原路径建立目录连接；恢复为反向操作。\n\n许可证：{1}\n仓库：{2}\nQQ：{3}",
+  "drive.free": "{0}  可用 {1}",
+  "app.name": "C盘救星 SaveMyCDrive"
 }

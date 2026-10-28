@@ -1,4 +1,4 @@
-# FreePort 需求
+# SaveMyCDrive 需求
 
 版本：1.0（以原始批处理为基准的精简版）
 日期：2026-10-28
@@ -6,7 +6,7 @@
 
 ## 1. 核心目标
 
-FreePort（CLI `fp`）把占空间的应用数据目录搬到别的盘，并在原路径留下目录 Junction，让应用无感继续使用原路径；需要时再把 Junction 恢复为真实目录。它是下面这段手工批处理的安全自动化版本：
+C盘救星（SaveMyCDrive，CLI `smcd`）把占空间的应用数据目录搬到别的盘，并在原路径留下目录 Junction，让应用无感继续使用原路径；需要时再把 Junction 恢复为真实目录。它是下面这段手工批处理的安全自动化版本：
 
 ```bat
 mkdir D:\Dev\Cursor\data
@@ -15,7 +15,7 @@ rd /s /q "C:\Users\<user>\AppData\Roaming\Cursor"
 mklink /J "C:\Users\<user>\AppData\Roaming\Cursor" "D:\Dev\Cursor\data"
 ```
 
-批处理的风险是 FreePort 必须消除的问题：robocopy 因占用或权限跳过文件时，后续 `rd /s /q` 会把没搬走的数据直接删掉。FreePort 保持“搬运 → 清理源 → 建连接”的语义，但删除源之前必须先确认目标副本完整。
+批处理的风险是 SaveMyCDrive 必须消除的问题：robocopy 因占用或权限跳过文件时，后续 `rd /s /q` 会把没搬走的数据直接删掉。SaveMyCDrive 保持“搬运 → 清理源 → 建连接”的语义，但删除源之前必须先确认目标副本完整。
 
 ## 2. 首版范围
 
@@ -58,7 +58,7 @@ mklink /J "C:\Users\<user>\AppData\Roaming\Cursor" "D:\Dev\Cursor\data"
 | --- | --- |
 | 1. 预检 | 源/目标路径关系、卷身份、文件系统、可用空间、目标不存在（不合并、不覆盖）、占用、已有连接与特殊对象；写入事务记录 |
 | 2. 复制 | robocopy `/E /COPY:DAT /XJ /SL` 到目标同卷暂存目录；返回码 ≥ 8 视为失败 |
-| 3. 校验 | 与原批处理一样以 robocopy 为准：复制返回码 ≥8 即失败；刷盘。FreePort 不另做内容散列或逐文件比对。删除源由 robocopy `/MOVE /IS /NOCOPY /XC /XN /XO` 完成，只移走目标已有且大小、时间一致的文件；源中剩下任何文件（未复制、已变化、新增）即停止、保留数据、不建连接。大小与时间都相同的静默损坏不在识别范围内 |
+| 3. 校验 | 与原批处理一样以 robocopy 为准：复制返回码 ≥8 即失败；刷盘。SaveMyCDrive 不另做内容散列或逐文件比对。删除源由 robocopy `/MOVE /IS /NOCOPY /XC /XN /XO` 完成，只移走目标已有且大小、时间一致的文件；源中剩下任何文件（未复制、已变化、新增）即停止、保留数据、不建连接。大小与时间都相同的静默损坏不在识别范围内 |
 | 4. 切换与清理 | 暂存目录改名为最终目标；源改名为保留名；robocopy `/MOVE /IS /NOCOPY` 收尾；只按深度移除已确认身份的空目录。出现新文件、变更文件、未知对象即停止，不删 |
 | 5. 建连接 | `mklink /J 原路径 目标`；核验连接指向和目标身份后标记完成 |
 
@@ -89,12 +89,12 @@ mklink /J "C:\Users\<user>\AppData\Roaming\Cursor" "D:\Dev\Cursor\data"
 ## 7. CLI
 
 ```powershell
-fp scan --volumes C: --mode migrate --out scan.json
-fp plan --scan scan.json --select <id1,id2> --destination D:\Dev --out plan.json
-fp apply --plan plan.json
-fp scan --volumes C: --mode restore --out links.json
-fp restore --scan links.json --select <id1,id2>
-fp recover --transaction <id>
+smcd scan --volumes C: --mode migrate --out scan.json
+smcd plan --scan scan.json --select <id1,id2> --destination D:\Dev --out plan.json
+smcd apply --plan plan.json
+smcd scan --volumes C: --mode restore --out links.json
+smcd restore --scan links.json --select <id1,id2>
+smcd recover --transaction <id>
 ```
 
 `apply`/`restore` 展示最终计划后确认；非交互执行须显式接受。旧扫描结果和外部输入在执行前重新预检。复杂树选择可用 `--selection` 文件。命令、参数、JSON 字段、退出码和事务 ID 保持稳定。
@@ -106,7 +106,7 @@ fp recover --transaction <id>
 | 编号 | 场景 | 通过条件 |
 | --- | --- | --- |
 | P01 | 跨卷迁移（普通桌面进程，非受限容器） | 内容、空目录、只读文件、ADS、时间一致；原路径为 Junction；应用可通过原路径读写 |
-| P02 | 恢复（含手工 `mklink /J`、无 FreePort 历史） | 原路径变为真实目录，内容为迁移后的当前数据；真实目标保留 |
+| P02 | 恢复（含手工 `mklink /J`、无 SaveMyCDrive 历史） | 原路径变为真实目录，内容为迁移后的当前数据；真实目标保留 |
 | P03 | 多连接共享同一目标 | 恢复其中一个不影响其他连接和目标 |
 | P04 | 复制中文件被占用 / 权限拒绝 | robocopy 失败被识别，源完整保留，不进入清理 |
 | P05 | 校验期间或收尾前源文件被修改、新增 | 检出差异，变化文件留在源，不被删除或覆盖 |

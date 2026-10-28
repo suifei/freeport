@@ -105,7 +105,7 @@ pub fn run() -> Result<()> {
         return fail(crate::i18n::t("selection.invalid"));
     }
     match command.as_str() {
-        "--version" | "version" => println!("FreePort {}", env!("CARGO_PKG_VERSION")),
+        "--version" | "version" => println!("SaveMyCDrive {}", env!("CARGO_PKG_VERSION")),
         "volumes" => println!("{}", serde_json::to_string_pretty(&scan::volumes())?),
         "scan" => {
             let roots = if let Some(p) = value("--path") {
@@ -363,7 +363,7 @@ pub fn run() -> Result<()> {
 fn fixture_boundary(path: &Path) -> Result<()> {
     let absolute = crate::platform::absolute(path)?;
     let parent = absolute.parent().ok_or("fixture parent")?;
-    if fs::read(parent.join("freeport-fixture.marker"))? != b"FreePort test fixture\n" {
+    if fs::read(parent.join("savemycdrive-fixture.marker"))? != b"SaveMyCDrive test fixture\n" {
         return fail("Missing test-fixture marker.");
     }
     Ok(())
@@ -390,20 +390,20 @@ fn confirm(yes: bool) -> Result<()> {
     Ok(())
 }
 fn print_help() {
-    const COMMANDS: &str = r"fp volumes
-fp scan --volumes C:,D: --mode migrate|restore [--measure] [--out scan.json]
-fp scan --path E:\test --mode migrate [--measure]
-fp plan --scan scan.json --select id1,id2 --destination D:\Dev --out plan.json
-fp plan --scan scan.json --selection selection.json --destination D:\Dev --out plan.json
-fp scan --volumes C: --elevate --out scan.json
-fp apply --plan plan.json --elevate
-fp apply --plan plan.json [--yes]
-fp migrate --source C:\cache --target D:\Dev\cache [--yes]
-fp restore --source C:\cache [--yes]
-fp restore --scan links.json --select id1,id2 [--yes]
-fp history [--state E:\fp-state] [--batches]
-fp recover --transaction ID [--yes]
-fp handles --path C:\cache
-fp rules [--import rules.json]";
+    const COMMANDS: &str = r"smcd volumes
+smcd scan --volumes C:,D: --mode migrate|restore [--measure] [--out scan.json]
+smcd scan --path E:\test --mode migrate [--measure]
+smcd plan --scan scan.json --select id1,id2 --destination D:\Dev --out plan.json
+smcd plan --scan scan.json --selection selection.json --destination D:\Dev --out plan.json
+smcd scan --volumes C: --elevate --out scan.json
+smcd apply --plan plan.json --elevate
+smcd apply --plan plan.json [--yes]
+smcd migrate --source C:\cache --target D:\Dev\cache [--yes]
+smcd restore --source C:\cache [--yes]
+smcd restore --scan links.json --select id1,id2 [--yes]
+smcd history [--state E:\smcd-state] [--batches]
+smcd recover --transaction ID [--yes]
+smcd handles --path C:\cache
+smcd rules [--import rules.json]";
     print!("{}", crate::i18n::format("cli.help", &[COMMANDS.into()]));
 }

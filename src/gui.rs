@@ -1,12 +1,14 @@
 #![windows_subsystem = "windows"]
+// The binary is named SaveMyCDrive.exe.
+#![allow(non_snake_case)]
 mod candidate_list;
 mod native_dialog;
-use freeport::i18n as l;
-use freeport::{
+use savemycdrive::i18n as l;
+use savemycdrive::{
     elevation::{self, Job, Update},
     selection,
 };
-use freeport::{
+use savemycdrive::{
     engine::{self, Control},
     handles,
     inventory::Row,
@@ -185,7 +187,7 @@ unsafe fn font(ui: &Ui, height: i32, weight: i32) -> HFONT {
 fn drive_label(v: &scan::Volume) -> String {
     l::format(
         "drive.free",
-        &[v.root.display().to_string(), freeport::human(v.free)],
+        &[v.root.display().to_string(), savemycdrive::human(v.free)],
     )
 }
 unsafe fn init(ui: &mut Ui) {
@@ -195,7 +197,7 @@ unsafe fn init(ui: &mut Ui) {
     ui.font = font(ui, 13, 400);
     ui.title_font = font(ui, 20, 600);
     ui.background = GetSysColorBrush(COLOR_WINDOW);
-    ui.title = child(ui, 1, "STATIC", "FreePort", SS_NOPREFIX);
+    ui.title = child(ui, 1, "STATIC", l::t("app.name"), SS_NOPREFIX);
     SendMessageW(ui.title, WM_SETFONT, ui.title_font as usize, 1);
     ui.description = child(ui, 2, "STATIC", l::t("scan.scope"), SS_NOPREFIX);
     button(ui, ABOUT, l::t("about.button"));
@@ -390,6 +392,7 @@ unsafe fn refresh(ui: &mut Ui) {
         &format!("{} — {}", l::t("msg.7540ee4199"), env!("CARGO_PKG_VERSION")),
     );
     for (id, key) in [
+        (1, "app.name"),
         (2, "scan.scope"),
         (SCAN, "msg.63dec1aba1"),
         (ADD, "msg.568626f4b7"),
@@ -640,7 +643,7 @@ unsafe fn apply(ui: &mut Ui) {
     busy(ui, true);
     log(ui, l::t("selection.preparing").into());
     thread::spawn(move || {
-        let result = (|| -> freeport::Result<Prepared> {
+        let result = (|| -> savemycdrive::Result<Prepared> {
             let mut preview = l::t(if restore {
                 "msg.d0b032ac5c"
             } else {
@@ -652,7 +655,7 @@ unsafe fn apply(ui: &mut Ui) {
             let job = if restore {
                 let sources = choice.restore_sources(&rows)?;
                 if sources.is_empty() {
-                    return freeport::fail(l::t("selection.invalid"));
+                    return savemycdrive::fail(l::t("selection.invalid"));
                 }
                 for p in &sources {
                     preview.push_str(&format!("\n{}", p.display()));
@@ -917,7 +920,7 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
                     }
                     let choice = selection.clone();
                     if let Some(folder) = browse(hwnd) {
-                        let path = folder.join("FreePort-selection.json");
+                        let path = folder.join("SaveMyCDrive-selection.json");
                         if msg(
                             hwnd,
                             &format!("{}\n{}", l::t("selection.save_confirm"), path.display()),
@@ -932,10 +935,10 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
                 }
                 LOAD_SELECTION => {
                     if let Some(path) = rule_file(hwnd) {
-                        let result = (|| -> freeport::Result<selection::Selection> {
+                        let result = (|| -> savemycdrive::Result<selection::Selection> {
                             let bytes = std::fs::read(path)?;
                             if bytes.len() > 1024 * 1024 {
-                                return freeport::fail(l::t("selection.limit"));
+                                return savemycdrive::fail(l::t("selection.limit"));
                             }
                             let choice: selection::Selection = serde_json::from_slice(&bytes)?;
                             if SendMessageW(ui.mode, CB_GETCURSEL, 0, 0) == 0 {
@@ -1129,7 +1132,7 @@ fn main() {
             dwICC: ICC_LISTVIEW_CLASSES | ICC_TREEVIEW_CLASSES,
         };
         InitCommonControlsEx(&common);
-        let class = p::wide("FreePortNativeWindow");
+        let class = p::wide("SaveMyCDriveNativeWindow");
         let mut wc: WNDCLASSW = std::mem::zeroed();
         wc.lpfnWndProc = Some(wnd);
         wc.hInstance = GetModuleHandleW(ptr::null());
@@ -1190,8 +1193,8 @@ fn main() {
             let initial_language = l::language();
             let mut switches_preserved = true;
             ui.rows.push(Row {
-                candidate: freeport::catalog::custom(
-                    std::path::Path::new(r"E:\freeport-self-test\cache"),
+                candidate: savemycdrive::catalog::custom(
+                    std::path::Path::new(r"E:\savemycdrive-self-test\cache"),
                     "fixture",
                     "custom",
                 ),

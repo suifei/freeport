@@ -58,10 +58,10 @@ pub struct Record {
 }
 pub fn default_store() -> PathBuf {
     std::env::current_exe()
-        .unwrap_or_else(|_| PathBuf::from("fp.exe"))
+        .unwrap_or_else(|_| PathBuf::from("smcd.exe"))
         .parent()
         .unwrap_or(Path::new("."))
-        .join("freeport-state")
+        .join("savemycdrive-state")
 }
 fn now() -> Result<String> {
     Ok(format!(
@@ -111,7 +111,7 @@ fn phase(store: &Path, r: &mut Record, s: &str) -> Result<()> {
 }
 fn fault(s: &str) {
     #[cfg(debug_assertions)]
-    if std::env::var("FP_TEST_FAIL_AT").ok().as_deref() == Some(s) {
+    if std::env::var("SMCD_TEST_FAIL_AT").ok().as_deref() == Some(s) {
         std::process::abort();
     }
     let _ = s;
@@ -682,7 +682,7 @@ pub fn history(store: &Path) -> Result<Vec<Record>> {
     out.sort_by(|a, b| b.id.cmp(&a.id));
     Ok(out)
 }
-/// `.freeport-<id>.stage/.hold` directories beside known sources and targets that no
+/// `.savemycdrive-<id>.stage/.hold` directories beside known sources and targets that no
 /// open transaction owns: interrupted runs from other state directories, or copies kept
 /// on purpose after a rollback. Listed for the user to inspect; never deleted here.
 pub fn leftover_dirs(store: &Path) -> Result<Vec<PathBuf>> {
@@ -705,7 +705,7 @@ pub fn leftover_dirs(store: &Path) -> Result<Vec<PathBuf>> {
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().into_owned();
             let Some(id) = name
-                .strip_prefix(".freeport-")
+                .strip_prefix(".savemycdrive-")
                 .and_then(|n| n.strip_suffix(".stage").or_else(|| n.strip_suffix(".hold")))
             else {
                 continue;
@@ -776,8 +776,8 @@ pub fn migrate(
                 .target
                 .parent()
                 .ok_or(crate::i18n::t("msg.cbe405d02b"))?
-                .join(format!(".freeport-{id}.stage")),
-            hold: parent.join(format!(".freeport-{id}.hold")),
+                .join(format!(".savemycdrive-{id}.stage")),
+            hold: parent.join(format!(".savemycdrive-{id}.hold")),
             source_id: p::identity(&item.source)?,
             origin_id: p::identity(&item.source)?,
             destination_id: None,
@@ -921,8 +921,8 @@ fn restore_tracked(
         kind: "restore".into(),
         source: source.clone(),
         target: target.clone(),
-        stage: parent.join(format!(".freeport-{id}.stage")),
-        hold: parent.join(format!(".freeport-{id}.hold")),
+        stage: parent.join(format!(".savemycdrive-{id}.stage")),
+        hold: parent.join(format!(".savemycdrive-{id}.hold")),
         source_id: p::identity(&source)?,
         origin_id: p::identity(&target)?,
         destination_id: None,
@@ -1019,8 +1019,10 @@ pub fn recover(store: &Path, id: &str, control: &Control, progress: Progress) ->
     }
     // Never replay handle closures, nor use recorded PIDs/handle values after restart.
     let parent = r.source.parent().ok_or(crate::i18n::t("msg.bcc73003f9"))?;
-    if !p::same(&r.hold, &parent.join(format!(".freeport-{}.hold", r.id)))
-        || protected(&r.source)
+    if !p::same(
+        &r.hold,
+        &parent.join(format!(".savemycdrive-{}.hold", r.id)),
+    ) || protected(&r.source)
         || protected(&r.target)
         || p::overlap(&r.source, store)
         || p::overlap(&r.target, store)
@@ -1346,8 +1348,14 @@ mod tests {
             kind: "migrate".into(),
             source: src.clone(),
             target: dest.clone(),
-            stage: dest.parent().unwrap().join(format!(".freeport-{id}.stage")),
-            hold: src.parent().unwrap().join(format!(".freeport-{id}.hold")),
+            stage: dest
+                .parent()
+                .unwrap()
+                .join(format!(".savemycdrive-{id}.stage")),
+            hold: src
+                .parent()
+                .unwrap()
+                .join(format!(".savemycdrive-{id}.hold")),
             source_id: p::identity(&src).unwrap(),
             origin_id: p::identity(&src).unwrap(),
             destination_id: Some(p::identity(&dest).unwrap()),

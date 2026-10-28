@@ -1,4 +1,4 @@
-# FreePort 技术方案
+# SaveMyCDrive 技术方案
 
 版本：1.0（对应[需求 1.0](requirements.md)）
 范围：核心迁移/恢复。搬运命令与参数见[系统命令后端](system-command-backend.md)；当前实现与验证状态见[实现状态](implementation-status.md)；构建与测试见[开发说明](development.md)。
@@ -8,9 +8,9 @@
 | 问题 | 方案 | 原因与边界 |
 | --- | --- | --- |
 | 语言 | Rust，Windows 10 / 11 x64 | 使用 Win32 API 精确控制文件对象与重解析点 |
-| 入口 | CLI `fp` 与原生 Win32 GUI 共用一个核心库 | 无 WebView / Node 运行时；GUI 只有迁移与恢复两个入口 |
+| 入口 | CLI `smcd` 与原生 Win32 GUI 共用一个核心库 | 无 WebView / Node 运行时；GUI 只有迁移与恢复两个入口 |
 | 发现 | 自研 NTFS 扫描器，调用 `FSCTL_ENUM_USN_DATA`（MFT / USN） | 不依赖第三方搜索软件；不解析裸盘 `$MFT`；不可用时回退 Win32 只读遍历并说明原因 |
-| 复制与连接 | 系统 `robocopy` 与 `cmd /c mklink /J` | 不自写复制器；FreePort 提供预检、校验、日志与恢复 |
+| 复制与连接 | 系统 `robocopy` 与 `cmd /c mklink /J` | 不自写复制器；SaveMyCDrive 提供预检、校验、日志与恢复 |
 | 一致性 | 预写日志、持久化校验、短暂路径切换、幂等恢复 | 跨卷没有原子的“搬目录并建连接”系统调用，不宣称原子 |
 | 删除 | 只清理本事务拥有且再次验证的对象 | 不对源目录或连接做未经核验的递归删除 |
 | 批处理 | 每目录独立事务，整批逐项记账 | 部分完成不报告为整批成功 |
@@ -184,7 +184,7 @@ CLI 简单选择用 `--select id1,id2`；复杂树选择用 `--selection selecti
 
 ### 7.4 稳定边界与安全删除
 
-- 源文件交给 robocopy `/MOVE /IS /NOCOPY /XC /XN /XO` 退役：只移走目标已有且大小、时间一致的文件，不写目标；未复制、复制后被改写或新增的文件留在源侧，FreePort 发现残留即停止、不建连接，可回滚。不做内容散列与逐文件比对。
+- 源文件交给 robocopy `/MOVE /IS /NOCOPY /XC /XN /XO` 退役：只移走目标已有且大小、时间一致的文件，不写目标；未复制、复制后被改写或新增的文件留在源侧，SaveMyCDrive 发现残留即停止、不建连接，可回滚。不做内容散列与逐文件比对。
 - 保持并核对父目录身份，清理用句柄或等价抗替换操作，不“按路径验证后再按路径删另一个对象”。
 - 只删确认身份的空目录；新增文件、后插入的重解析点、无法确认的内容留作现场。
 - 收尾不持有逐文件句柄，资源不随文件数增长。
@@ -250,7 +250,7 @@ CLI 简单选择用 `--select id1,id2`；复杂树选择用 `--selection selecti
 
 支持 Windows 10 / 11 x64，不再支持 Windows 7/8。GUI 用 Win32 控件，产品不要求第三方运行时 DLL。stable 工具链、编译目标 `x86_64-pc-windows-gnu`、静态 CRT；PE 导入只允许系统 DLL。不提供 x86/ARM 构建。
 
-规则位于 `rules/freeport-rules.json`（`schema_version`、递增 `revision`、数据规则），仅离线导入：限制包大小、数量、ID、后缀组件、进程名与未知字段，持锁并原子替换。保护目录、重解析点与身份检查、默认选中状态不受规则控制；规则不能执行命令或启动软件。
+规则位于 `rules/savemycdrive-rules.json`（`schema_version`、递增 `revision`、数据规则），仅离线导入：限制包大小、数量、ID、后缀组件、进程名与未知字段，持锁并原子替换。保护目录、重解析点与身份检查、默认选中状态不受规则控制；规则不能执行命令或启动软件。
 
 ## 11. Git 与发布身份
 

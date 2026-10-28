@@ -391,7 +391,7 @@ pub fn execute(
     let parent = process(std::process::id())?;
     let birth = created(&parent)?;
     let name = format!(
-        r"\\.\pipe\FreePort-{}-{}-{}",
+        r"\\.\pipe\SaveMyCDrive-{}-{}-{}",
         std::process::id(),
         birth,
         SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos()
@@ -448,7 +448,7 @@ pub fn execute(
     let executable = p::wide(&current_executable);
     let verb = p::wide("runas");
     let parameters = p::wide(format!(
-        "--fp-worker {} {} {}",
+        "--smcd-worker {} {} {}",
         name,
         std::process::id(),
         birth
@@ -517,7 +517,7 @@ pub fn execute(
     result
 }
 fn worker(args: &[String]) -> Result<()> {
-    if args.len() != 5 || !args[2].starts_with(r"\\.\pipe\FreePort-") || args[2].len() > 200 {
+    if args.len() != 5 || !args[2].starts_with(r"\\.\pipe\SaveMyCDrive-") || args[2].len() > 200 {
         return crate::fail("Invalid worker request");
     }
     let expected: u32 = args[3].parse()?;
@@ -584,7 +584,7 @@ fn worker(args: &[String]) -> Result<()> {
 }
 pub fn maybe_worker() -> bool {
     let args: Vec<String> = std::env::args().collect();
-    if args.get(1).is_none_or(|a| a != "--fp-worker") {
+    if args.get(1).is_none_or(|a| a != "--smcd-worker") {
         return false;
     }
     let code = if worker(&args).is_ok() { 0 } else { 1 };
@@ -596,7 +596,7 @@ mod tests {
     use super::*;
     fn pair() -> (File, File) {
         let name = format!(
-            r"\\.\pipe\FreePort-unit-{}-{}",
+            r"\\.\pipe\SaveMyCDrive-unit-{}-{}",
             std::process::id(),
             SystemTime::now()
                 .duration_since(UNIX_EPOCH)
@@ -685,17 +685,17 @@ mod tests {
     #[test]
     fn malformed_worker_identity_is_rejected() {
         assert!(worker(&[
-            "fp.exe".into(),
-            "--fp-worker".into(),
+            "smcd.exe".into(),
+            "--smcd-worker".into(),
             r"\\server\pipe\other".into(),
             "0".into(),
             "0".into()
         ])
         .is_err());
         assert!(worker(&[
-            "fp.exe".into(),
-            "--fp-worker".into(),
-            r"\\.\pipe\FreePort-unit".into(),
+            "smcd.exe".into(),
+            "--smcd-worker".into(),
+            r"\\.\pipe\SaveMyCDrive-unit".into(),
             "0".into(),
             "0".into()
         ])

@@ -1,5 +1,5 @@
 //! Native modal dialogs with application-owned translations, including their buttons.
-use freeport::{i18n as l, platform as p};
+use savemycdrive::{i18n as l, platform as p};
 use std::{fs, path::PathBuf, ptr};
 use windows_sys::Win32::{
     Foundation::*,
@@ -60,7 +60,7 @@ fn template(width: i16, height: i16) -> Vec<u32> {
         0,
         0,
     ];
-    words.extend(p::wide("FreePort"));
+    words.extend(p::wide("SaveMyCDrive"));
     let mut bytes = Vec::new();
     for word in words {
         bytes.extend(word.to_le_bytes());
@@ -125,7 +125,7 @@ unsafe extern "system" fn message_proc(hwnd: HWND, m: u32, w: usize, param: isiz
         } else {
             l::t("common.information")
         };
-        set(hwnd, &format!("FreePort — {title}"));
+        set(hwnd, &format!("SaveMyCDrive — {title}"));
         let mut r: RECT = std::mem::zeroed();
         GetClientRect(hwnd, &mut r);
         // A multi-line EDIT only breaks lines at CRLF.

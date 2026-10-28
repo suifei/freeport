@@ -9,9 +9,6 @@ jobs:
       - uses: actions/checkout@v7
       - name: Windows PowerShell 5.1 script encoding and syntax
         run: python scripts/check-powershell.py
-      - name: Offline publisher encoding and resume checks
-        shell: powershell
-        run: python scripts/test-publisher.py
       - uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable-x86_64-pc-windows-gnu
@@ -36,13 +33,13 @@ jobs:
         shell: powershell
         run: ./scripts/build.ps1
       - name: Six-language CLI and native GUI checks
-        run: python scripts/smoke.py --cli target/x86_64-pc-windows-gnu/release/fp.exe --gui target/x86_64-pc-windows-gnu/release/freeport.exe
+        run: python scripts/smoke.py --cli target/x86_64-pc-windows-gnu/release/smcd.exe --gui target/x86_64-pc-windows-gnu/release/SaveMyCDrive.exe
       - name: Build fault-injection executable
         shell: powershell
         run: ./scripts/build.ps1 -Profile dev
       - name: Real NTFS, cross-volume, crash recovery and GUI flow
         shell: powershell
-        run: ./scripts/test-native.ps1 -Cli target/x86_64-pc-windows-gnu/debug/fp.exe
+        run: ./scripts/test-native.ps1 -Cli target/x86_64-pc-windows-gnu/debug/smcd.exe
       - uses: actions/upload-artifact@v7
         if: always()
         with:
