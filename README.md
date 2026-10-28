@@ -5,7 +5,8 @@
 # FreePort
 
 **Set your C: drive free.**<br>
-Move your data. Keep your workflow.
+Move your data. Keep your workflow.<br>
+**Nothing deleted · One-click migrate · One-click restore**
 
 [![Release](https://img.shields.io/github/v/release/suifei/freeport?label=download&color=2563eb)](https://github.com/suifei/freeport/releases/latest)
 [![CI](https://github.com/suifei/freeport/actions/workflows/ci.yml/badge.svg)](https://github.com/suifei/freeport/actions/workflows/ci.yml)
@@ -55,6 +56,34 @@ You picked D: in the installer, keep projects elsewhere, and emptied the Recycle
 An AI tool downloaded another model. Your editor added extensions. A compiler built its cache, and a package manager kept its own copy of everything, all under `AppData` or hidden folders in your home directory. Then an update fails, a build stops, or a download runs out of room halfway.
 
 **Your computer has room. Your tools just keep choosing the same place.** If you're new to this, unfamiliar folders are scary to touch. If you're experienced, you can write `mklink`, but you still have to find folders, check what's using them, move data and remember what went where, every time. FreePort puts discovery, review, migration and restoration in one flow.
+
+## Move, don't delete: how it compares
+
+Cleaning only buys time: deleted caches grow back, models have to be downloaded again, and session history or extensions can't be deleted at all. FreePort deletes nothing; it gives that data a home on another drive.
+
+| | Disk cleaners<br>(CCleaner, Storage Sense, 360, etc.) | Asking an AI assistant / AI skill each time | **FreePort** |
+| --- | --- | --- | --- |
+| Approach | Delete caches and "junk" | The AI inspects folders, decides and runs commands on the spot | Move whole folders to another drive, junction at the original path |
+| AI coding tool data<br>(sessions, models, extensions) | Mostly unrecognized: delete or ignore | Judged on the fly; conclusions can change each time | 124 built-in rules match location and app markers |
+| Data loss | Deleted is gone; re-download or rebuild | Possible: important folders mistaken for cache | Nothing deleted; source retired only after a successful copy, stops on leftovers |
+| A few weeks later | It grows back; clean again | It grows back; ask the AI again | New files land on the new drive, not on C: |
+| Changed your mind | No way back | Depends on what the AI actually ran | One-click restore, including files added since |
+| Power loss / interruption | — | Half-run commands are hard to trace | Journaled; continue or roll back from the log |
+| Cost per run | Free; some stay resident or show promotions | Many tokens per run, inconsistent results | Zero tokens, repeatable; exits when done, no network |
+| Auditable | Closed source | Prompts are readable, but the model decides what runs | Open source; rules and procedure are fixed |
+
+Some cleaners also offer a "move C: data" feature, but the scope is a vendor list that generally doesn't cover AI coding tools.
+
+### Why not just ask an AI to clean up each time?
+
+AI is great for one-off, unfamiliar problems. Freeing C: every few weeks is the opposite: repetitive, and your data is on the line.
+
+- **Inconsistent.** The same folder can be "safe to delete cache" in one session and "keep" in the next, depending on the model and the prompt.
+- **Mistaken deletes.** `.claude\projects` sounds like a cache but holds Claude Code's session history. `huggingface\hub` blobs and snapshots reference each other; deleting "the biggest files" corrupts models and costs tens of GB to re-download. One mistyped path in `Remove-Item -Recurse` or `rm -rf` can take out the parent folder.
+- **Token cost.** Every run lists folders, sums sizes and looks things up, often tens of thousands of lines of output; two weeks later C: is full again and you pay again.
+- **Treats the symptom.** Whatever was deleted grows back.
+
+FreePort turns those judgments into reviewable rules and a fixed procedure: the same input gives the same result, you preview before anything runs, you can roll back afterwards, and it costs no tokens.
 
 ## How it works
 
