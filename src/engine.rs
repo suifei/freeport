@@ -5,7 +5,6 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeMap,
     fs::{self, File, OpenOptions},
-    io::Read,
     os::windows::{fs::MetadataExt, io::AsRawHandle},
     path::{Path, PathBuf},
     sync::{
@@ -62,7 +61,6 @@ pub struct Record {
 struct Stream {
     name: String,
     bytes: u64,
-    hash: String,
 }
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 enum Kind {
@@ -407,19 +405,10 @@ pub fn validate_plan(plan: &Plan, store: &Path) -> Result<()> {
     Ok(())
 }
 
-fn hash(f: &mut File) -> Result<String> {
-    let mut sha = Sha256::new();
-    let mut buf = vec![0u8; 1024 * 1024];
-    loop {
-        let n = f.read(&mut buf)?;
-        if n == 0 {
-            break;
-        }
-        sha.update(&buf[..n]);
-    }
-    Ok(format!("{:x}", sha.finalize()))
-}
-fn stream_names(path: &Path) -> Result<Vec<String>> {
+/// Stream names and sizes come from the stream listing. File contents are never opened,
+/// so on-access antivirus scanning is not triggered; copy correctness rests on robocopy's
+/// exit code plus name, size, time and attribute comparison.
+fn streams(path: &Path) -> Result<Vec<Stream>> {
     let mut d: WIN32_FIND_STREAM_DATA = unsafe { std::mem::zeroed() };
     let h = unsafe {
         FindFirstStreamW(
@@ -432,14 +421,24 @@ fn stream_names(path: &Path) -> Result<Vec<String>> {
     if h == INVALID_HANDLE_VALUE {
         return Err(std::io::Error::last_os_error().into());
     }
-    let mut names = vec![];
+    let mut streams = vec![];
     loop {
         let n = d
             .cStreamName
             .iter()
             .position(|c| *c == 0)
             .ok_or(crate::i18n::t("msg.4de6b45259"))?;
-        names.push(String::from_utf16(&d.cStreamName[..n])?);
+        let name = String::from_utf16(&d.cStreamName[..n])?;
+        if !name.ends_with(":$DATA") {
+            unsafe {
+                FindClose(h);
+            }
+            return fail(crate::i18n::t("msg.405e40251e"));
+        }
+        streams.push(Stream {
+            name,
+            bytes: d.StreamSize as u64,
+        });
         if unsafe { FindNextStreamW(h, &mut d as *mut _ as _) } == 0 {
             let e = std::io::Error::last_os_error();
             unsafe {
@@ -451,8 +450,8 @@ fn stream_names(path: &Path) -> Result<Vec<String>> {
             break;
         }
     }
-    names.sort();
-    Ok(names)
+    streams.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(streams)
 }
 fn stream_path(path: &Path, name: &str) -> PathBuf {
     if name == "::$DATA" {
@@ -463,44 +462,17 @@ fn stream_path(path: &Path, name: &str) -> PathBuf {
         s.into()
     }
 }
-fn file_kind_checked(
-    path: &Path,
-    keep: bool,
-    expected: Option<p::Identity>,
-    stable: bool,
-) -> Result<(Kind, Vec<File>)> {
-    let mut streams = vec![];
-    let mut guards = vec![];
-    let mut links = 1;
-    for name in stream_names(path)? {
-        if !name.ends_with(":$DATA") {
-            return fail(crate::i18n::t("msg.405e40251e"));
-        }
-        let mut f = if stable {
-            p::stable_read_guard(&stream_path(path, &name))?
-        } else {
-            p::read_guard(&stream_path(path, &name))?
-        };
-        let identity = p::identity_file(&f)?;
-        if expected.is_some_and(|id| id != identity.0) {
-            return fail(crate::i18n::t("msg.ea3fff43e3"));
-        }
-        let m = f.metadata()?;
-        links = identity.1;
-        let sha = hash(&mut f)?;
-        streams.push(Stream {
-            name,
-            bytes: m.len(),
-            hash: sha,
-        });
-        if keep {
-            guards.push(f);
-        }
-    }
-    Ok((Kind::File { streams, links }, guards))
-}
-fn file_kind(path: &Path, keep: bool) -> Result<(Kind, Vec<File>)> {
-    file_kind_checked(path, keep, None, false)
+fn file_kind(path: &Path) -> Result<Kind> {
+    let f = p::native_file(
+        path,
+        FILE_READ_ATTRIBUTES,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+    )?;
+    Ok(Kind::File {
+        streams: streams(path)?,
+        links: p::identity_file(&f)?.1,
+    })
 }
 fn tree(root: &Path, control: &Control, progress: Progress) -> Result<Tree> {
     tree_impl(root, control, progress, false)
@@ -562,7 +534,7 @@ fn tree_impl(
             }
             Kind::Directory
         } else {
-            file_kind(&path, false)?.0
+            file_kind(&path)?
         };
         let security = if !legacy_security || matches!(kind, Kind::Link { .. }) {
             vec![]
@@ -688,7 +660,11 @@ fn copy(
     ));
     crate::system_ops::robocopy(root, to, crate::system_ops::CopyMode::Prepare, control)?;
     repair_hardlinks(to, expected, control)?;
-    // Finish durability before /MOVE is allowed to remove a source name.
+    // Finish durability before /MOVE is allowed to remove a source name. One volume
+    // flush needs administrator rights; otherwise each copied file is flushed.
+    if p::flush_volume(to).is_ok() {
+        return Ok(());
+    }
     let mut flushed = std::collections::BTreeSet::new();
     for e in &expected.entries {
         control.check()?;
@@ -706,10 +682,10 @@ fn copy(
             fs::set_permissions(&path, writable)?;
         }
         let result = (|| -> Result<()> {
-            for stream in stream_names(&path)? {
+            for stream in streams(&path)? {
                 OpenOptions::new()
                     .write(true)
-                    .open(stream_path(&path, &stream))?
+                    .open(stream_path(&path, &stream.name))?
                     .sync_all()?;
             }
             Ok(())
@@ -731,8 +707,8 @@ fn repair_hardlinks(root: &Path, expected: &Tree, control: &Control) -> Result<(
             if p::identity(first)? == p::identity(&path)? {
                 continue;
             }
-            if !same_content(&file_kind(&path, false)?.0, &entry.kind)
-                || !same_content(&file_kind(first, false)?.0, &entry.kind)
+            if !same_content(&file_kind(&path)?, &entry.kind)
+                || !same_content(&file_kind(first)?, &entry.kind)
             {
                 return fail(crate::i18n::t("system.changed"));
             }
@@ -858,11 +834,12 @@ fn cleanup(
         ensure_identity(&target, dest.id)?;
         match &e.kind {
             Kind::File { .. } => {
-                let (actual, _source_guards) = file_kind_checked(&source, true, Some(e.id), false)?;
-                let (copied, _target_guards) =
-                    file_kind_checked(&target, true, Some(dest.id), true)?;
+                let actual = file_kind(&source)?;
+                let copied = file_kind(&target)?;
                 if !same_content(&actual, &copied)
                     || !same_content(&actual, &e.kind)
+                    || fs::symlink_metadata(&source)?.last_write_time() != e.modified
+                    || fs::symlink_metadata(&target)?.last_write_time() != dest.modified
                     || (!e.security.is_empty()
                         && !security_equal(&p::security(&source)?, &e.security))
                     || (!dest.security.is_empty()
@@ -900,13 +877,19 @@ fn cleanup_system(
     progress: Progress,
 ) -> Result<()> {
     let current = tree(root, control, progress)?;
-    verify(&manifest.destination, &tree(reference, control, progress)?)?;
-    let mut source_files = vec![];
-    let mut source_dirs = vec![];
-    let mut target_files = vec![];
-    let mut target_dirs = vec![];
-    // Pin the verified target until source retirement finishes. /NOCOPY must
-    // not overwrite it. Unknown/new source objects never enter the move pass.
+    let copied = tree(reference, control, progress)?;
+    verify(&manifest.destination, &copied)?;
+    if manifest
+        .destination
+        .entries
+        .iter()
+        .zip(&copied.entries)
+        .any(|(a, b)| a.id != b.id)
+    {
+        return fail(crate::i18n::t("system.changed"));
+    }
+    // robocopy /MOVE below retires only source files equal in size and time to the
+    // copy (/XC /XN /XO); anything changed or new stays behind as residue.
     for entry in &current.entries {
         let expected = manifest
             .source
@@ -914,45 +897,14 @@ fn cleanup_system(
             .iter()
             .find(|e| e.path == entry.path)
             .ok_or(crate::i18n::t("system.changed"))?;
-        if entry.id != expected.id || !same_content(&entry.kind, &expected.kind) {
+        if entry.id != expected.id
+            || !same_content(&entry.kind, &expected.kind)
+            || (matches!(entry.kind, Kind::File { .. }) && entry.modified != expected.modified)
+        {
             return fail(crate::i18n::t("system.changed"));
         }
-        let path = root.join(&entry.path);
-        match entry.kind {
-            Kind::File { .. } => {
-                let (actual, guards) = file_kind_checked(&path, true, Some(entry.id), false)?;
-                if !same_content(&actual, &expected.kind) {
-                    return fail(crate::i18n::t("system.changed"));
-                }
-                source_files.extend(guards);
-            }
-            Kind::Directory => source_dirs.push(p::native_file(
-                &path,
-                FILE_READ_ATTRIBUTES | FILE_LIST_DIRECTORY,
-                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
-            )?),
-            Kind::Link { .. } => return fail(crate::i18n::t("selection.link")),
-        }
-    }
-    for entry in &manifest.destination.entries {
-        let path = reference.join(&entry.path);
-        ensure_identity(&path, entry.id)?;
-        match entry.kind {
-            Kind::File { .. } => {
-                let (actual, guards) = file_kind_checked(&path, true, Some(entry.id), true)?;
-                if !same_content(&actual, &entry.kind) {
-                    return fail(crate::i18n::t("system.changed"));
-                }
-                target_files.extend(guards);
-            }
-            Kind::Directory => target_dirs.push(p::native_file(
-                &path,
-                FILE_READ_ATTRIBUTES | FILE_LIST_DIRECTORY,
-                FILE_SHARE_READ | FILE_SHARE_WRITE,
-                FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
-            )?),
-            Kind::Link { .. } => return fail(crate::i18n::t("selection.link")),
+        if matches!(entry.kind, Kind::Link { .. }) {
+            return fail(crate::i18n::t("selection.link"));
         }
     }
     progress(crate::i18n::format(
@@ -965,30 +917,68 @@ fn cleanup_system(
         crate::system_ops::CopyMode::FinishMove,
         control,
     )?;
-    let remaining = tree(root, control, progress)?;
-    for entry in &remaining.entries {
-        if !matches!(entry.kind, Kind::Directory)
+    let mut directories = leftovers(root, manifest)?;
+    verify(&manifest.destination, &tree(reference, control, progress)?)?;
+    directories.sort_by_key(|(path, _)| std::cmp::Reverse(path.components().count()));
+    for (path, id) in directories {
+        control.check()?;
+        match p::identity(&path) {
+            Ok(actual) if actual == id => crate::system_ops::remove_empty(&path, control)?,
+            Ok(_) => return fail(crate::i18n::t("system.changed")),
+            Err(e) if gone(e.as_ref()) => {}
+            Err(e) => return Err(e),
+        }
+    }
+    progress(crate::i18n::t("msg.0853e24b6c").into());
+    Ok(())
+}
+fn gone(e: &(dyn std::error::Error + Send + Sync + 'static)) -> bool {
+    e.downcast_ref::<std::io::Error>()
+        .is_some_and(|e| matches!(e.raw_os_error(), Some(2 | 3)))
+}
+/// Lists the source directories robocopy /MOVE left behind. It removes the files and the
+/// directories it emptied, which may still be vanishing while other processes close their
+/// handles, so a name that is already gone counts as removed. Any file, link or directory
+/// not in the manifest is residue.
+fn leftovers(root: &Path, manifest: &Manifest) -> Result<Vec<(PathBuf, p::Identity)>> {
+    let mut dirs = vec![];
+    let mut stack = vec![root.to_path_buf()];
+    while let Some(dir) = stack.pop() {
+        let (m, id) = match fs::symlink_metadata(&dir)
+            .map_err(Box::<dyn std::error::Error + Send + Sync>::from)
+            .and_then(|m| Ok((m, p::identity(&dir)?)))
+        {
+            Ok(v) => v,
+            Err(e) if gone(e.as_ref()) => continue,
+            Err(e) => return Err(e),
+        };
+        let rel = dir.strip_prefix(root)?;
+        if !m.is_dir()
+            || p::reparse(&m)
             || !manifest
                 .source
                 .entries
                 .iter()
-                .any(|e| e.path == entry.path && e.id == entry.id)
+                .any(|e| e.path == rel && e.id == id)
         {
             return fail(crate::i18n::t("system.residue"));
         }
+        match fs::read_dir(&dir) {
+            Ok(children) => {
+                for child in children {
+                    match child {
+                        Ok(c) => stack.push(c.path()),
+                        Err(e) if gone(&e) => {}
+                        Err(e) => return Err(e.into()),
+                    }
+                }
+            }
+            Err(e) if gone(&e) => continue,
+            Err(e) => return Err(e.into()),
+        }
+        dirs.push((dir, id));
     }
-    verify(&manifest.destination, &tree(reference, control, progress)?)?;
-    drop(source_files);
-    drop(source_dirs);
-    let mut directories = remaining.entries;
-    directories.sort_by_key(|e| std::cmp::Reverse(e.path.components().count()));
-    for entry in directories {
-        let path = root.join(&entry.path);
-        ensure_identity(&path, entry.id)?;
-        crate::system_ops::remove_empty(&path, control)?;
-    }
-    progress(crate::i18n::t("msg.0853e24b6c").into());
-    Ok(())
+    Ok(dirs)
 }
 fn restore_system_source(
     store: &Path,
@@ -1538,17 +1528,14 @@ mod tests {
         assert!(checked_read::<Vec<u32>>(&p).is_err());
     }
     #[test]
-    fn detects_same_size_damage() {
+    fn detects_same_size_change_by_time() {
         let a = temp();
-        let b = temp();
         fs::write(a.join("a"), b"abcd").unwrap();
-        fs::write(b.join("a"), b"abce").unwrap();
         let c = Control::default();
-        assert!(verify(
-            &tree(&a, &c, &|_| {}).unwrap(),
-            &tree(&b, &c, &|_| {}).unwrap()
-        )
-        .is_err());
+        let before = tree(&a, &c, &|_| {}).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(20));
+        fs::write(a.join("a"), b"abce").unwrap();
+        assert!(verify(&before, &tree(&a, &c, &|_| {}).unwrap()).is_err());
     }
     #[test]
     fn read_guard_prevents_writes() {
@@ -1750,7 +1737,7 @@ mod tests {
         }
     }
     #[test]
-    fn system_move_pins_verified_files_and_retains_late_unknown_source() {
+    fn system_move_retains_late_changed_and_unknown_source() {
         let (src, dest, manifest) = copy_fixture();
         let marker = crate::i18n::format(
             "system.move",
@@ -1760,8 +1747,7 @@ mod tests {
         let progress = |message: String| {
             if message == marker {
                 invoked.set(true);
-                assert!(fs::write(src.join(data_file(&manifest)), b"overwrite").is_err());
-                assert!(fs::write(dest.join(data_file(&manifest)), b"overwrite").is_err());
+                fs::write(src.join(data_file(&manifest)), b"late change").unwrap();
                 fs::write(src.join("late.txt"), b"retain late source").unwrap();
             }
         };
@@ -1770,6 +1756,10 @@ mod tests {
         assert_eq!(
             fs::read(src.join("late.txt")).unwrap(),
             b"retain late source"
+        );
+        assert_eq!(
+            fs::read(src.join(data_file(&manifest))).unwrap(),
+            b"late change"
         );
         assert_eq!(
             fs::read(dest.join(data_file(&manifest))).unwrap(),

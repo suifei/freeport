@@ -57,6 +57,24 @@ pub fn native_file(path: &Path, access: u32, share: u32, flags: u32) -> Result<F
     }
     Ok(unsafe { File::from_raw_handle(h) })
 }
+/// Writes back every cached write on the volume holding `path`. Needs administrator rights.
+pub fn flush_volume(path: &Path) -> Result<()> {
+    let letter = match path.components().next() {
+        Some(Component::Prefix(p)) => match p.kind() {
+            std::path::Prefix::Disk(l) | std::path::Prefix::VerbatimDisk(l) => l as char,
+            _ => return fail(crate::i18n::t("msg.1f8f68f598")),
+        },
+        _ => return fail(crate::i18n::t("msg.1f8f68f598")),
+    };
+    let volume = native_file(
+        Path::new(&format!(r"\\.\{letter}:")),
+        GENERIC_WRITE,
+        FILE_SHARE_READ | FILE_SHARE_WRITE,
+        0,
+    )?;
+    volume.sync_all()?;
+    Ok(())
+}
 pub fn rename(source: &Path, target: &Path) -> Result<()> {
     unsafe {
         if MoveFileExW(
