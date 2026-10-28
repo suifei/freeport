@@ -26,6 +26,11 @@ for rel in [".claude", ".cache/huggingface", ".vscode/extensions", "go/pkg/mod"]
     folder.mkdir(parents=True)
     (folder / "日本語-한국어.txt").write_text("original fixture data", encoding="utf-8")
 STATE = ROOT / "state"
+for rel in [".claude/projects", ".cache/huggingface/hub", "go/pkg/mod/cache/download"]:
+    (FIXTURE / rel).mkdir(parents=True, exist_ok=True)
+    (FIXTURE / rel / "fixture.bin").write_bytes(b"owned application fixture")
+(FIXTURE / ".claude/settings.json").write_text("{}", encoding="utf-8")
+(FIXTURE / ".vscode/extensions/extensions.json").write_text("[]", encoding="utf-8")
 
 
 def invoke(*values, lang=None, code=0):
@@ -91,6 +96,7 @@ class InterfaceTests(unittest.TestCase):
             text, _ = invoke("scan", "--path", str(FIXTURE), "--measure", "--state", str(STATE), lang=tag)
             report = json.loads(text)
             self.assertEqual(report["mode"], "migrate")
+            self.assertEqual([os.path.normcase(p) for p in report["scope_roots"]], [os.path.normcase(str(FIXTURE))])
             rows = [{k: r[k] for k in ("stats", "status", "link_target", "busy")} |
                     {k: r["candidate"][k] for k in ("id", "source", "category", "recommended")}
                     for r in report["rows"]]
@@ -105,7 +111,9 @@ class InterfaceTests(unittest.TestCase):
         state = ROOT / "rules-state"
         pack = json.loads(invoke("rules", "--state", str(state), lang="en")[0])
         pack["revision"] += 1
-        pack["rules"] = [{"id": "fixture-rule", "name": "fixture", "category": "cache", "suffix": ".claude"}]
+        rule = next(r for r in pack["rules"] if r["id"] == "claude-projects")
+        rule.update(id="fixture-rule", name="fixture")
+        pack["rules"] = [rule]
         path = ROOT / "pack.json"
         path.write_text(json.dumps(pack), encoding="utf-8")
         invoke("rules", "--import", str(path), "--state", str(state), lang="en")
@@ -136,6 +144,23 @@ class InterfaceTests(unittest.TestCase):
         self.assertTrue(report["dialogs_localized"])
         self.assertEqual(set(report["labels"]), set(TAGS))
         self.assertEqual(len(set(report["labels"].values())), 6)
+
+    def test_legacy_pack_preserves_file_and_uses_bundled_application_evidence(self):
+        state = ROOT / "legacy-state"
+        state.mkdir()
+        legacy = {"schema_version": 1, "revision": 1, "rules": [{"id":"legacy", "name":"legacy", "category":"cache", "suffix":".claude"}]}
+        path = state / "rules.json"
+        original = json.dumps(legacy).encode("utf-8")
+        path.write_bytes(original)
+        report = json.loads(invoke("scan", "--path", str(FIXTURE), "--state", str(state), lang="en")[0])
+        self.assertTrue(any(r["candidate"].get("knowledge", {}).get("application") == "Claude Code" for r in report["rows"]))
+        self.assertTrue(any("legacy" in w for w in report["warnings"]))
+        self.assertFalse(any(r["candidate"]["name"] == "legacy" for r in report["rows"]))
+        self.assertEqual(path.read_bytes(), original)
+        path.write_bytes(b"not valid rules JSON")
+        restored = json.loads(invoke("scan", "--path", str(FIXTURE), "--mode", "restore", "--state", str(state), lang="en")[0])
+        self.assertEqual(restored["mode"], "restore")
+        self.assertEqual(path.read_bytes(), b"not valid rules JSON")
 
     def test_selection_file_rejections_are_readonly(self):
         report = json.loads(invoke("scan", "--path", str(FIXTURE), "--state", str(STATE), lang="en")[0])
@@ -168,5 +193,6 @@ if __name__ == "__main__":
     result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(InterfaceTests))
     Path(args.out).write_text(json.dumps({"tests": result.testsRun, "failures": len(result.failures),
         "errors": len(result.errors), "passed": result.wasSuccessful(),
+        "binaries": {Path(p).name:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in [CLI, GUI]},
         "note": "Interface tests only; does not prove migration, force-close, power-loss safety or Windows 7 runtime compatibility."}, indent=2) + "\n", encoding="utf-8")
     raise SystemExit(0 if result.wasSuccessful() else 1)

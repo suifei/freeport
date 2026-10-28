@@ -26,12 +26,12 @@ static MAPS: OnceLock<[BTreeMap<String, String>; 6]> = OnceLock::new();
 fn maps() -> &'static [BTreeMap<String, String>; 6] {
     MAPS.get_or_init(|| {
         [
-            include_str!("../locales/en.json"),
-            include_str!("../locales/zh-CN.json"),
-            include_str!("../locales/zh-TW.json"),
-            include_str!("../locales/ja.json"),
-            include_str!("../locales/ko.json"),
-            include_str!("../locales/de.json"),
+            include_str!(concat!(env!("OUT_DIR"), "/en.json")),
+            include_str!(concat!(env!("OUT_DIR"), "/zh-CN.json")),
+            include_str!(concat!(env!("OUT_DIR"), "/zh-TW.json")),
+            include_str!(concat!(env!("OUT_DIR"), "/ja.json")),
+            include_str!(concat!(env!("OUT_DIR"), "/ko.json")),
+            include_str!(concat!(env!("OUT_DIR"), "/de.json")),
         ]
         .map(|s| serde_json::from_str(s).expect("validated embedded locale"))
     })

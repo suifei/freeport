@@ -1,150 +1,3339 @@
 {
-  "schema_version": 1,
-  "revision": 1,
+  "schema_version": 2,
+  "revision": 2026102401,
   "rules": [
     {
-      "id": "claude",
-      "name": "Claude CLI 数据",
-      "category": "ai_tool",
-      "suffix": ".claude",
+      "id": "claude-projects",
+      "name": "Claude Code: projects",
+      "category": "app_data",
+      "suffix": ".claude/projects",
       "processes": [
-        "claude.exe"
-      ]
+        "claude.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "Claude Code",
+        "purpose": "会话记录、项目记忆及工具输出；属于用户历史，完整保留，退出所有会话后迁移。",
+        "kind": "history",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".claude",
+        "markers": [
+          [
+            "settings.json",
+            "projects"
+          ],
+          [
+            ".credentials.json",
+            "projects"
+          ]
+        ],
+        "sources": [
+          "https://code.claude.com/docs/en/claude-directory"
+        ],
+        "relocation_env": [
+          "CLAUDE_CONFIG_DIR"
+        ]
+      }
     },
     {
-      "id": "kimi",
-      "name": "Kimi CLI 数据",
-      "category": "ai_tool",
-      "suffix": ".kimi-code",
+      "id": "claude-file-history",
+      "name": "Claude Code: file-history",
+      "category": "app_data",
+      "suffix": ".claude/file-history",
       "processes": [
-        "kimi.exe"
-      ]
+        "claude.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "Claude Code",
+        "purpose": "文件修改前的恢复快照；用于回退，不能当作可丢弃缓存。",
+        "kind": "history",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".claude",
+        "markers": [
+          [
+            "settings.json",
+            "projects"
+          ],
+          [
+            ".credentials.json",
+            "projects"
+          ]
+        ],
+        "sources": [
+          "https://code.claude.com/docs/en/claude-directory"
+        ],
+        "relocation_env": [
+          "CLAUDE_CONFIG_DIR"
+        ]
+      }
     },
     {
-      "id": "dsh",
-      "name": "DeepSeek DSH",
-      "category": "ai_tool",
-      "suffix": ".dsh",
+      "id": "claude-paste-cache",
+      "name": "Claude Code: paste-cache",
+      "category": "app_data",
+      "suffix": ".claude/paste-cache",
       "processes": [
-        "dsh.exe"
-      ]
+        "claude.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "Claude Code",
+        "purpose": "历史粘贴内容；删除可能影响历史提示词，迁移时完整保留。",
+        "kind": "history",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".claude",
+        "markers": [
+          [
+            "settings.json",
+            "projects"
+          ],
+          [
+            ".credentials.json",
+            "projects"
+          ]
+        ],
+        "sources": [
+          "https://code.claude.com/docs/en/claude-directory"
+        ],
+        "relocation_env": [
+          "CLAUDE_CONFIG_DIR"
+        ]
+      }
     },
     {
-      "id": "grok",
-      "name": "Grok 数据",
-      "category": "ai_tool",
-      "suffix": ".grok",
+      "id": "claude-cache",
+      "name": "Claude Code: cache",
+      "category": "build_cache",
+      "suffix": ".claude/cache",
+      "processes": [
+        "claude.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "Claude Code",
+        "purpose": "版本说明等可重新获取的应用缓存。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".claude",
+        "markers": [
+          [
+            "settings.json",
+            "projects"
+          ],
+          [
+            ".credentials.json",
+            "projects"
+          ]
+        ],
+        "sources": [
+          "https://code.claude.com/docs/en/claude-directory"
+        ],
+        "relocation_env": [
+          "CLAUDE_CONFIG_DIR"
+        ]
+      }
+    },
+    {
+      "id": "claude-plugins",
+      "name": "Claude Code: plugins",
+      "category": "extensions",
+      "suffix": ".claude/plugins",
+      "processes": [
+        "claude.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "Claude Code",
+        "purpose": "已安装插件、市场副本和插件状态；检测嵌套链接后按无链接分支处理。",
+        "kind": "extensions",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".claude",
+        "markers": [
+          [
+            "settings.json",
+            "projects"
+          ],
+          [
+            ".credentials.json",
+            "projects"
+          ]
+        ],
+        "sources": [
+          "https://code.claude.com/docs/en/claude-directory"
+        ],
+        "relocation_env": [
+          "CLAUDE_CONFIG_DIR"
+        ]
+      }
+    },
+    {
+      "id": "claude-debug",
+      "name": "Claude Code: debug",
+      "category": "cache",
+      "suffix": ".claude/debug",
+      "processes": [
+        "claude.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "Claude Code",
+        "purpose": "诊断日志；本机 latest 是绝对文件符号链接，整目录需链接处理能力，不能忽略。",
+        "kind": "logs",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".claude",
+        "markers": [
+          [
+            "settings.json",
+            "projects"
+          ],
+          [
+            ".credentials.json",
+            "projects"
+          ]
+        ],
+        "sources": [
+          "https://code.claude.com/docs/en/claude-directory"
+        ],
+        "relocation_env": [
+          "CLAUDE_CONFIG_DIR"
+        ]
+      }
+    },
+    {
+      "id": "claude-skills",
+      "name": "Claude Code: skills",
+      "category": "extensions",
+      "suffix": ".claude/skills",
+      "processes": [
+        "claude.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "Claude Code",
+        "purpose": "共享技能经常指向 .agents/skills；保留连接，不整体搬运。",
+        "kind": "extensions",
+        "confidence": "documented",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".claude",
+        "markers": [
+          [
+            "settings.json",
+            "projects"
+          ],
+          [
+            ".credentials.json",
+            "projects"
+          ]
+        ],
+        "sources": [
+          "https://code.claude.com/docs/en/claude-directory"
+        ],
+        "relocation_env": [
+          "CLAUDE_CONFIG_DIR"
+        ]
+      }
+    },
+    {
+      "id": "codex-sessions",
+      "name": "OpenAI Codex: sessions",
+      "category": "app_data",
+      "suffix": ".codex/sessions",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "可恢复会话的完整记录；用户历史，禁止按临时文件清理。",
+        "kind": "history",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".codex",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://developers.openai.com/codex/config-advanced",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "CODEX_HOME"
+        ]
+      }
+    },
+    {
+      "id": "codex-archived-sessions",
+      "name": "OpenAI Codex: archived_sessions",
+      "category": "app_data",
+      "suffix": ".codex/archived_sessions",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "归档会话，迁移保留内容及 ACL。",
+        "kind": "history",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".codex",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://developers.openai.com/codex/config-advanced",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "CODEX_HOME"
+        ]
+      }
+    },
+    {
+      "id": "codex-attachments",
+      "name": "OpenAI Codex: attachments",
+      "category": "app_data",
+      "suffix": ".codex/attachments",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "会话附件，可能仍被历史引用。",
+        "kind": "history",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".codex",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://developers.openai.com/codex/config-advanced",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "CODEX_HOME"
+        ]
+      }
+    },
+    {
+      "id": "codex-generated-images",
+      "name": "OpenAI Codex: generated_images",
+      "category": "app_data",
+      "suffix": ".codex/generated_images",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "已生成图片，属于用户产物。",
+        "kind": "history",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".codex",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://developers.openai.com/codex/config-advanced",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "CODEX_HOME"
+        ]
+      }
+    },
+    {
+      "id": "codex-cache",
+      "name": "OpenAI Codex: cache",
+      "category": "build_cache",
+      "suffix": ".codex/cache",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "应用缓存，具体子项随版本变化；退出应用后处理。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".codex",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://developers.openai.com/codex/config-advanced",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "CODEX_HOME"
+        ]
+      }
+    },
+    {
+      "id": "codex-plugins-cache",
+      "name": "OpenAI Codex: plugins-cache",
+      "category": "extensions",
+      "suffix": ".codex/plugins/cache",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "插件下载/版本目录；本机 chrome/latest 是版本目录连接，允许选择其他无链接分支。",
+        "kind": "extensions",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".codex",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://developers.openai.com/codex/config-advanced",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "CODEX_HOME"
+        ]
+      }
+    },
+    {
+      "id": "codex-sandbox",
+      "name": "OpenAI Codex: sandbox",
+      "category": "build_cache",
+      "suffix": ".codex/.sandbox",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "沙箱状态和权限关系，不作为缓存自动迁移。",
+        "kind": "runtime",
+        "confidence": "local",
+        "migration": "exclude",
+        "scope": "home",
+        "owner_suffix": ".codex",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://developers.openai.com/codex/config-advanced",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "CODEX_HOME"
+        ]
+      }
+    },
+    {
+      "id": "codex-sandbox-bin",
+      "name": "OpenAI Codex: sandbox-bin",
+      "category": "build_cache",
+      "suffix": ".codex/.sandbox-bin",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "OpenAI Codex",
+        "purpose": "沙箱执行文件，可能关联主机权限和版本绑定，需专门验证。",
+        "kind": "runtime",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".codex",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://developers.openai.com/codex/config-advanced",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "CODEX_HOME"
+        ]
+      }
+    },
+    {
+      "id": "codex-runtime-root",
+      "name": "Codex managed runtime: root",
+      "category": "build_cache",
+      "suffix": ".cache/codex-runtimes",
+      "processes": [
+        "codex.exe",
+        "chatgpt.exe"
+      ],
+      "knowledge": {
+        "application": "Codex managed runtime",
+        "purpose": "本机包含 primary-runtime 和安装暂存，约 1.75 GiB；升级/版本绑定尚需验证，暂不自动迁移。",
+        "kind": "runtime",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".cache/codex-runtimes",
+        "markers": [
+          [
+            "codex-primary-runtime"
+          ]
+        ],
+        "sources": [
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "kimi-sessions",
+      "name": "Kimi Code: sessions",
+      "category": "app_data",
+      "suffix": ".kimi-code/sessions",
+      "processes": [
+        "kimi.exe",
+        "kimi code.exe"
+      ],
+      "knowledge": {
+        "application": "Kimi Code",
+        "purpose": "会话正文、任务、计划与会话日志；完整保留，先退出所有 CLI/桌面后台。",
+        "kind": "history",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".kimi-code",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "KIMI_CODE_HOME"
+        ]
+      }
+    },
+    {
+      "id": "kimi-logs",
+      "name": "Kimi Code: logs",
+      "category": "cache",
+      "suffix": ".kimi-code/logs",
+      "processes": [
+        "kimi.exe",
+        "kimi code.exe"
+      ],
+      "knowledge": {
+        "application": "Kimi Code",
+        "purpose": "诊断日志。",
+        "kind": "logs",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".kimi-code",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "KIMI_CODE_HOME"
+        ]
+      }
+    },
+    {
+      "id": "kimi-cache",
+      "name": "Kimi Code: cache",
+      "category": "build_cache",
+      "suffix": ".kimi-code/cache",
+      "processes": [
+        "kimi.exe",
+        "kimi code.exe"
+      ],
+      "knowledge": {
+        "application": "Kimi Code",
+        "purpose": "本机存在的缓存；格式由应用版本决定。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".kimi-code",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "KIMI_CODE_HOME"
+        ]
+      }
+    },
+    {
+      "id": "kimi-files",
+      "name": "Kimi Code: files",
+      "category": "app_data",
+      "suffix": ".kimi-code/files",
+      "processes": [
+        "kimi.exe",
+        "kimi code.exe"
+      ],
+      "knowledge": {
+        "application": "Kimi Code",
+        "purpose": "本机附件文件，可能被历史引用。",
+        "kind": "history",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".kimi-code",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "KIMI_CODE_HOME"
+        ]
+      }
+    },
+    {
+      "id": "kimi-file-history",
+      "name": "Kimi Code: file-history",
+      "category": "app_data",
+      "suffix": ".kimi-code/file-history",
+      "processes": [
+        "kimi.exe",
+        "kimi code.exe"
+      ],
+      "knowledge": {
+        "application": "Kimi Code",
+        "purpose": "本机文件恢复快照；不是可丢弃缓存。",
+        "kind": "history",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".kimi-code",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "KIMI_CODE_HOME"
+        ]
+      }
+    },
+    {
+      "id": "kimi-search-index",
+      "name": "Kimi Code: search-index",
+      "category": "build_cache",
+      "suffix": ".kimi-code/search-index",
+      "processes": [
+        "kimi.exe",
+        "kimi code.exe"
+      ],
+      "knowledge": {
+        "application": "Kimi Code",
+        "purpose": "本机搜索索引；应退出索引写入进程后处理。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".kimi-code",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "KIMI_CODE_HOME"
+        ]
+      }
+    },
+    {
+      "id": "kimi-server",
+      "name": "Kimi Code: server",
+      "category": "build_cache",
+      "suffix": ".kimi-code/server",
+      "processes": [
+        "kimi.exe",
+        "kimi code.exe"
+      ],
+      "knowledge": {
+        "application": "Kimi Code",
+        "purpose": "桌面服务运行时，需验证升级器及后台服务停机行为。",
+        "kind": "runtime",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".kimi-code",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://www.kimi.com/code/docs/en/kimi-code-cli/configuration/data-locations.html",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "KIMI_CODE_HOME"
+        ]
+      }
+    },
+    {
+      "id": "dsh-sessions",
+      "name": "DeepSeek Harness: sessions",
+      "category": "app_data",
+      "suffix": ".dsh/sessions",
+      "processes": [
+        "dsh.exe",
+        "dsh-desktop.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "DeepSeek Harness",
+        "purpose": "CLI 与桌面共享的会话历史。",
+        "kind": "history",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".dsh",
+        "markers": [
+          [
+            "profiles",
+            "sessions"
+          ],
+          [
+            ".credentials.yaml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "DSH_HOME"
+        ]
+      }
+    },
+    {
+      "id": "dsh-attachments",
+      "name": "DeepSeek Harness: attachments",
+      "category": "app_data",
+      "suffix": ".dsh/attachments",
+      "processes": [
+        "dsh.exe",
+        "dsh-desktop.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "DeepSeek Harness",
+        "purpose": "会话附件。",
+        "kind": "history",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".dsh",
+        "markers": [
+          [
+            "profiles",
+            "sessions"
+          ],
+          [
+            ".credentials.yaml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "DSH_HOME"
+        ]
+      }
+    },
+    {
+      "id": "dsh-cache",
+      "name": "DeepSeek Harness: cache",
+      "category": "build_cache",
+      "suffix": ".dsh/cache",
+      "processes": [
+        "dsh.exe",
+        "dsh-desktop.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "DeepSeek Harness",
+        "purpose": "本机应用缓存。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".dsh",
+        "markers": [
+          [
+            "profiles",
+            "sessions"
+          ],
+          [
+            ".credentials.yaml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "DSH_HOME"
+        ]
+      }
+    },
+    {
+      "id": "dsh-dsh-runtimes",
+      "name": "DeepSeek Harness: dsh-runtimes",
+      "category": "build_cache",
+      "suffix": ".dsh/dsh-runtimes",
+      "processes": [
+        "dsh.exe",
+        "dsh-desktop.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "DeepSeek Harness",
+        "purpose": "本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。",
+        "kind": "mixed",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".dsh",
+        "markers": [
+          [
+            "profiles",
+            "sessions"
+          ],
+          [
+            ".credentials.yaml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "DSH_HOME"
+        ]
+      }
+    },
+    {
+      "id": "dsh-storages",
+      "name": "DeepSeek Harness: storages",
+      "category": "build_cache",
+      "suffix": ".dsh/storages",
+      "processes": [
+        "dsh.exe",
+        "dsh-desktop.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "DeepSeek Harness",
+        "purpose": "本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。",
+        "kind": "mixed",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".dsh",
+        "markers": [
+          [
+            "profiles",
+            "sessions"
+          ],
+          [
+            ".credentials.yaml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "DSH_HOME"
+        ]
+      }
+    },
+    {
+      "id": "dsh-profiles",
+      "name": "DeepSeek Harness: profiles",
+      "category": "build_cache",
+      "suffix": ".dsh/profiles",
+      "processes": [
+        "dsh.exe",
+        "dsh-desktop.exe",
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "DeepSeek Harness",
+        "purpose": "本机存在；需按具体版本确认运行时、插件存储和数据库关系后纳入。",
+        "kind": "mixed",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".dsh",
+        "markers": [
+          [
+            "profiles",
+            "sessions"
+          ],
+          [
+            ".credentials.yaml",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://github.com/deepseek-ai/deepseek-harness/blob/master/apps/desktop/README.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "DSH_HOME"
+        ]
+      }
+    },
+    {
+      "id": "grok-sessions",
+      "name": "Grok CLI: sessions",
+      "category": "app_data",
+      "suffix": ".grok/sessions",
       "processes": [
         "grok.exe"
-      ]
+      ],
+      "knowledge": {
+        "application": "Grok CLI",
+        "purpose": "会话正文和恢复元数据，属于用户历史。",
+        "kind": "history",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".grok",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://docs.x.ai/build/settings",
+          "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "GROK_HOME"
+        ]
+      }
     },
     {
-      "id": "grokbot",
-      "name": "Grok Bot",
-      "category": "ai_tool",
-      "suffix": ".grokbot",
+      "id": "grok-logs",
+      "name": "Grok CLI: logs",
+      "category": "cache",
+      "suffix": ".grok/logs",
       "processes": [
-        "node.exe"
-      ]
+        "grok.exe"
+      ],
+      "knowledge": {
+        "application": "Grok CLI",
+        "purpose": "本机诊断日志。",
+        "kind": "logs",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".grok",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://docs.x.ai/build/settings",
+          "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "GROK_HOME"
+        ]
+      }
+    },
+    {
+      "id": "grok-downloads",
+      "name": "Grok CLI: downloads",
+      "category": "build_cache",
+      "suffix": ".grok/downloads",
+      "processes": [
+        "grok.exe"
+      ],
+      "knowledge": {
+        "application": "Grok CLI",
+        "purpose": "本机下载暂存，先确认升级器未运行。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".grok",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://docs.x.ai/build/settings",
+          "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "GROK_HOME"
+        ]
+      }
+    },
+    {
+      "id": "grok-marketplace-cache",
+      "name": "Grok CLI: marketplace-cache",
+      "category": "extensions",
+      "suffix": ".grok/marketplace-cache",
+      "processes": [
+        "grok.exe"
+      ],
+      "knowledge": {
+        "application": "Grok CLI",
+        "purpose": "本机插件市场缓存。",
+        "kind": "extensions",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".grok",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://docs.x.ai/build/settings",
+          "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "GROK_HOME"
+        ]
+      }
+    },
+    {
+      "id": "grok-runtime",
+      "name": "Grok CLI: runtime",
+      "category": "build_cache",
+      "suffix": ".grok/bin",
+      "processes": [
+        "grok.exe"
+      ],
+      "knowledge": {
+        "application": "Grok CLI",
+        "purpose": "实际 CLI 程序及升级入口，不能当缓存。",
+        "kind": "runtime",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".grok",
+        "markers": [
+          [
+            "config.toml",
+            "sessions"
+          ],
+          [
+            "auth.json",
+            "sessions"
+          ]
+        ],
+        "sources": [
+          "https://docs.x.ai/build/settings",
+          "https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/17-sessions.md",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "GROK_HOME"
+        ]
+      }
+    },
+    {
+      "id": "grokbot-attachment-staging",
+      "name": "Grok Bot: attachment-staging",
+      "category": "build_cache",
+      "suffix": ".grokbot/attachment-staging",
+      "processes": [
+        "grok bot.exe"
+      ],
+      "knowledge": {
+        "application": "Grok Bot",
+        "purpose": "附件暂存；公开文档未确认其可重建性，先保留人工复核。",
+        "kind": "mixed",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".grokbot",
+        "markers": [
+          [
+            ".grokbot-data-root-v1",
+            "settings.json"
+          ]
+        ],
+        "sources": [
+          "https://docs.x.ai/grok-bot/get-started",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-cache",
+      "name": "VS Code: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Code/Cache",
+      "processes": [
+        "code.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Code",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-code-cache",
+      "name": "VS Code: code-cache",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Code/Code Cache",
+      "processes": [
+        "code.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Code",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-gpucache",
+      "name": "VS Code: gpucache",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Code/GPUCache",
+      "processes": [
+        "code.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Code",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-cacheddata",
+      "name": "VS Code: cacheddata",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Code/CachedData",
+      "processes": [
+        "code.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Code",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-cachedextensionvsixs",
+      "name": "VS Code: cachedextensionvsixs",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Code/CachedExtensionVSIXs",
+      "processes": [
+        "code.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Code",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-logs",
+      "name": "VS Code: logs",
+      "category": "cache",
+      "suffix": "AppData/Roaming/Code/logs",
+      "processes": [
+        "code.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "logs",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Code",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "cursor-cache",
+      "name": "Cursor: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Cursor/Cache",
+      "processes": [
+        "cursor.exe"
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Cursor",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "cursor-code-cache",
+      "name": "Cursor: code-cache",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Cursor/Code Cache",
+      "processes": [
+        "cursor.exe"
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Cursor",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "cursor-gpucache",
+      "name": "Cursor: gpucache",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Cursor/GPUCache",
+      "processes": [
+        "cursor.exe"
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Cursor",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "cursor-cacheddata",
+      "name": "Cursor: cacheddata",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Cursor/CachedData",
+      "processes": [
+        "cursor.exe"
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Cursor",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "cursor-cachedextensionvsixs",
+      "name": "Cursor: cachedextensionvsixs",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/Cursor/CachedExtensionVSIXs",
+      "processes": [
+        "cursor.exe"
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Cursor",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "cursor-logs",
+      "name": "Cursor: logs",
+      "category": "cache",
+      "suffix": "AppData/Roaming/Cursor/logs",
+      "processes": [
+        "cursor.exe"
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "logs",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Cursor",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/command-line",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "obsidian-cache",
+      "name": "Obsidian: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/obsidian/Cache",
+      "processes": [
+        "obsidian.exe"
+      ],
+      "knowledge": {
+        "application": "Obsidian",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/obsidian",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://obsidian.md/help/data-storage",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "obsidian-code-cache",
+      "name": "Obsidian: code-cache",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/obsidian/Code Cache",
+      "processes": [
+        "obsidian.exe"
+      ],
+      "knowledge": {
+        "application": "Obsidian",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/obsidian",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://obsidian.md/help/data-storage",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "obsidian-gpucache",
+      "name": "Obsidian: gpucache",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/obsidian/GPUCache",
+      "processes": [
+        "obsidian.exe"
+      ],
+      "knowledge": {
+        "application": "Obsidian",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/obsidian",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://obsidian.md/help/data-storage",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "obsidian-cacheddata",
+      "name": "Obsidian: cacheddata",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/obsidian/CachedData",
+      "processes": [
+        "obsidian.exe"
+      ],
+      "knowledge": {
+        "application": "Obsidian",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/obsidian",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://obsidian.md/help/data-storage",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "obsidian-cachedextensionvsixs",
+      "name": "Obsidian: cachedextensionvsixs",
+      "category": "build_cache",
+      "suffix": "AppData/Roaming/obsidian/CachedExtensionVSIXs",
+      "processes": [
+        "obsidian.exe"
+      ],
+      "knowledge": {
+        "application": "Obsidian",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "cache",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/obsidian",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://obsidian.md/help/data-storage",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "obsidian-logs",
+      "name": "Obsidian: logs",
+      "category": "cache",
+      "suffix": "AppData/Roaming/obsidian/logs",
+      "processes": [
+        "obsidian.exe"
+      ],
+      "knowledge": {
+        "application": "Obsidian",
+        "purpose": "应用特定缓存/日志；只处理确实存在的叶目录，保留 User、Cookies、会话和数据库。",
+        "kind": "logs",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/obsidian",
+        "markers": [
+          [
+            "Preferences"
+          ],
+          [
+            "User"
+          ]
+        ],
+        "sources": [
+          "https://obsidian.md/help/data-storage",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
     },
     {
       "id": "vscode-extensions",
-      "name": "VS Code 扩展",
+      "name": "VS Code: extensions",
       "category": "extensions",
       "suffix": ".vscode/extensions",
       "processes": [
         "code.exe"
-      ]
+      ],
+      "knowledge": {
+        "application": "VS Code",
+        "purpose": "已安装扩展，不是缓存；完全退出编辑器及扩展宿主后迁移。",
+        "kind": "extensions",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".vscode",
+        "markers": [
+          [
+            "extensions/extensions.json"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/extensions/extension-marketplace",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "vscode-insiders-extensions",
+      "name": "VS Code Insiders: extensions",
+      "category": "extensions",
+      "suffix": ".vscode-insiders/extensions",
+      "processes": [
+        "code - insiders.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code Insiders",
+        "purpose": "已安装扩展，不是缓存；完全退出编辑器及扩展宿主后迁移。",
+        "kind": "extensions",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".vscode-insiders",
+        "markers": [
+          [
+            "extensions/extensions.json"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/extensions/extension-marketplace",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
     },
     {
       "id": "cursor-extensions",
-      "name": "Cursor 扩展与配置",
+      "name": "Cursor: extensions",
       "category": "extensions",
-      "suffix": ".cursor",
+      "suffix": ".cursor/extensions",
       "processes": [
         "cursor.exe"
-      ]
+      ],
+      "knowledge": {
+        "application": "Cursor",
+        "purpose": "已安装扩展，不是缓存；完全退出编辑器及扩展宿主后迁移。",
+        "kind": "extensions",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".cursor",
+        "markers": [
+          [
+            "extensions/extensions.json"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/configure/extensions/extension-marketplace",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
     },
     {
-      "id": "obsidian-plugins",
-      "name": "Obsidian 插件",
+      "id": "obsidian-vault-plugins",
+      "name": "Obsidian vault: plugins",
       "category": "extensions",
       "suffix": ".obsidian/plugins",
       "processes": [
         "obsidian.exe"
-      ]
-    },
-    {
-      "id": "vcpkg-downloads",
-      "name": "vcpkg 下载缓存",
-      "category": "build_cache",
-      "suffix": "vcpkg/downloads",
-      "processes": [
-        "vcpkg.exe"
-      ]
-    },
-    {
-      "id": "vcpkg-buildtrees",
-      "name": "vcpkg 编译缓存",
-      "category": "build_cache",
-      "suffix": "vcpkg/buildtrees",
-      "processes": [
-        "vcpkg.exe"
-      ]
-    },
-    {
-      "id": "go-build",
-      "name": "Go 编译缓存",
-      "category": "build_cache",
-      "suffix": "AppData/Local/go-build",
-      "processes": [
-        "go.exe"
-      ]
+      ],
+      "knowledge": {
+        "application": "Obsidian vault",
+        "purpose": "插件代码及 data.json 设置，不是纯缓存；保留插件状态。",
+        "kind": "extensions",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "project",
+        "owner_suffix": ".obsidian",
+        "markers": [
+          [
+            "app.json",
+            "community-plugins.json"
+          ]
+        ],
+        "sources": [
+          "https://obsidian.md/help/configuration-folder"
+        ],
+        "relocation_env": []
+      }
     },
     {
       "id": "cargo-registry",
-      "name": "Cargo 包缓存",
+      "name": "Rust Cargo: registry",
       "category": "build_cache",
       "suffix": ".cargo/registry",
       "processes": [
+        "cargo.exe",
+        "rustc.exe"
+      ],
+      "knowledge": {
+        "application": "Rust Cargo",
+        "purpose": "下载依赖、索引及源码缓存；停止所有 cargo/rustc 后迁移，保留全目录关系。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".cargo",
+        "markers": [
+          [
+            "registry",
+            "bin"
+          ],
+          [
+            "registry",
+            "config.toml"
+          ]
+        ],
+        "sources": [
+          "https://doc.rust-lang.org/cargo/guide/cargo-home.html"
+        ],
+        "relocation_env": [
+          "CARGO_HOME"
+        ]
+      }
+    },
+    {
+      "id": "cargo-git",
+      "name": "Rust Cargo: git",
+      "category": "build_cache",
+      "suffix": ".cargo/git",
+      "processes": [
+        "cargo.exe",
+        "rustc.exe"
+      ],
+      "knowledge": {
+        "application": "Rust Cargo",
+        "purpose": "下载依赖、索引及源码缓存；停止所有 cargo/rustc 后迁移，保留全目录关系。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".cargo",
+        "markers": [
+          [
+            "registry",
+            "bin"
+          ],
+          [
+            "registry",
+            "config.toml"
+          ]
+        ],
+        "sources": [
+          "https://doc.rust-lang.org/cargo/guide/cargo-home.html"
+        ],
+        "relocation_env": [
+          "CARGO_HOME"
+        ]
+      }
+    },
+    {
+      "id": "rustup-toolchains",
+      "name": "Rust toolchains: toolchains",
+      "category": "toolchain",
+      "suffix": ".rustup/toolchains",
+      "processes": [
+        "rustup.exe",
+        "rustc.exe",
         "cargo.exe"
-      ]
+      ],
+      "knowledge": {
+        "application": "Rust toolchains",
+        "purpose": "已安装编译器/标准库，属于工具链，不是构建缓存。",
+        "kind": "toolchain",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".rustup",
+        "markers": [
+          [
+            "settings.toml",
+            "toolchains"
+          ]
+        ],
+        "sources": [
+          "https://rust-lang.github.io/rustup/environment-variables.html"
+        ],
+        "relocation_env": [
+          "RUSTUP_HOME"
+        ]
+      }
+    },
+    {
+      "id": "rustup-downloads",
+      "name": "Rust toolchains: downloads",
+      "category": "build_cache",
+      "suffix": ".rustup/downloads",
+      "processes": [
+        "rustup.exe",
+        "rustc.exe",
+        "cargo.exe"
+      ],
+      "knowledge": {
+        "application": "Rust toolchains",
+        "purpose": "工具链下载/解压暂存，需停止 rustup 更新。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".rustup",
+        "markers": [
+          [
+            "settings.toml",
+            "toolchains"
+          ]
+        ],
+        "sources": [
+          "https://rust-lang.github.io/rustup/environment-variables.html"
+        ],
+        "relocation_env": [
+          "RUSTUP_HOME"
+        ]
+      }
+    },
+    {
+      "id": "rustup-tmp",
+      "name": "Rust toolchains: tmp",
+      "category": "build_cache",
+      "suffix": ".rustup/tmp",
+      "processes": [
+        "rustup.exe",
+        "rustc.exe",
+        "cargo.exe"
+      ],
+      "knowledge": {
+        "application": "Rust toolchains",
+        "purpose": "工具链下载/解压暂存，需停止 rustup 更新。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".rustup",
+        "markers": [
+          [
+            "settings.toml",
+            "toolchains"
+          ]
+        ],
+        "sources": [
+          "https://rust-lang.github.io/rustup/environment-variables.html"
+        ],
+        "relocation_env": [
+          "RUSTUP_HOME"
+        ]
+      }
+    },
+    {
+      "id": "rust-project-target",
+      "name": "Cargo project: target",
+      "category": "build_cache",
+      "suffix": "target",
+      "processes": [
+        "cargo.exe",
+        "rustc.exe"
+      ],
+      "knowledge": {
+        "application": "Cargo project",
+        "purpose": "项目构建产物，须同时存在 Cargo.toml；自定义 target-dir 另行解析。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "project",
+        "owner_suffix": "",
+        "markers": [
+          [
+            "Cargo.toml"
+          ]
+        ],
+        "sources": [
+          "https://doc.rust-lang.org/cargo/reference/environment-variables.html"
+        ],
+        "relocation_env": [
+          "CARGO_TARGET_DIR"
+        ]
+      }
+    },
+    {
+      "id": "go-build",
+      "name": "Go build: build",
+      "category": "build_cache",
+      "suffix": "AppData/Local/go-build",
+      "processes": [
+        "go.exe",
+        "gopls.exe"
+      ],
+      "knowledge": {
+        "application": "Go build",
+        "purpose": "Go 编译和测试缓存；以 go env GOCACHE 的本机配置为优先线索。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/go-build",
+        "markers": [
+          [
+            "README"
+          ],
+          [
+            "trim.txt"
+          ]
+        ],
+        "sources": [
+          "https://go.dev/cmd/go/#hdr-Build_and_test_caching"
+        ],
+        "relocation_env": [
+          "GOCACHE"
+        ]
+      }
+    },
+    {
+      "id": "go-mod-cache",
+      "name": "Go modules: cache",
+      "category": "build_cache",
+      "suffix": "go/pkg/mod",
+      "processes": [
+        "go.exe",
+        "gopls.exe"
+      ],
+      "knowledge": {
+        "application": "Go modules",
+        "purpose": "模块缓存含只读源码、下载及校验元数据；不是整个 GOPATH。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "go/pkg",
+        "markers": [
+          [
+            "mod/cache/download"
+          ]
+        ],
+        "sources": [
+          "https://go.dev/ref/mod#module-cache"
+        ],
+        "relocation_env": [
+          "GOMODCACHE",
+          "GOPATH"
+        ]
+      }
+    },
+    {
+      "id": "vcpkg-archives",
+      "name": "vcpkg: archives",
+      "category": "build_cache",
+      "suffix": "AppData/Local/vcpkg/archives",
+      "processes": [
+        "vcpkg.exe",
+        "cl.exe",
+        "msbuild.exe"
+      ],
+      "knowledge": {
+        "application": "vcpkg",
+        "purpose": "已编译包的二进制归档缓存。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/vcpkg",
+        "markers": [
+          [
+            "archives"
+          ]
+        ],
+        "sources": [
+          "https://learn.microsoft.com/en-us/vcpkg/users/binarycaching"
+        ],
+        "relocation_env": [
+          "VCPKG_DEFAULT_BINARY_CACHE"
+        ]
+      }
+    },
+    {
+      "id": "vcpkg-root-downloads",
+      "name": "vcpkg checkout: downloads",
+      "category": "build_cache",
+      "suffix": "downloads",
+      "processes": [
+        "vcpkg.exe",
+        "cl.exe"
+      ],
+      "knowledge": {
+        "application": "vcpkg checkout",
+        "purpose": "下载/构建中间产物/暂存包；只在证实为 vcpkg 根后纳入。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "project",
+        "owner_suffix": "",
+        "markers": [
+          [
+            ".vcpkg-root",
+            "vcpkg.exe"
+          ]
+        ],
+        "sources": [
+          "https://learn.microsoft.com/en-us/vcpkg/users/config-environment"
+        ],
+        "relocation_env": [
+          "VCPKG_ROOT"
+        ]
+      }
+    },
+    {
+      "id": "vcpkg-root-buildtrees",
+      "name": "vcpkg checkout: buildtrees",
+      "category": "build_cache",
+      "suffix": "buildtrees",
+      "processes": [
+        "vcpkg.exe",
+        "cl.exe"
+      ],
+      "knowledge": {
+        "application": "vcpkg checkout",
+        "purpose": "下载/构建中间产物/暂存包；只在证实为 vcpkg 根后纳入。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "project",
+        "owner_suffix": "",
+        "markers": [
+          [
+            ".vcpkg-root",
+            "vcpkg.exe"
+          ]
+        ],
+        "sources": [
+          "https://learn.microsoft.com/en-us/vcpkg/users/config-environment"
+        ],
+        "relocation_env": [
+          "VCPKG_ROOT"
+        ]
+      }
+    },
+    {
+      "id": "vcpkg-root-packages",
+      "name": "vcpkg checkout: packages",
+      "category": "build_cache",
+      "suffix": "packages",
+      "processes": [
+        "vcpkg.exe",
+        "cl.exe"
+      ],
+      "knowledge": {
+        "application": "vcpkg checkout",
+        "purpose": "下载/构建中间产物/暂存包；只在证实为 vcpkg 根后纳入。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "project",
+        "owner_suffix": "",
+        "markers": [
+          [
+            ".vcpkg-root",
+            "vcpkg.exe"
+          ]
+        ],
+        "sources": [
+          "https://learn.microsoft.com/en-us/vcpkg/users/config-environment"
+        ],
+        "relocation_env": [
+          "VCPKG_ROOT"
+        ]
+      }
+    },
+    {
+      "id": "cpptools-cache",
+      "name": "VS Code C/C++: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Microsoft/vscode-cpptools",
+      "processes": [
+        "code.exe",
+        "cpptools.exe"
+      ],
+      "knowledge": {
+        "application": "VS Code C/C++",
+        "purpose": "IntelliSense/PCH 缓存；可通过 C_Cpp.intelliSenseCachePath 更改位置。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Microsoft",
+        "markers": [
+          [
+            "vscode-cpptools"
+          ]
+        ],
+        "sources": [
+          "https://code.visualstudio.com/docs/cpp/faq-cpp"
+        ],
+        "relocation_env": []
+      }
     },
     {
       "id": "pip-cache",
-      "name": "pip 缓存",
-      "category": "package_cache",
+      "name": "Python pip: cache",
+      "category": "build_cache",
       "suffix": "AppData/Local/pip/Cache",
       "processes": [
-        "python.exe"
-      ]
+        "python.exe",
+        "pip.exe"
+      ],
+      "knowledge": {
+        "application": "Python pip",
+        "purpose": "HTTP 响应与已构建 wheel 缓存；不是 Python 安装或虚拟环境。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/pip/Cache",
+        "markers": [
+          [
+            "http-v2"
+          ],
+          [
+            "wheels"
+          ],
+          [
+            "http"
+          ]
+        ],
+        "sources": [
+          "https://pip.pypa.io/en/stable/topics/caching/"
+        ],
+        "relocation_env": [
+          "PIP_CACHE_DIR"
+        ]
+      }
     },
     {
       "id": "npm-cache",
-      "name": "npm 缓存",
-      "category": "package_cache",
+      "name": "Node npm: cache",
+      "category": "build_cache",
       "suffix": "AppData/Local/npm-cache",
       "processes": [
         "node.exe"
-      ]
+      ],
+      "knowledge": {
+        "application": "Node npm",
+        "purpose": "内容寻址下载缓存及 npx 暂存；不包含全局安装程序。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/npm-cache",
+        "markers": [
+          [
+            "_cacache"
+          ],
+          [
+            "_npx"
+          ]
+        ],
+        "sources": [
+          "https://docs.npmjs.com/cli/v11/commands/npm-cache"
+        ],
+        "relocation_env": [
+          "NPM_CONFIG_CACHE"
+        ]
+      }
     },
     {
-      "id": "hf-models",
-      "name": "Hugging Face 模型",
+      "id": "npm-user-cache",
+      "name": "Node npm: cache",
+      "category": "build_cache",
+      "suffix": "npm-cache",
+      "processes": [
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "Node npm",
+        "purpose": "本机历史配置遗留的用户根缓存；用缓存结构识别。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "npm-cache",
+        "markers": [
+          [
+            "_cacache"
+          ],
+          [
+            "_npx"
+          ]
+        ],
+        "sources": [
+          "https://docs.npmjs.com/cli/v11/commands/npm-cache",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": [
+          "NPM_CONFIG_CACHE"
+        ]
+      }
+    },
+    {
+      "id": "uv-cache",
+      "name": "Python uv: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/uv/cache",
+      "processes": [
+        "uv.exe",
+        "python.exe"
+      ],
+      "knowledge": {
+        "application": "Python uv",
+        "purpose": "Windows 默认使用硬链接；可能和环境共享数据。跨盘拆开共享关系不一定释放原盘空间，先专门复核。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/uv/cache",
+        "markers": [
+          [
+            "CACHEDIR.TAG"
+          ]
+        ],
+        "sources": [
+          "https://docs.astral.sh/uv/concepts/cache/"
+        ],
+        "relocation_env": [
+          "UV_CACHE_DIR"
+        ]
+      }
+    },
+    {
+      "id": "pnpm-store",
+      "name": "pnpm: store",
+      "category": "build_cache",
+      "suffix": "AppData/Local/pnpm/store",
+      "processes": [
+        "node.exe"
+      ],
+      "knowledge": {
+        "application": "pnpm",
+        "purpose": "内容寻址包仓库可能硬链接到项目，先确认边界及同盘限制。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/pnpm/store",
+        "markers": [
+          [
+            "v3"
+          ],
+          [
+            "v10"
+          ],
+          [
+            "v11"
+          ]
+        ],
+        "sources": [
+          "https://pnpm.io/settings#storedir"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "bun-cache",
+      "name": "Bun: cache",
+      "category": "build_cache",
+      "suffix": ".bun/install/cache",
+      "processes": [
+        "bun.exe"
+      ],
+      "knowledge": {
+        "application": "Bun",
+        "purpose": "包缓存可能与已安装包硬链接共享，先核验后迁移。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".bun",
+        "markers": [
+          [
+            "bin/bun.exe",
+            "install/cache"
+          ]
+        ],
+        "sources": [
+          "https://bun.sh/docs/pm/global-cache"
+        ],
+        "relocation_env": [
+          "BUN_INSTALL_CACHE_DIR"
+        ]
+      }
+    },
+    {
+      "id": "nuget-packages",
+      "name": "NuGet: packages",
+      "category": "build_cache",
+      "suffix": ".nuget/packages",
+      "processes": [
+        "dotnet.exe",
+        "msbuild.exe",
+        "devenv.exe"
+      ],
+      "knowledge": {
+        "application": "NuGet",
+        "purpose": "全局展开包；构建可能直接引用其中内容，停止构建后迁移。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".nuget",
+        "markers": [
+          [
+            "packages"
+          ]
+        ],
+        "sources": [
+          "https://learn.microsoft.com/en-us/nuget/consume-packages/managing-the-global-packages-and-cache-folders"
+        ],
+        "relocation_env": [
+          "NUGET_PACKAGES"
+        ]
+      }
+    },
+    {
+      "id": "gradle-caches",
+      "name": "Gradle: caches",
+      "category": "build_cache",
+      "suffix": ".gradle/caches",
+      "processes": [
+        "java.exe",
+        "gradle.exe"
+      ],
+      "knowledge": {
+        "application": "Gradle",
+        "purpose": "依赖/构建缓存或 Gradle 分发包；先停止 Gradle daemon。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".gradle",
+        "markers": [
+          [
+            "caches",
+            "daemon"
+          ],
+          [
+            "caches",
+            "wrapper"
+          ]
+        ],
+        "sources": [
+          "https://docs.gradle.org/current/userguide/directory_layout.html"
+        ],
+        "relocation_env": [
+          "GRADLE_USER_HOME"
+        ]
+      }
+    },
+    {
+      "id": "gradle-wrapper-dists",
+      "name": "Gradle: wrapper-dists",
+      "category": "build_cache",
+      "suffix": ".gradle/wrapper/dists",
+      "processes": [
+        "java.exe",
+        "gradle.exe"
+      ],
+      "knowledge": {
+        "application": "Gradle",
+        "purpose": "依赖/构建缓存或 Gradle 分发包；先停止 Gradle daemon。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".gradle",
+        "markers": [
+          [
+            "caches",
+            "daemon"
+          ],
+          [
+            "caches",
+            "wrapper"
+          ]
+        ],
+        "sources": [
+          "https://docs.gradle.org/current/userguide/directory_layout.html"
+        ],
+        "relocation_env": [
+          "GRADLE_USER_HOME"
+        ]
+      }
+    },
+    {
+      "id": "hf-hub",
+      "name": "Hugging Face: hub",
       "category": "models",
-      "suffix": ".cache/huggingface",
+      "suffix": ".cache/huggingface/hub",
+      "processes": [
+        "python.exe",
+        "hf.exe"
+      ],
+      "knowledge": {
+        "application": "Hugging Face",
+        "purpose": "模型缓存必须保留 blobs/refs/snapshots 关系；可能有内部符号链接，不能仅搬某个大权重文件。",
+        "kind": "models",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".cache/huggingface",
+        "markers": [
+          [
+            "hub"
+          ],
+          [
+            "xet"
+          ]
+        ],
+        "sources": [
+          "https://huggingface.co/docs/huggingface_hub/guides/manage-cache"
+        ],
+        "relocation_env": [
+          "HF_HOME",
+          "HF_HUB_CACHE",
+          "HF_XET_CACHE"
+        ]
+      }
+    },
+    {
+      "id": "hf-xet",
+      "name": "Hugging Face: xet",
+      "category": "models",
+      "suffix": ".cache/huggingface/xet",
+      "processes": [
+        "python.exe",
+        "hf.exe"
+      ],
+      "knowledge": {
+        "application": "Hugging Face",
+        "purpose": "模型缓存必须保留 blobs/refs/snapshots 关系；可能有内部符号链接，不能仅搬某个大权重文件。",
+        "kind": "models",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".cache/huggingface",
+        "markers": [
+          [
+            "hub"
+          ],
+          [
+            "xet"
+          ]
+        ],
+        "sources": [
+          "https://huggingface.co/docs/huggingface_hub/guides/manage-cache"
+        ],
+        "relocation_env": [
+          "HF_HOME",
+          "HF_HUB_CACHE",
+          "HF_XET_CACHE"
+        ]
+      }
+    },
+    {
+      "id": "modelscope-models",
+      "name": "ModelScope: models",
+      "category": "models",
+      "suffix": ".cache/modelscope",
       "processes": [
         "python.exe"
-      ]
+      ],
+      "knowledge": {
+        "application": "ModelScope",
+        "purpose": "模型及下载元数据；不能把 .modelscope/credentials 当模型目录。",
+        "kind": "models",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".cache/modelscope",
+        "markers": [
+          [
+            "hub"
+          ],
+          [
+            "ast_indexer"
+          ]
+        ],
+        "sources": [
+          "https://github.com/modelscope/modelscope/blob/master/modelscope/hub/utils/utils.py"
+        ],
+        "relocation_env": [
+          "MODELSCOPE_CACHE"
+        ]
+      }
     },
     {
-      "id": "wxwork",
-      "name": "企业微信数据",
-      "category": "app_data",
+      "id": "torch-hub",
+      "name": "PyTorch Hub: hub",
+      "category": "models",
+      "suffix": ".cache/torch/hub",
+      "processes": [
+        "python.exe"
+      ],
+      "knowledge": {
+        "application": "PyTorch Hub",
+        "purpose": "Hub 下载代码与 checkpoints；保留整体。",
+        "kind": "models",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".cache/torch",
+        "markers": [
+          [
+            "hub"
+          ]
+        ],
+        "sources": [
+          "https://docs.pytorch.org/docs/stable/hub.html"
+        ],
+        "relocation_env": [
+          "TORCH_HOME"
+        ]
+      }
+    },
+    {
+      "id": "ollama-models",
+      "name": "Ollama: models",
+      "category": "models",
+      "suffix": ".ollama/models",
+      "processes": [
+        "ollama.exe",
+        "ollama app.exe"
+      ],
+      "knowledge": {
+        "application": "Ollama",
+        "purpose": "共享权重 blobs 和 manifests 必须整体保留；停止模型服务和下载后迁移。",
+        "kind": "models",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": ".ollama",
+        "markers": [
+          [
+            "models/blobs",
+            "models/manifests"
+          ]
+        ],
+        "sources": [
+          "https://docs.ollama.com/faq"
+        ],
+        "relocation_env": [
+          "OLLAMA_MODELS"
+        ]
+      }
+    },
+    {
+      "id": "hy3d-models",
+      "name": "Hunyuan3D: models",
+      "category": "models",
+      "suffix": ".cache/hy3dgen",
+      "processes": [
+        "python.exe"
+      ],
+      "knowledge": {
+        "application": "Hunyuan3D",
+        "purpose": "本机模型目录；需确认对应工具和模型文件格式后启用，禁止仅按通用文件夹名匹配。",
+        "kind": "models",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".cache/hy3dgen",
+        "markers": [
+          [
+            "checkpoints"
+          ]
+        ],
+        "sources": [
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "rembg-models",
+      "name": "rembg: models",
+      "category": "models",
+      "suffix": ".u2net",
+      "processes": [
+        "python.exe"
+      ],
+      "knowledge": {
+        "application": "rembg",
+        "purpose": "本机模型目录；需确认对应工具和模型文件格式后启用，禁止仅按通用文件夹名匹配。",
+        "kind": "models",
+        "confidence": "local",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": ".u2net",
+        "markers": [
+          [
+            "u2net.onnx"
+          ]
+        ],
+        "sources": [
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "chrome-cache",
+      "name": "Google Chrome: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Google/Chrome/User Data/*/Cache",
+      "processes": [
+        "chrome.exe"
+      ],
+      "knowledge": {
+        "application": "Google Chrome",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Google/Chrome/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "chrome-code-cache",
+      "name": "Google Chrome: code-cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Google/Chrome/User Data/*/Code Cache",
+      "processes": [
+        "chrome.exe"
+      ],
+      "knowledge": {
+        "application": "Google Chrome",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Google/Chrome/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "chrome-gpucache",
+      "name": "Google Chrome: gpucache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Google/Chrome/User Data/*/GPUCache",
+      "processes": [
+        "chrome.exe"
+      ],
+      "knowledge": {
+        "application": "Google Chrome",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Google/Chrome/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "chrome-offline",
+      "name": "Google Chrome: offline",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Google/Chrome/User Data/*/Service Worker/CacheStorage",
+      "processes": [
+        "chrome.exe"
+      ],
+      "knowledge": {
+        "application": "Google Chrome",
+        "purpose": "离线网站资源可能不可重新获取，不等同普通 HTTP 缓存。",
+        "kind": "mixed",
+        "confidence": "documented",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Google/Chrome/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "edge-cache",
+      "name": "Microsoft Edge: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Microsoft/Edge/User Data/*/Cache",
+      "processes": [
+        "msedge.exe"
+      ],
+      "knowledge": {
+        "application": "Microsoft Edge",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Microsoft/Edge/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "edge-code-cache",
+      "name": "Microsoft Edge: code-cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Microsoft/Edge/User Data/*/Code Cache",
+      "processes": [
+        "msedge.exe"
+      ],
+      "knowledge": {
+        "application": "Microsoft Edge",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Microsoft/Edge/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "edge-gpucache",
+      "name": "Microsoft Edge: gpucache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Microsoft/Edge/User Data/*/GPUCache",
+      "processes": [
+        "msedge.exe"
+      ],
+      "knowledge": {
+        "application": "Microsoft Edge",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Microsoft/Edge/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "edge-offline",
+      "name": "Microsoft Edge: offline",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Microsoft/Edge/User Data/*/Service Worker/CacheStorage",
+      "processes": [
+        "msedge.exe"
+      ],
+      "knowledge": {
+        "application": "Microsoft Edge",
+        "purpose": "离线网站资源可能不可重新获取，不等同普通 HTTP 缓存。",
+        "kind": "mixed",
+        "confidence": "documented",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Microsoft/Edge/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "brave-cache",
+      "name": "Brave: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*/Cache",
+      "processes": [
+        "brave.exe"
+      ],
+      "knowledge": {
+        "application": "Brave",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "brave-code-cache",
+      "name": "Brave: code-cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*/Code Cache",
+      "processes": [
+        "brave.exe"
+      ],
+      "knowledge": {
+        "application": "Brave",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "brave-gpucache",
+      "name": "Brave: gpucache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*/GPUCache",
+      "processes": [
+        "brave.exe"
+      ],
+      "knowledge": {
+        "application": "Brave",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "brave-offline",
+      "name": "Brave: offline",
+      "category": "build_cache",
+      "suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*/Service Worker/CacheStorage",
+      "processes": [
+        "brave.exe"
+      ],
+      "knowledge": {
+        "application": "Brave",
+        "purpose": "离线网站资源可能不可重新获取，不等同普通 HTTP 缓存。",
+        "kind": "mixed",
+        "confidence": "documented",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/BraveSoftware/Brave-Browser/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "chromium-cache",
+      "name": "Chromium: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Chromium/User Data/*/Cache",
+      "processes": [
+        "chrome.exe"
+      ],
+      "knowledge": {
+        "application": "Chromium",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Chromium/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "chromium-code-cache",
+      "name": "Chromium: code-cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Chromium/User Data/*/Code Cache",
+      "processes": [
+        "chrome.exe"
+      ],
+      "knowledge": {
+        "application": "Chromium",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Chromium/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "chromium-gpucache",
+      "name": "Chromium: gpucache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Chromium/User Data/*/GPUCache",
+      "processes": [
+        "chrome.exe"
+      ],
+      "knowledge": {
+        "application": "Chromium",
+        "purpose": "仅浏览器配置实例下的磁盘缓存；退出全部浏览器后台。排除 Cookies、Login Data、History 和会话数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Chromium/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "chromium-offline",
+      "name": "Chromium: offline",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Chromium/User Data/*/Service Worker/CacheStorage",
+      "processes": [
+        "chrome.exe"
+      ],
+      "knowledge": {
+        "application": "Chromium",
+        "purpose": "离线网站资源可能不可重新获取，不等同普通 HTTP 缓存。",
+        "kind": "mixed",
+        "confidence": "documented",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Chromium/User Data/*",
+        "markers": [
+          [
+            "Preferences"
+          ]
+        ],
+        "sources": [
+          "https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "firefox-cache",
+      "name": "Firefox: cache",
+      "category": "build_cache",
+      "suffix": "AppData/Local/Mozilla/Firefox/Profiles/*/cache2",
+      "processes": [
+        "firefox.exe"
+      ],
+      "knowledge": {
+        "application": "Firefox",
+        "purpose": "磁盘网络缓存；保留 Roaming 下书签、密码与配置数据库。",
+        "kind": "cache",
+        "confidence": "documented",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Local/Mozilla/Firefox/Profiles/*",
+        "markers": [
+          [
+            "cache2/entries"
+          ]
+        ],
+        "sources": [
+          "https://firefox-source-docs.mozilla.org/netwerk/cache2/doc.html"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "wxwork-data",
+      "name": "WeCom: data",
+      "category": "build_cache",
       "suffix": "AppData/Roaming/Tencent/WXWork",
       "processes": [
-        "wxwork.exe"
-      ]
+        "wxwork.exe",
+        "wxworkweb.exe"
+      ],
+      "knowledge": {
+        "application": "WeCom",
+        "purpose": "聊天、附件、账号与数据库混合。不同版本位置不同，须以本机客户端显示的数据路径核实，暂不自动纳入。",
+        "kind": "mixed",
+        "confidence": "unverified",
+        "migration": "review",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Tencent/WXWork",
+        "markers": [
+          [
+            "Data"
+          ],
+          [
+            "config"
+          ]
+        ],
+        "sources": [
+          "https://work.weixin.qq.com/",
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
+    },
+    {
+      "id": "wxwork-logs",
+      "name": "WeCom: logs",
+      "category": "cache",
+      "suffix": "AppData/Roaming/Tencent/WXWork/Log",
+      "processes": [
+        "wxwork.exe",
+        "wxworkweb.exe"
+      ],
+      "knowledge": {
+        "application": "WeCom",
+        "purpose": "本机独立日志目录；退出企业微信全部后台后预检，保留其他组件和账号数据。",
+        "kind": "logs",
+        "confidence": "local",
+        "migration": "candidate",
+        "scope": "home",
+        "owner_suffix": "AppData/Roaming/Tencent/WXWork",
+        "markers": [
+          [
+            "Log",
+            "wwmapp"
+          ],
+          [
+            "Log",
+            "WeChatOCR"
+          ]
+        ],
+        "sources": [
+          "local-metadata:2026-10-24"
+        ],
+        "relocation_env": []
+      }
     }
   ]
 }

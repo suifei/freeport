@@ -1,5 +1,47 @@
 # 实现与验证状态
 
+## 2026-10-24：系统命令后端修订
+
+迁移/恢复的数据复制改用系统 robocopy，连接改用 `cmd /d /v:off /u /s /c` 的 `mklink /J`，内部硬链接重建使用 `mklink /H`。移除了 CopyFileExW 复制器和 SetFileSecurityW owner/group 写回。按用户批处理保持 `/E` 包含空目录、`/MOVE` 后清理源、最后 `/J` 的顺序；为满足删除前校验要求增加暂存副本，收尾用 `/IS /NOCOPY` 避免重复复制。仅当系统 robocopy 帮助声明支持时追加 `/IM`，修复只读副本刷盘后 modified 分类被跳过的问题。清理只移除空目录，不能执行无条件 `rd /s /q`。新目标继承目标父目录权限，两入口确认前均明示。完整参数和恢复限制见[后端协议](system-command-backend.md)。
+
+本轮单元测试 **66 项：63 通过、3 失败、0 忽略**。原先 owner/group 写回导致的 6 项失败全部通过；现存 3 项仍在创建硬链接/Junction 夹具时被当前 AppContainer 拒绝，未改成跳过或通过。新测试覆盖真实 robocopy 收尾、文件变化、新增文件、稳定读取句柄防写、取消、锁定源导致复制失败、只读文件收尾和可重复的补齐回退。恢复补齐核心已测，不等于完整普通终端端到端验收；当前环境 SMB 共享核验也受限。
+
+CLI/GUI 的 Windows 7 x64 静态构建成功。接口与六语言检查 **11/11 通过**；PE 检查通过，CLI **1,105,408 字节**、GUI **1,169,920 字节**，仅系统 DLL。验证收据为 `.build/system-backend-tests.txt`、`system-backend-smoke.json`、`system-backend-pe.json`。本轮新后端未独立重复用户此前通过的 UAC/Win7/断电验收，未修改这些已有用户结论，也未迁移真实数据或发布新包。
+
+后续限制：大项收尾会同时保持对应文件/流句柄，尚未做有界批次；完整跨盘与硬链接/连接原生用例仍需能创建这些夹具的环境。下文 53 项和旧体积是后端修订前的历史基线。
+
+## 2026-10-24：0.1.2-dev.1 扫描与知识库修订基线
+
+用户已明确反馈 **UAC 实际交互、Win7、断电验收通过**，记为用户验收结论。下文旧版本中这些项目“未验收”的文字是历史记录；不要求用户重复验收，也不将用户结论表述为本轮自动测试独立复现。
+
+本轮扫描范围已收敛为**用户目录及其中的 AppData**。选择盘符时识别该盘的当前/注册用户配置目录，以及带 NTUSER.DAT 的普通 Users 子目录；普通 Win32 回退不再遍历 Windows、Program Files、ProgramData。MFT 读取卷级索引，再按用户范围过滤。其他位置可手动添加；恢复继续从盘找连接。报告新增 scope_roots，明确实际范围。
+
+已移除代码中庞大的猜测目录表、所有点目录自动纳入、任意 updater、任意 .vs/target 等发现方式。共享 schema v2 知识库现为 **39 类应用／存储、105 条规则**，要求路径锚定和应用标志；区分缓存、历史、模型、扩展、工具链与复核/排除项。仅有名称的 v1 规则不产生候选。注册表安装清单属于本轮调研证据；产品尚未自动关联全部安装版本或解析应用自定义配置/环境变量。见 [调研报告](application-storage-research.md) 和 [逐项清单](application-storage-list.md)。
+
+已实现原生 SysHeader32 + SysTreeView32 分列：目录、递归逻辑总大小、应用、状态/链接目标。每个已加载兄弟组按数值总量降序，未知排后；祖先汇总不重复累加重叠候选，明确只汇总已识别候选。一次计量同时收集分支大小与具体链接，保留浅层优先预算及截断标志；CLI JSON 共享这些字段。事务层对未处理嵌套链接的拒绝保持有效，允许选择无链接的独立兄弟分支。
+
+构建内嵌 JSON 会移除字符串以外的空白，源码 JSON 保持可读；内嵌知识库与源文件的 JSON 语义一致性有测试。打包按当前版本读取验证记录，并校验 PE/接口记录与实际 EXE 的 SHA-256，防止借用上一版本的结果。当前发布脚本仍是已发布 0.1.1 的续跑脚本，源指纹检查会拒绝将本轮改动混入旧版；0.1.2 尚未推送或发布。
+
+验证：新增 7 项核心测试通过；全套 53 项中 44 通过、9 项原有 Win32 error 5 原生夹具失败、0 忽略。六语言/CLI/原生界面 11 项检查通过，其中界面自检包含四列表头、三态和两层大小降序；旧库回退及损坏规则不影响恢复扫描也已验证。最终 CLI 1,075,712 字节、GUI 1,139,712 字节，均小于 1.1 MiB；PE 导入仅系统 DLL。完整跨盘及强关真实外部句柄的验收不因上述用户反馈自动认定通过。本轮没有迁移或删除真实用户数据。
+
+以下为 0.1.1 及更早的实现历史。
+
+### 9 项失败的具体原因（本机追加诊断）
+
+“夹具”指测试自己新建的目录、文件和链接，不是真实用户缓存。53 项测试中的 9 项失败并非 9 个独立故障：
+
+| 用例 | 数量 | 实际中断位置 |
+| --- | ---: | --- |
+| 基础复制及内容/空目录/安全描述符/时间验证；ADS 验证；只读文件验证；清理时保留未知新文件；拒绝已修改源；拒绝已修改目标 | 6 | 复制阶段对目标根目录调用 SetFileSecurityW，写入 Owner + Group + DACL 时 Win32 error 5。三个清理用例共用 copy_fixture，在准备数据时中断，尚未进入 cleanup 断言 |
+| 保持内部硬链接身份；拒绝外部共享硬链接 | 2 | fs::hard_link 创建测试链接时 Win32 error 5，尚未进入相关树校验断言 |
+| 嵌套 Junction 不穿透 | 1 | 创建测试用 Junction 时 Win32 error 5，尚未进入不穿透断言 |
+
+独立小样本直接调用 Windows API，所有写操作仅针对本次新建的 `.build/denial-probe-*`：进程 TokenIsAppContainer=true、TokenElevation=false；E 盘是 NTFS，声明支持 ACL、硬链接、reparse point 和 ADS。普通读写、CopyFileExW、GetFileSecurityW、单独设置 DACL 均成功；设置 Owner、设置 Group、合并设置安全描述符、同目录/兄弟目录 CreateHardLinkW、FSCTL_SET_REPARSE_POINT 均返回 5。Junction 目录以写权限打开成功，拒绝发生在设置 reparse point 时。原始证据仅留在 `.build/native-denials.json`，未发布用户身份、SID 或令牌内容。
+
+这些对照结果指向当前代理 AppContainer/宿主权限策略所允许的操作范围，不能简单解释为磁盘不支持、普通复制失败或所有测试必须以管理员身份运行。尚未用同一测试在容器外的普通/管理员进程对照，因此具体是哪条宿主策略拒绝，不能从错误码 5 进一步武断确定。没有放松权限保留、跳过测试或将失败改成通过；9 项继续按验证未完成处理。用户完成的桌面 UAC 验收不会改变代理启动的 cargo test 进程令牌。
+
+权限接口依据：[SetFileSecurityW](https://learn.microsoft.com/en-us/windows/win32/api/securitybaseapi/nf-securitybaseapi-setfilesecurityw)、[AppContainer isolation](https://learn.microsoft.com/en-us/windows/win32/secauthz/appcontainer-isolation)。
+
 状态：开发预览，未达到处理真实用户数据的发布标准。没有迁移或删除本机真实缓存、模型、聊天记录或软件安装目录。
 
 | 范围 | 当前实现 | 验证边界 |

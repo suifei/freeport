@@ -308,5 +308,20 @@
   "operation.rescan": "任务完成。请重新扫描以更新目录和连接状态。",
   "selection.save": "保存选择…",
   "selection.load": "载入选择…",
-  "selection.save_confirm": "在此保存选择文件（已有文件将替换）？"
+  "selection.save_confirm": "在此保存选择文件（已有文件将替换）？",
+  "column.folder": "目录",
+  "column.total": "递归总大小 ↓",
+  "column.application": "所属应用",
+  "column.status": "状态 / 链接目标",
+  "column.candidate_total": "仅汇总已识别候选目录",
+  "rules.legacy": "已禁用仅按名称匹配的旧规则。请导入第 2 版应用知识库。",
+  "scan.scope": "迁移扫描用户目录（含 AppData）；其他位置可手动添加。",
+  "scan.no_profiles": "{0} 未发现用户目录；需要时可手动添加具体路径。",
+  "system.copy": "Robocopy 复制：{0} → {1}",
+  "system.move": "Robocopy /E /MOVE：{0} → {1}",
+  "system.command_failed": "系统工具 {0} 执行失败（退出码 {1}）。{2}",
+  "system.path": "系统命令路径必须为绝对路径，不能包含百分号、引号或换行。",
+  "system.residue": "源目录仍有残留或新内容，已停止清理并保留现有数据。",
+  "system.changed": "目录内容或身份发生变化，已停止操作并保留现有数据。",
+  "system.policy": "系统复制保留数据、属性和文件时间；权限继承目标目录。"
 }

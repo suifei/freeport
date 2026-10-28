@@ -308,5 +308,20 @@
   "operation.rescan": "Task completed. Scan again to refresh directory and link states.",
   "selection.save": "Save selection…",
   "selection.load": "Load selection…",
-  "selection.save_confirm": "Save or replace the selection file here?"
+  "selection.save_confirm": "Save or replace the selection file here?",
+  "column.folder": "Folder",
+  "column.total": "Total size ↓",
+  "column.application": "Application",
+  "column.status": "Status / link target",
+  "column.candidate_total": "Sum of discovered candidates",
+  "rules.legacy": "Name-only legacy rules are disabled. Import a version 2 application knowledge pack.",
+  "scan.scope": "Migration scans user folders, including AppData. Other paths can be added manually.",
+  "scan.no_profiles": "No user profile was found on {0}. Add a specific folder if needed.",
+  "system.copy": "Robocopy copy: {0} → {1}",
+  "system.move": "Robocopy /E /MOVE: {0} → {1}",
+  "system.command_failed": "System tool {0} failed (exit {1}). {2}",
+  "system.path": "System command paths must be absolute and cannot contain percent signs, quotes or line breaks.",
+  "system.residue": "Source data remains or changed. Cleanup stopped; existing data was retained.",
+  "system.changed": "Directory content or identity changed. Operation stopped; existing data was retained.",
+  "system.policy": "System copying preserves data, attributes and file times. Destination permissions are inherited."
 }

@@ -179,7 +179,7 @@ unsafe fn init(ui: &mut Ui) {
         p::wide("Segoe UI").as_ptr(),
     );
     ui.title = child(ui, 1, "STATIC", "FreePort", 0);
-    ui.description = child(ui, 2, "STATIC", l::t("msg.1918b38f27"), 0);
+    ui.description = child(ui, 2, "STATIC", l::t("scan.scope"), 0);
     ui.language = child(
         ui,
         LANG,
@@ -362,6 +362,9 @@ unsafe fn layout(ui: &Ui) {
     move_id(ui, NONE, w - 128, bar, 110, 30);
     let top = bar + 40 + extra;
     move_id(ui, 3, pad, top, w - 36, (h - 280 - top).max(80));
+    if let Some(tree) = &ui.tree {
+        tree.layout_header(ui.dpi);
+    }
     let offset = (80 - (h - 280 - top)).max(0);
     let h = h + offset;
     move_id(ui, 4, pad, h - 268, w - 36, 22);
@@ -383,7 +386,7 @@ unsafe fn refresh(ui: &mut Ui) {
         &format!("{} — {}", l::t("msg.7540ee4199"), env!("CARGO_PKG_VERSION")),
     );
     for (id, key) in [
-        (2, "msg.1918b38f27"),
+        (2, "scan.scope"),
         (SCAN, "msg.63dec1aba1"),
         (ADD, "msg.568626f4b7"),
         (ALL, "msg.3a5040b68a"),
@@ -444,8 +447,8 @@ unsafe fn selected(ui: &Ui) -> Vec<String> {
         .map(|r| r.candidate.id.clone())
         .collect()
 }
-unsafe fn row(ui: &Ui, i: usize) {
-    ui.tree.as_ref().unwrap().update(&ui.rows, i);
+unsafe fn row(ui: &mut Ui, i: usize) {
+    ui.tree.as_mut().unwrap().update(&ui.rows, i);
 }
 unsafe fn log(ui: &mut Ui, s: String) {
     text(ui.status, &s);
@@ -612,6 +615,8 @@ unsafe fn apply(ui: &mut Ui) {
                 "msg.5a514567e2"
             })
             .to_string();
+            preview.push_str("\n\n");
+            preview.push_str(l::t("system.policy"));
             let job = if restore {
                 let sources = choice.restore_sources(&rows)?;
                 if sources.is_empty() {
@@ -753,6 +758,15 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
         }
         WM_NOTIFY => {
             let hdr = &*(l as *const NMHDR);
+            if ui.tree.is_none() {
+                return 0;
+            }
+            if ui.tree.as_ref().unwrap().header_notification(hdr) {
+                return 0;
+            }
+            if hdr.hwndFrom == ui.list && hdr.code == NM_CUSTOMDRAW {
+                return ui.tree.as_ref().unwrap().draw(l);
+            }
             if hdr.hwndFrom != ui.list || ui.busy {
                 return 0;
             }
@@ -763,6 +777,12 @@ unsafe extern "system" fn wnd(hwnd: HWND, message: u32, w: usize, l: isize) -> i
                         log(ui, l::describe_error(e.as_ref()));
                         return 1;
                     }
+                }
+            } else if hdr.code == TVN_SELCHANGEDW {
+                let n = &*(l as *const NMTREEVIEWW);
+                let details = ui.tree.as_ref().unwrap().details(n.itemNew.hItem, &ui.rows);
+                if !details.is_empty() {
+                    log(ui, details);
                 }
             } else if hdr.code == NM_CLICK {
                 let pos = GetMessagePos();

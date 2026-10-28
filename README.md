@@ -1,6 +1,10 @@
 # FreePort — Set your C: drive free
 
-> Development preview: source and Windows binaries are implemented, but native safety acceptance and actual Windows 7/power-loss testing are incomplete. See [implementation status](docs/implementation-status.md) before running write operations.
+The migration backend uses Windows' own robocopy and `mklink /J`. It verifies a staged copy before `/MOVE`, removes only empty source directories, then creates the junction. DAT copying follows the original batch defaults; destination permissions are inherited. See the [command order and parameter contract](docs/system-command-backend.md).
+
+> Development preview: UAC interaction, Windows 7 and power-loss acceptance were reported passed by the owner on 2026-10-24. Other native safety checks remain open. See [implementation status](docs/implementation-status.md) before running write operations.
+
+Migration discovery focuses on user folders, including AppData, using application evidence and a versioned knowledge pack. See the [storage research](docs/application-storage-research.md) and [directory list](docs/application-storage-list.md). Restore discovery starts from the selected drive; other migration paths can be added manually.
 
 
 **Move your data. Keep your workflow.**

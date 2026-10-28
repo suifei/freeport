@@ -308,5 +308,20 @@
   "operation.rescan": "工作完成。請重新掃描以更新目錄和連結狀態。",
   "selection.save": "儲存選擇…",
   "selection.load": "載入選擇…",
-  "selection.save_confirm": "在此儲存選擇檔案（既有檔案將取代）？"
+  "selection.save_confirm": "在此儲存選擇檔案（既有檔案將取代）？",
+  "column.folder": "目錄",
+  "column.total": "遞迴總大小 ↓",
+  "column.application": "所屬應用",
+  "column.status": "狀態 / 連結目標",
+  "column.candidate_total": "僅加總已識別候選目錄",
+  "rules.legacy": "已停用僅依名稱比對的舊規則。請匯入第 2 版應用知識庫。",
+  "scan.scope": "遷移掃描使用者目錄（含 AppData）；其他位置可手動加入。",
+  "scan.no_profiles": "{0} 未發現使用者目錄；需要時可手動加入指定路徑。",
+  "system.copy": "Robocopy 複製：{0} → {1}",
+  "system.move": "Robocopy /E /MOVE：{0} → {1}",
+  "system.command_failed": "系統工具 {0} 執行失敗（結束代碼 {1}）。{2}",
+  "system.path": "系統命令路徑必須為絕對路徑，不能包含百分號、引號或換行。",
+  "system.residue": "來源目錄仍有殘留或新內容，已停止清理並保留現有資料。",
+  "system.changed": "目錄內容或身分發生變化，已停止操作並保留現有資料。",
+  "system.policy": "系統複製保留資料、屬性及檔案時間；權限繼承目標目錄。"
 }

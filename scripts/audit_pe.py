@@ -1,5 +1,6 @@
 """Inspect release PE imports and size without executing the binary or extra packages."""
 import argparse
+import hashlib
 import json
 import pathlib
 import struct
@@ -72,7 +73,7 @@ def audit(path, limit=5 * 1024 * 1024):
     if bad_apis: issues.append("Static APIs newer than Windows 7: " + ", ".join(bad_apis))
     if delayed: issues.append("Delay imports require separate review")
     return {
-        "file": pathlib.Path(path).name, "bytes": len(data), "limit_bytes": limit,
+        "file": pathlib.Path(path).name, "bytes": len(data), "sha256": hashlib.sha256(data).hexdigest(), "limit_bytes": limit,
         "machine": hex(u16(pe + 4)), "os_version": [u16(optional + 40), u16(optional + 42)],
         "subsystem_version": [u16(optional + 48), u16(optional + 50)],
         "imports": imports, "issues": issues, "passed": not issues,

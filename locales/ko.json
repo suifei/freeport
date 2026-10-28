@@ -308,5 +308,20 @@
   "operation.rescan": "작업이 완료되었습니다. 디렉터리와 링크 상태를 업데이트하려면 다시 검색하세요.",
   "selection.save": "선택 저장…",
   "selection.load": "선택 불러오기…",
-  "selection.save_confirm": "이 위치에 선택 파일을 저장하거나 덮어쓸까요?"
+  "selection.save_confirm": "이 위치에 선택 파일을 저장하거나 덮어쓸까요?",
+  "column.folder": "폴더",
+  "column.total": "전체 크기 ↓",
+  "column.application": "앱",
+  "column.status": "상태 / 링크 대상",
+  "column.candidate_total": "검색된 후보 폴더만 합산",
+  "rules.legacy": "이름만 비교하는 이전 규칙은 비활성화되었습니다. 버전 2 앱 지식 팩을 가져오세요.",
+  "scan.scope": "이동 검색은 AppData를 포함한 사용자 폴더를 대상으로 합니다. 다른 경로는 직접 추가할 수 있습니다.",
+  "scan.no_profiles": "{0}에서 사용자 폴더를 찾지 못했습니다. 필요하면 폴더를 직접 추가하세요.",
+  "system.copy": "Robocopy 복사: {0} → {1}",
+  "system.move": "Robocopy /E /MOVE: {0} → {1}",
+  "system.command_failed": "시스템 도구 {0} 실패(종료 코드 {1}). {2}",
+  "system.path": "명령 경로는 절대 경로여야 하며 퍼센트 기호, 따옴표, 줄바꿈을 포함할 수 없습니다.",
+  "system.residue": "원본 폴더에 남은 데이터나 새 데이터가 있습니다. 정리를 중지하고 데이터를 보존했습니다.",
+  "system.changed": "폴더 내용 또는 식별 정보가 변경되었습니다. 작업을 중지하고 데이터를 보존했습니다.",
+  "system.policy": "데이터, 속성, 파일 시간을 보존합니다. 권한은 대상 폴더에서 상속합니다."
 }

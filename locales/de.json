@@ -308,5 +308,20 @@
   "operation.rescan": "Aufgabe abgeschlossen. Scannen Sie erneut, um Ordner und Verknüpfungen zu aktualisieren.",
   "selection.save": "Auswahl speichern…",
   "selection.load": "Auswahl laden…",
-  "selection.save_confirm": "Auswahldatei hier speichern oder ersetzen?"
+  "selection.save_confirm": "Auswahldatei hier speichern oder ersetzen?",
+  "column.folder": "Ordner",
+  "column.total": "Gesamtgröße ↓",
+  "column.application": "Anwendung",
+  "column.status": "Status / Linkziel",
+  "column.candidate_total": "Summe der erkannten Kandidaten",
+  "rules.legacy": "Alte Regeln ohne Anwendungsnachweis sind deaktiviert. Importieren Sie ein Anwendungspaket der Version 2.",
+  "scan.scope": "Die Suche zur Migration umfasst Benutzerordner einschließlich AppData. Weitere Pfade können manuell hinzugefügt werden.",
+  "scan.no_profiles": "Auf {0} wurde kein Benutzerprofil gefunden. Fügen Sie bei Bedarf einen Ordner hinzu.",
+  "system.copy": "Robocopy kopiert: {0} → {1}",
+  "system.move": "Robocopy /E /MOVE: {0} → {1}",
+  "system.command_failed": "Systemprogramm {0} fehlgeschlagen (Exitcode {1}). {2}",
+  "system.path": "Befehlspfade müssen absolut sein und dürfen keine Prozentzeichen, Anführungszeichen oder Zeilenumbrüche enthalten.",
+  "system.residue": "Im Quellordner verbleiben Daten oder neue Inhalte. Bereinigung gestoppt; Daten bleiben erhalten.",
+  "system.changed": "Ordnerinhalt oder Identität geändert. Vorgang gestoppt; Daten bleiben erhalten.",
+  "system.policy": "Daten, Attribute und Dateizeiten bleiben erhalten. Berechtigungen werden vom Zielordner geerbt."
 }
