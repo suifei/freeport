@@ -118,6 +118,11 @@ See the [requirements](docs/requirements.md), [technical design](docs/technical-
 
 If FreePort helps, a **Star** helps the next person with a full C: drive find it.
 
+## Contact
+
+- QQ: 410000
+- Issues and suggestions: [GitHub Issues](https://github.com/suifei/freeport/issues)
+
 ## License
 
 Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option. Dependency notices ship with the release archive (`third-party-notices/`).

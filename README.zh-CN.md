@@ -114,6 +114,11 @@ AI 工具又下载了一个模型，编辑器又装了几个扩展，编译器�
 
 觉得有用，欢迎 **Star**，也欢迎告诉我们哪个目录总在把你的 C 盘撑满。
 
+## 联系方式
+
+- QQ：410000
+- 问题与建议：[GitHub Issues](https://github.com/suifei/freeport/issues)
+
 ## 许可证
 
 可任选 [MIT](LICENSE-MIT) 或 [Apache-2.0](LICENSE-APACHE) 许可证使用。依赖的版权声明随发布包附带（`third-party-notices/`）。
