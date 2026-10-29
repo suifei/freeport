@@ -143,7 +143,7 @@ Simplified Chinese is the maintained interface language. English, Traditional Ch
 
 ## Development
 
-See the [requirements](docs/requirements.md), [technical design](docs/technical-design.md), [system command contract](docs/system-command-backend.md), [build and validation](docs/development.md) and [implementation status](docs/implementation-status.md) (Chinese). Written in Rust; the CLI and the native Win32 GUI share one core. Repository conventions are in [AGENTS.md](AGENTS.md).
+See the [requirements](docs/requirements.md), [technical design](docs/technical-design.md), [system command contract](docs/system-command-backend.md), [build and validation](docs/development.md) and [implementation status](docs/implementation-status.md) (Chinese). Written in Rust; the CLI and the native Win32 GUI share one core.
 
 If SaveMyCDrive helps, a **Star** helps the next person with a full C: drive find it.
 

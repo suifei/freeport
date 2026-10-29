@@ -138,7 +138,7 @@ SaveMyCDrive 把這些判斷固化成可審查的規則和固定流程：同樣�
 
 ## 開發
 
-需求、設計與驗證見 [docs/](docs/)（簡體中文）。以 Rust 實作，CLI 與原生 Win32 GUI 共用同一核心；儲存庫慣例見 [AGENTS.md](AGENTS.md)。
+需求、設計與驗證見 [docs/](docs/)（簡體中文）。以 Rust 實作，CLI 與原生 Win32 GUI 共用同一核心。
 
 覺得有用，歡迎 **Star**，讓下一個 C 槽滿了的人更容易找到它。
 

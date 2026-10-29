@@ -254,7 +254,7 @@ CLI 简单选择用 `--select id1,id2`；复杂树选择用 `--selection selecti
 
 ## 11. Git 与发布身份
 
-见 [AGENTS.md](../AGENTS.md)：author / committer 使用 `flynn <7343085+suifei@users.noreply.github.com>`，不添加协作作者或生成工具署名；本机扫描结果、日志、构建产物不入库；项目许可证由所有者决定。
+author / committer 使用 `flynn <7343085+suifei@users.noreply.github.com>`，不添加协作作者或生成工具署名；本机扫描结果、日志、构建产物不入库；项目许可证由所有者决定。
 
 ## 12. 技术依据
 

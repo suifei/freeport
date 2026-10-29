@@ -139,7 +139,7 @@ C盘救星把这些判断固化成可审查的规则和固定流程：同样的�
 
 ## 开发
 
-需求、设计与验证见[需求](docs/requirements.md)、[技术方案](docs/technical-design.md)、[系统命令约定](docs/system-command-backend.md)、[构建和验证](docs/development.md)与[实现状态](docs/implementation-status.md)。Rust 实现，CLI 与原生 Win32 GUI 共用同一核心；仓库约定见 [AGENTS.md](AGENTS.md)。
+需求、设计与验证见[需求](docs/requirements.md)、[技术方案](docs/technical-design.md)、[系统命令约定](docs/system-command-backend.md)、[构建和验证](docs/development.md)与[实现状态](docs/implementation-status.md)。Rust 实现，CLI 与原生 Win32 GUI 共用同一核心。
 
 觉得有用，欢迎 **Star**，也欢迎告诉我们哪个目录总在把你的 C 盘撑满。
 

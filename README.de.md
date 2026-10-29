@@ -138,7 +138,7 @@ Gepflegt wird vereinfachtes Chinesisch. Englisch, traditionelles Chinesisch, Jap
 
 ## Entwicklung
 
-Anforderungen, Entwurf und Prüfung stehen in [docs/](docs/) (Chinesisch). In Rust geschrieben; CLI und native Win32-Oberfläche teilen einen Kern. Die Regeln für das Repository stehen in [AGENTS.md](AGENTS.md).
+Anforderungen, Entwurf und Prüfung stehen in [docs/](docs/) (Chinesisch). In Rust geschrieben; CLI und native Win32-Oberfläche teilen einen Kern.
 
 Wenn SaveMyCDrive hilft, hilft ein **Star** der nächsten Person mit vollem Laufwerk C:, es zu finden.
 
